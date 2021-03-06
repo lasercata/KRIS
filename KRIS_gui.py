@@ -5,7 +5,7 @@
 
 KRIS_gui__auth = 'Lasercata'
 KRIS_gui__last_update = '06.03.2021'
-KRIS_gui__version = '1.0'
+KRIS_gui__version = '1.1'
 
 # Note : there are still part of code which are useless here (like DoubleInput)
 # and maybe some imported modules too.
@@ -481,9 +481,9 @@ class KrisGui(QMainWindow):
         self.cipher_opt_alf.addItem(tr('-- Select an alphabet --'))
         self.cipher_opt_alf.insertSeparator(1)
         self.cipher_opt_alf.addItems(list(crypta_alf_list.values()))
-        keys_lay.addWidget(self.cipher_opt_alf, 0, 5)
+        #keys_lay.addWidget(self.cipher_opt_alf, 0, 5)
 
-        keys_lay.setColumnMinimumWidth(6, 50) #Spacing
+        #keys_lay.setColumnMinimumWidth(6, 300) #Spacing
 
         #-Ciphers' box
         self.cipher_opt_ciphs = QComboBox()
