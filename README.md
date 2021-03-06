@@ -5,8 +5,7 @@ The name come from the esperanto "kriptosistemo" ("KRIptoSistemo").
 
 You can generate your own RSA keys. They will be stored in `KRIS/Data/RSA_keys`, encrypted with AES, using the application password as base for the key.
 
-![KRIS_v1 0 1_pic](https://user-images.githubusercontent.com/67599917/110215657-dea3a380-7ea2-11eb-8098-4158a87c3aa6.png)
-
+![KRIS_v1 0 1_pic_](https://user-images.githubusercontent.com/67599917/110216294-3ee81480-7ea6-11eb-9475-7fd7dd96134f.png)
 
 
 ## Requirements
