@@ -4,7 +4,7 @@
 """AES (Advanced Encryption Standard) by Daemen and Rijmen"""
 
 auth = 'Elerias'
-last_update = '11.08.2020'
+last_update = '06.03.2021'
 version = '2.0.2'
 sites = ["https://en.wikipedia.org/wiki/Advanced_Encryption_Standard", "https://en.wikipedia.org/wiki/Rijndael_S-box", "https://en.wikipedia.org/wiki/Rijndael_MixColumns", "https://nvlpubs.nist.gov/nistpubs/FIPS/NIST.FIPS.197.pdf", "https://fr.wikipedia.org/wiki/Division_d%27un_polyn%C3%B4me", "https://www.samiam.org/galois.html", "https://www.samiam.org/key-schedule.html", "https://en.wikipedia.org/wiki/AES_key_schedule"]
 
@@ -40,7 +40,15 @@ if platform.system() == 'Windows':
 else:
     dll_fn = 'AES_unix.dll'
 
-lib_AES = ctypes.cdll.LoadLibrary('{}/modules/ciphers/kris/AES_library/{}'.format(os.getcwd(), dll_fn))
+try:
+    lib_AES = ctypes.cdll.LoadLibrary('{}/modules/ciphers/kris/AES_library/{}'.format(os.getcwd(), dll_fn))
+
+except OSError as err:
+    if platform.system() == 'Windows':
+        lib_AES = ctypes.cdll.LoadLibrary('{}/modules/ciphers/kris/AES_library/{}'.format(os.getcwd(), 'AES_win_2.dll'))
+
+    else:
+        raise OSError(str(err))
 
 f_initAES = lib_AES.initAES
 f_initAES.argtypes = (ctypes.c_int, ctypes.c_char_p)
