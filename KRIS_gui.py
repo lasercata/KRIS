@@ -396,7 +396,7 @@ class KrisGui(QMainWindow):
 
 
         #------path bar
-        tab_cipher_lay.addWidget(self.create_path_bar(tab=2, mn_size=610), 0, 0, 1, -1)#, alignment=Qt.AlignTop)
+        tab_cipher_lay.addWidget(self.create_path_bar(tab=0, mn_size=610), 0, 0, 1, -1)#, alignment=Qt.AlignTop)
 
         #------widgets
         #---text editor e
@@ -812,7 +812,7 @@ class KrisGui(QMainWindow):
             QMessageBox.about(QWidget(), tr('!!! Directory error !!!'), tr('The directory was NOT found !!!'))
             return False
 
-        for tab in range(5):
+        for tab in range(1):
             self.path_ent[tab].setText(getcwd()) #actualise every path bar.
 
         for text_editor in self.lst_txt:
@@ -825,7 +825,7 @@ class KrisGui(QMainWindow):
         '''Change the current directory up'''
 
         chdir('..')
-        for tab in range(5):
+        for tab in range(1):
             self.path_ent[tab].setText(getcwd()) #actualise every path bar.
 
         for text_editor in self.lst_txt:
@@ -849,7 +849,7 @@ class KrisGui(QMainWindow):
                 QMessageBox.about(QWidget(), tr('!!! Directory error !!!'), tr('The directory was NOT found !!!'))
                 return False
 
-            for tab in range(5):
+            for tab in range(1):
                 self.path_ent[tab].setText(getcwd()) #actualise every path bar.
 
             for text_editor in self.lst_txt:
