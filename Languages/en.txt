@@ -1,0 +1,424 @@
+Put the module
+back
+The file "version.txt" was not found. A version will be set but can be wrong.
+The file "version.txt" contain more than 16 characters, so it certainly doesn\'t contain the actual version. A version will be set but can be wrong.
+The file "versions_modules.txt" was NOT found
+The file "history.txt" was NOT found
+locked
+Enter your password
+remaining attempts
+Show password
+Last attempt
+Wrong password
+It was your last attempt
+passed
+Text :
+-- Select a file --
+Clear
+File
+Select and load
+Load
+Save
+Reload
+Text encoding :
+Binary mode
+Hexa mode
+Bytes mode
+Sure
+Are you sure ?
+Open file
+Select a file
+No file selected
+Please select a file
+Or use the button "Select and load"
+Error
+The file was NOT found
+Encoding error
+The file can't be decoded with this encoding
+Try bytes mode
+Erase Text data
+Text is detected in the box ! Remplace by the file's data ?
+Decoding error
+The file can't be decoded in bytes mode
+Save file
+Erase file data
+The selected file is NOT empty
+Overwrite with text data ?
+Text is empty
+There is no text in the box
+Write anyway ?
+Value Error
+The number of binary digits is not a multiple of 8
+A binary number is composed only of 0 and 1
+Error in the conversion of hexadecimal to bytes
+The file can't be encoded with this encoding
+Done
+Your text has been be wrote
+File error
+The file
+was NOT found
+Parameter "from_" should be None, "text" or "file", but
+was found
+The text widget seem to be empty
+Read the file ?
+The text widget is empty
+You did not select a file
+File is empty
+The file seem to be empty
+Read the text widget ?
+The file is empty
+Text is not empty
+The text widget is not empty, but the file is
+Write the file (Yes) or overwrite text (Ignore) ?
+Write in the text widget ?
+invisible
+black
+orange
+blue
+green
+light_blue
+red
+pink
+yellow
+white
+none
+bold
+lite
+italics
+underline
+flaches
+norm
+reverse
+cross
+The input is not a color
+Enter new color of
+(0 to keep the color)
+The color was NOT founded
+program
+input
+output
+error
+wordlist
+succes
+ascii art
+Current colors
+Program color
+Input color
+Output color
+Error color
+Wordlists color
+Succes color
+Ascii art color
+Change colors ?
+(y/n)
+y
+n
+Restore default program colors (1) or change colors one by one (2) ?
+Back menu
+What you entered is NOT in list
+RSA signature
+analysis
+Text analysis
+Frequence analysis
+Index of coincidence
+Kasiki examination
+Friedman's test
+Brute-force
+Dictionary attack
+Advanced brute-force
+Code break
+Decomposition
+Trial division
+Wheel factorization
+Fermat's factorization
+Pollard's rho
+Probabilistic
+Fermat's test
+Miller-Rabin's test
+Sieves
+Sieve of Erathostenes
+Segmented sieve of Erathostenes
+Crypta : module {} not found, it could mean that Craker was not found, redefining the functions !
+Operation successfully realised
+Enter the text
+Result
+Name of the output file
+Read text from file ?
+yes
+no
+Write the result in a file ?
+Place of letters
+Binary code
+Reverse code
+Reverse code word
+Columnar transposition
+Caesar
+Monoalphabetic substitution
+Four squares
+Polybius
+The cipher "{}" was NOT found !!!
+If it exists, please add it to the dict "ciph_types".
+"verbose" arg should be a boolean !!!
+Place of letters in alphabet
+"mode" arg should be "all", or "word", but "{}" found !!!
+"key" should be an int, but "{}" of type "{}" was found !!!
+Can't encrypt with an empty key !!!
+Can't decrypt with an empty key !!!
+Method : brute-force
+The argument "key" should be a list (a square matrix), but a "{}" was found !!!
+The argument "key" should be a list of lists (a square matrix), but "key[{}]" is a "{}" !!!
+The argument "key" should be a square matrix (list of lists), but "key[{}]" has not the same size as "key" !!!
+The length of the text is not a square number !!!
+The argument "size" should be an intenger, but "{}" of type "{}" was found !!!
+The key should be a string, but
+Method : Brute force (on all the keys of 9 letters)
+Method : brute-force (on all the keys of 9 letters)
+Omitting "{}" because it is not in the alphabet !
+Atbash code
+Albam code
+Achbi code
+Avgad code
+"ignore" arg should be a boolean !!!
+The key must be either a string or an intenger, but "{}", of type "{}" was found !!!
+The key, if a string, must have a length of one, but "{}", of length {} was found !!!
+The key, if a string, should be contained in the alphabet !!!
+Caesar cipher
+Method : brute-force
+The keys `a` and `b` should be both None (to brute-force a message), or both intengers, but only one was None !!!
+The keys should be intengers (or None to brute-force a message) !!!
+The key `a` must be co-prime with the alphabet's length !!!
+Can't encrypt with empty keys !!!
+Affine cipher
+The length of "indexes" should be of 5 or 6, but it has a length of "{}" !!!
+Unknown encrypted group "{}" !
+The key should be a string, or a list, but "{}" of type "{}" was found !!!
+Unknown "{}" ! (try ignore=False)
+Monoalphabetic substitution cipher
+Method : Hill-climbing
+Tritheme cipher
+The key must be a string, but "{}", of type "{}" was found !!!
+Invalid character "{}" at position {} in the key !!! (it is not in the alphabet)
+Unknown character "{}" ! It is not in the alphabet ! (try ignore=False)
+Impossible to determine the key
+The argument "mfl" should be a string !!!
+The argument "mfl" should have a length of 1 !!!
+The argument "mfl" should be in the alphabet !!!
+Vigenere cipher
+The key must be an int, but "{}", of type "{}" was found !!!
+The arg "a" must be 1 or -1, but "{}" was found !!!
+The keys 1 and 2 should be both None, or both intengers, but only one was None !!!
+The keys should be strings (or None) !!!
+The arg "wprocess" should be a boolean, but "{}" of type "{}" was found !!!
+The argument "n" should be an intenger, but "{}" of type "{}" was found !!!
+The arg "n" should be a positive intenger different from 0 !!!
+The arg "sort" should be None, "char", or "occ", but "{}" was found !!!
+To get the comparaison, "n" should be 1 !!!
+Character correspondance (Text : English - French) :
+Number of total characters : {}
+Number of characters (after word processing) : {}
+Number of total occurences : {}
+Occurences count :
+Occurences count (by character) :
+Occurences count (by occurence) :
+Max : {}, for length of {}.
+Alphabet (let empty to use normal) : 
+Text in majuscule ? [yn ] 
+Put ! to quit
+Example : B -> E transform all B in E
+f gives you the frequences of the letters
+Plain alphabet
+Cipher alphabet
+Correct text ? [yn] 
+File "quad_f.wrdlst" was not found !
+Your may have forgotten to unzip it.
+It is in Data/Crack.
+The software can't start until the file is not unziped.
+Fatal error !!!
+File "quad_f.wrdlst" was not found.
+Can't import quad.wrdlst
+Put the module {} back !!!
+analysis
+Analys&e ↓
+Si&gn ↓
+Chec&k
+H&ash ↓
+&Encrypt ↓
+&Decrypt ↑
+&Quit
+C&ipher
+Group :
+Key :
+-- Select a key --
+-- Select an alphabet --
+-- Select a cipher --
+Generate keys
+Export public keys
+Show info about keys
+Rename keys
+Convert keys
+Enter french phone number(s) ("," between) :
+Phone number :
+Unassigned or unrecognized
+Home phone
+Ile-de-France
+Northwest region
+Northeast region
+Southeast region
+Southwest region or oversea territories
+Cellphone
+Block
+Area
+Operator
+Allocation date
+Get infos
+n has to be an integer
+n cannot be negative
+0 is not factorizable
+Prime
+Not prime
+Probably prime
+prime numbers
+is likely a prime number
+is a prime number
+is a composite number
+List of prime factors :
+exit
+Prima menu :
+Main menu
+Exit
+Decomposition of a number as a product of prime factors
+Probabilistic primality's test
+Sieves to find prime numbers
+Your choice : 
+is NOT an option of this menu !
+Enter the integer number : 
+Number of tests (Error = 0.25 ^ number of tests) : 
+Limit : 
+Realised in 
+Length of the list :
+Write the prime numbers in a file ? 
+Name of the file (a file of the same name will be erase) :
+Print the list on the screen ? 
+---End---
+Y
+Yes
+YES
+Algorithm :
+-- Select an algorithm --
+C&alculate
+Number :
+Only one var should be None !!!
+At least 1 var should be None !!!
+"word" argument should be a string, but "{}", of type "{}" was found !
+You should enter something !!!
+ret_entro should be a boolean !!!
+Return for : 
+Alphabets : 
+Your word's lenth : 
+Number of differents characters : 
+Lenth of the alphabet containing your word : 
+uncrackable
+very strong
+strong
+medium
+weak
+very weak
+too much weak
+so bad
+Your password is in the top 25 weakest passwords !!!
+It has an entropy of ~
+bits.
+You should choose an other password.
+Your password contain only
+differents characters !!!
+You should add more differents characters.
+Your password is a PIN took from a date in [1900 : 2100] !!!
+Your password is
+of weakness
+To get a
+password
+of weakness, with an entropy of
+you can add
+characters to your password.
+password (4/9 of weakness, with an entropy of 82), you can add
+Enter the password to test :
+Hexadecimal
+Decimal
+Binary
+Alphabetic uppercases
+Alphabetic lowercases
+Specials
+Enter the password to try :
+Show password
+Get strenth
+Return for
+Cracker ― About
+&About
+&Version
+&Updates
+By <h3>Lasercata</h3><h3>Elerias</h3>
+Au&thors
+Cracker is a software developed and updated by Lasercata and by Elerias. It is written in Python 3 and in C.
+This software is a toolbox application that enables you to do many things : you can encrypt securely a secret message using one of the many ciphers present in Cracker (KRIS, AES, RSA, ...), sign it with a hash function, decrypt it.
+If you have a message without the key, but you need to read the content, you can try to crack it using a wordlist that you made with Cracker, or let the algorithm try to crack it using its wordlist bank.
+You don't remember which was your favourite wordlist ? Don't worry ! You can analyze them with the wordlist tab to get numerous informations on them.
+You need to convert a number from binary to hexadecimal ? You need to do a special conversion using your own base alphabet ? Check the "Base convert" tab.
+As you can see, there is a lot of functions, often about cracking. But Cracker can also help to improve your security : if you need a strong password, hard to be cracked by brute-force, the "P@ssw0rd_Test0r" tab is for you ! It gives a lot of informations about the password you entered, like its entropy.
+The arg "type_" should be QLineEdit or QSpinBox, but "{}" was found !!!
+The arg "n" should be an int !!!
+The arg "n" should be greater or equal to 1 !!!
+Select a wordlist ...
+Select a location ...
+Select a file ...
+Home
+Settings
+&About ...
+&Lock
+&Quit
+&Home
+Ciphers
+Current directory :
+Apply
+Search
+!!! Directory error !!!
+The directory was NOT found !!!
+Select directory
+The argument "binary" should be a boolean, but "{}" of type "{}" was found !!!
+The argument "interface" should be None, "gui", or "console", but {} of type {} was found !!!
+The file "{}" was NOT found !!!
+Bad encoding "{}" for the file "{}"
+!!! File error !!!
+Filename : {} ;
+Size : {} ({}) ;
+Last modification : {} ;
+Last access : {} ;
+Creation : {} ;
+Number of characters : {} ;
+Minimum line length : {} characters ;
+Maximum line length : {} characters ;
+Average line length : {} characters ;
+Median line length : {} characters ;
+Wordlist's length : {} lines ;
+Wordlength repartition :
+Length of the alphabet : {} characters ;
+Alphabets : {} ;
+Number of differents characters : {} ;
+Characters' repartition :
+Reading "{}" ... ― Cracker
+Processing ...
+Enter the wordlist's name :
+No file of this name !!!
+Back menu ...
+Done in {} s !
+Done !
+Generate a wordlist
+Words' length :
+Alphabet :
+Filename :
+Encoding :
+-- Previous locations --
+Save in folder :
+&Generate
+Analyze a wordlist
+&Analyze
+Number of head / bottom lines :

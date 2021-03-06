@@ -1,0 +1,424 @@
+Remettre le module
+à sa place
+Le fichier "version.txt" est introuvable.
+Le fichier "version.txt' semble erroné.
+Le fichier "versions_modules.txt" est introuvable
+Le fichier "history.txt" est introuvable
+verrouillé
+Entrer votre mot de passe
+essais restants
+Montrer le mot de passe
+Dernier essai
+Mot de passe incorrect
+C'était votre dernier essai
+réussi
+Texte :
+-- Sélectionnez un fichier --
+Effacer
+Fichier
+Sélectionner et charger
+Charger
+Sauvegarder
+Actualiser
+Encodage du texte :
+Mode binaire
+Mode hexa
+Mode bytes
+Certain
+Êtes-vous certain ?
+Ouvrir un fichier
+Sélectionnez un fichier
+Aucun fichier sélectionné
+Veuillez sélectionner un fichier
+Ou utilisez le bouton "Sélectionner et charger"
+Erreur
+Le fichier est introuvable
+Erreur d'encodage
+Le fichier ne peut être décodé avec cette norme d'encodage
+Essayez le mode bytes
+Supprimer les données du widget Text
+Il y a du texte dans le widget Text, le remplacer par les données du fichier ?
+Erreur de décodage
+Le fichier ne peut pas être décodé en mode bytes
+Sauvegarder le fichier
+Supprimer les données du fichier
+Le fichier sélectionner n'est pas vide
+Ecraser avec les données du widget Text ?
+Le widget Text est vide
+Pas de texte dans le widget Text
+Ecrire quand même ?
+Erreur de valeur
+Le nombre de chiffres binaires n'est pas un multiple de 8
+Un nombre en binaire est composé seulement de 0 et de 1
+Erreur lors de la conversion de l'hexadécimal en bytes
+Le fichier ne peut pas être encodé avec cette norme d'encodage
+Fait
+Votre texte a été écrit
+Erreur de fichier
+Le fichier
+est introuvable
+Le paramètre "from_" devrait être None, "text" ou "file", mais
+a été trouvé
+Le widget Text semble vide
+Lire le fichier ?
+Le widget Text est vide
+Vous n'avez pas sélectionné un fichier
+Le fichier est vide
+Le fichier semble vide
+Lire le widget Text ?
+Le fichier est vide
+Le widget Text n'est pas vide
+Le widget Text n'est pas vide mais le fichier l'est
+Ecrire dans le fichier (Yes) ou écraser le texte (Ignore) ?
+Ecrire dans le widget Text ?
+invisible
+noir
+orange
+bleu
+vert
+bleu_clair
+rouge
+rose
+jaune
+blanc
+aucune
+gras
+léger
+italique
+souligné
+flaches
+normé
+inversé
+barré
+L'entrée n'est pas une couleur
+Entrer une nouvelle couleur de
+(0 pour garder la couleur)
+La couleur est introuvable
+programme
+entrée
+sortie
+erreur
+wordlist
+succès
+art ascii
+Couleurs actuelles
+Couleur du programme
+Couleur des entrées
+Couleur des sorties
+Couleur des erreurs
+Couleur des wordlists
+Couleur des actions réussites
+Couleur de l'art ascii
+Changer les couleurs ?
+(o/n)
+o
+n
+Restaurer les couleurs par défaut (1) ou les changer une par une (2) ?
+Retour au menu
+Ce que vous avez entré n'est pas dans la liste
+Signature RSA
+analyse
+Analyse du texte
+Analyse des fréquences
+Indice de coïncidence
+Test de Kasiki
+Test de Friedman
+Force brute
+Attaque par dictionnaire
+Force brute avancée
+Cassage du chiffre
+Décomposition
+Divisions successives
+Factorisation par roue
+Factorisation de Fermat
+Algorithme rho de Pollard
+Probabilistique
+Test de Fermat
+Test de Miller-Rabin
+Cribles
+Crible d'Erathostenes
+Crible d'Erathostenes par segment
+Crypta : Le module {} est introuvable, Craker pourrait donc être introuvable, redéfinition des fonctions !
+Opération réalisée avec succès
+Entrer le texte
+Résultat
+Nom du fichier dans lequel écrire les données
+Lire le texte depuis un fichier ?
+oui
+non
+Ecrire le résultat dans une fichier ?
+Rang dans l'alphabet
+Code binaire
+Code inversé
+Mots inversés
+Transposition de colonnes
+César
+Substitution monoalphabétique
+Quatre carrés
+Polybe
+Le chiffre "{}" est introuvable !!!
+Si il existe, veuillez l'ajouter au dictionnaire "ciph_types".
+L'argument "verbose" devrait être un booléen !!!
+Rang dans l'alphabet
+L'argument "mode" devrait être "all", ou "word", mais est "{}" !!!
+"key" devrait être un int, mais "{}" est de type "{}" !!!
+Le texte ne peut pas être chiffré avec une clé vide !!!
+Le texte ne peut pas être déchiffré avec une clé vide !!!
+Méthode : force brute
+L'argument "key" devrait être une liste (une matrice carrée), mais est de type "{}" !!!
+L'argument "key" devrait être une liste de listes (une matrice carrée), mais "key[{}]" est de type "{}" !!!
+L'argument "key" devrait être une matrice carrée (liste de listes), mais "key[{}]" n'a pas la même taille que "key" !!!
+La longueur du texte n'est pas égale au carré d'un nombre entier !!!
+L'argument "size" devrait être un int, mais "{}" est de type "{}" !!!
+La clé devrait être un str mais "{}" est de type "{}" !!!
+Methode : force brute (test de toutes les clés de 9 lettres)
+Methode : force brute (test de toutes les clés de 9 lettres)
+"{}" omis car n'est pas présent dans l'alphabet
+Code Atbash
+Code Albam
+Code Achbi
+Code Avgad
+L'argument "ignore" devrait être un booléen !!!
+La clé doit être soit un str soit un int, mais "{}" est de type "{}" !!!
+Si la clé est un str, elle doit avoir une longueur de 1, mais "{}" est de longueur {} !!!
+Si la clé est un str, elle doit appartenir à l'alphabet !!!
+Chiffre de César
+Methode : force brute
+Les clés `a` et `b` devraient être toutes deux None, ou int, mais une seule est None !!!
+Les clés devraient des int (ou None) !!!
+La clé `a` doit être un nombre premier avec la longueur de l'alphabet !!!
+Impossible de chiffres avec des clés vides !!!
+Chiffre affine
+La longueur des "indexes" devraient être de 5 ou 6, alors qu'ils ont une longueur de "{}" !!!
+Groupe inconnu "{}" !
+La clé devrait être un str, ou une list, mais "{}" est de type "{}" !!!
+"{}" inconnu ! (essayer ignore=False)
+Chiffrement par substitution monoalphabétique
+Methode : Hill-climbing
+Chiffre de Tritheme
+La clé devrait être un str, ou une list, mais "{}" est de type "{}" !!!
+Caractère invalide "{}" à la position {} dans la clé !!! (il n'est pas dans l'alphabet)
+Caractère inconnu "{}" ! Il n'est pas dans l'alphabet ! (essayer ignore=False)
+Clé indéterminable
+L'argument "mfl" doit être un str !!!
+L'argument "mfl" doit avoir une longueur de 1 !!!
+L'argument "mfl" doit être dans l'alphabet !!!
+Chiffre de Vigenère
+La clé devrait être un int, mais "{}" est de type "{}" !!!
+L'argument "a" doit être égal à 1 ou -1, mais est égal à "{}" !!!
+Les clés 1 et 2 doivent être toutes deux None, ou des int, mais un seul est None !!!
+Les clés devraient être des str (ou None) !!!
+L'argument "wprocess" devrait être un bool, mais "{}" est de type "{}" !!!
+L'argument "n" devrait être un integer, mais "{}" est de type "{}" !!!
+L'argument "n" doit être un nombre positif différent de 0 !!!
+L'argument "sort" devrait être None, "char", ou "occ", mais est de type "{}" !!!
+Pour avoir la comparaison, "n" devrait être égal à 1 !!!
+Correspondance des caractères (Texte : Englais - Français) :
+Nombre total de caractères : {}
+Nombre de caractères (après traitement du texte) : {}
+Nombre total d'occurences : {}
+Occurences :
+Occurences (par caractère) :
+Occurences (par occurence) :
+Max : {}, pour une longueur de {}.
+Alphabet (ne rien mettre pour utiliser le normal) : 
+Texte en majuscule ? [on ] 
+Mettre ! pour quitter
+Exemple : B -> E transforme tous les B en E
+f donne la fréquence des lettres
+Alphabet en clair
+Alphabet chiffré
+Texte correct ? [on] 
+Le fichier "quad_f.wrdlst" est introuvable !
+Vous avez peut-être oublié de le décompresser.
+Il se trouve dans Data/Crack.
+Le logiciel ne peut pas démarrer tant que le fichier n'est pas décompressé.
+Erreur fatale !!!
+Le fichier "quad_f.wrdlst" est introuvable.
+Le module quad.wrdlst ne peut-être importé.
+Remettez le module {} !!!
+analyse
+Analys&er ↓
+Si&gner ↓
+Vérif&ier
+C&alculer l'empreinte ↓
+&Chiffrer ↓
+&Déchiffrer ↑
+&Quitter
+Ch&iffrement
+Groupe :
+Clé :
+-- Sélectionnez une clé --
+-- Sélectionnez un alphabet --
+-- Sélectionner un chiffre --
+Générer des clés
+Exporter des clés publiques
+S'informer sur des clés
+Renommer des clés
+Convertir des clés
+Entrer un ou des numéros de téléphone français ("," entre) :
+Numéro :
+Non attribué ou non reconnu
+Téléphone fixe
+Île-de-France
+Région nord-ouest
+Région nord-est
+Région sud-est
+Région sud-ouest ou territoires d'outre-mer
+Téléphone portable
+Bloc
+Zone
+Opérateur
+Date d'attribution
+Chercher
+n doit être un entier
+n doit être positif
+0 n'est pas factorizable
+Premier
+Non premier
+Probablement premier
+nombres premiers
+est probablement un nombre premier
+est un nombre premier
+est un nombre composé
+Liste des facteurs premiers :
+quitter
+Menu de Prima :
+Menu principal
+Quitter
+Décomposition d'un nombre en produits de facteurs premiers
+Test de primalité probabiliste
+Crible pour trouver des nombres premiers
+Votre choix : 
+n'est pas une option de ce menu !
+Entrez le nombre entier : 
+Nombre de tests (Erreur = 0,25 ^ nombre de tests) : 
+Limite : 
+Réalisé en 
+Longueur de la liste : 
+Ecrire les nombres premiers dans un fichier ?
+Nom du fichier (un fichier du même nom sera écrasé) : 
+Afficher la liste à l'écran ?
+---Fin---
+O
+Oui
+OUI
+Algorithme :
+-- Sélectionnez un algorithme --
+C&alculer
+Nombre :
+Une seule variable doit être None !!!
+Au moins une variable doit être None !!!
+L'argument "word" devrait être un str, mais "{}" est de type "{}" !
+Vous devez entrer quelque chose !!!
+ret_entro doit être un booléen !!!
+Retour pour : 
+Alphabets : 
+Longueur de votre mot : 
+Nombre de caractères différents : 
+Longueur de l'alphabet contenant votre mot : 
+incassable
+très fort
+fort
+moyen
+faible
+très faible
+extrêmement faible
+si mauvais
+Votre mot de passe fait parmi des 25 pires mots de passe !!!
+Il a une entropie de ~
+bits.
+Vous devriez choisir un autre mot de passe.
+Votre mot de passe contient seulement
+caractères différents !!!
+Vous devriez ajouter plus de caractères différents.
+Votre mot de passe est un ensemble de 4 chiffres provenant d'une date [1900 : 2100] !!!
+Votre mot de passe est
+de faiblesse
+Pour avoir un
+mot de passe
+de faiblesse, avec une entropie de
+vous pouvez ajouter
+caractères à votre mot de passe.
+mot de passe (4/9 de faiblesse, avec une entropie de 82), vous pouvez ajouter
+Entrez le mot de passe à tester :
+Hexadecimal
+Décimal
+Binaire
+Alphabet majuscule
+Alphabet minuscule
+Caractères spéciaux
+Entrez le mot de passe à tester :
+Montrer le mot de passe
+Tester
+Retour pour
+A propos de Cracker ...
+A p&ropos
+&Version
+&Mises à jour
+Par <h3>Lasercata</h3><h3>Elerias</h3>
+Au&teurs
+Cracker est un logiciel developpé et mis à jour par Lasercata et Elerias. Il est programmé en Python 3 et en C.
+Ce logiciel vous permet de faire beaucoup de choses : vous pouvez chiffrer de façon sécurisée un message que vous voulez garder secret en utilisant un des nombreux algorithmes de chiffrements proposés (KRIS, AES, RSA, ...), y apposer une signature avec une fonction de hachage, et le déchiffrer.
+Si vous êtes en possession d'un message chiffré dont vous ignorez la clé, mais que vous avez besoin de lire le content, vous pouvez essayer de le décrypter en utilisant une wordlist que vous avez créée avec Cracker, ou laisser l'algorithme essayer de le décrypter en utilisant sa banque de wordlists. 
+Vous ne vous souvenez plus quelle était votre wordlist favorite ? Ne vous inquiétez pas ! Vous pouvez analyser des wordlist avec le menu wordlist afin d'obtenir des informations sur elles. 
+Vous désirez convertir un nombre écrit en binaire en hexadécimal ? Ou d'une conversion particulière en utilisant votre propre alphabet ? Allez voir le menu "Base convert".
+Comme vous pouvez le voir, il y a de nombreuses fonction, souvent en rapport avec le hacking. Mais Cracker possède également des fonctionnalités qui vous permettent d'améliorer votre sécurité : si vous cherchez un mot de passe résistant aux différentes attaques par force-brute, le menu "@Passw0rd_Test0r" vous sera très utile ! Il donne beaucoup d'informations sur le mot de passe que vous voulez tester, comme son entropie par exemple.
+L'argument "type_" devrait être QLineEdit ou QSpinBox, mais est de type "{}" !!!
+L'argument "n" doit être un int !!!
+L'argument "n" doit être supérieur ou égal à 1 !!!
+Sélectionnez une wordlist ...
+Sélectionnez un emplacement ...
+Sélectionnez un fichier ...
+Accueil
+Paramètres
+&A propos ...
+&Verrouiller
+&Quitter
+&Accueil
+Chiffrements
+Répertoire courant :
+Appliquer
+Chercher
+!!! Erreur de répertoire !!!
+Le répertoire est introuvable !!!
+Sélectionnez un répertoire
+L'argument "binary" devrait être un booléen mais "{}" est de type "{}" !!! 
+L'argument "interface" devrait être None, "gui", ou "console",  mais "{}" est de type "{}" !!! 
+Le fichier "{}" est introuvable !!!
+Mauvais encodage ({}) pour le fichier "{}"
+!!! Erreur de fichier !!!
+Nom du fichier : {} ;
+Taille : {} ({}) ;
+Dernière modification : {} ;
+Dernier accès : {} ;
+Création : {} ;
+Nombre de caractères : {} ;
+Longueur minimum d'une ligne : {} caractères ;
+Longueur maximum d'une ligne : {} caractères ;
+Longueur moyenne d'une ligne : {} caractères ;
+Longueur médiane d'une ligne : {} caractères ;
+Longueur de la wordlist : {} lignes ;
+Répartition des caractères de la wordlist :
+Longueur de l'alphabet utilisé : {} caractères ;
+Alphabets : {} ;
+Nombre de caractères différents : {} ;
+Répartition des caractères utilisés :
+Lecture de "{}" ... ― Cracker
+En cours ...
+Entrez le nom de la wordlist :
+Aucun fichier de ce nom !!!
+Retour au menu ...
+Fait en {} s
+Opération terminée !
+Générer une wordlist
+Longueur des mots :
+Alphabet :
+Nom du fichier :
+Encodage :
+-- Derniers emplacements --
+Sauvegarder dans le dossier :
+&Générer
+Analyser une wordlist
+&Analyser
+Nombre de lignes au début / à la fin :
