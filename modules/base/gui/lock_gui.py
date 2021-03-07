@@ -2,8 +2,8 @@
 # -*- coding: utf-8 -*-
 
 lock_gui__auth = 'Lasercata'
-lock_gui__ver = '4.1.1'
-lock_gui__last_update = '31.01.2021'
+lock_gui__ver = '4.1.2'
+lock_gui__last_update = '07.03.2021'
 
 ##-import
 import sys
@@ -63,7 +63,7 @@ class Lock(QWidget):
         #------ini
         super().__init__(parent)
         self.setWindowTitle('KRIS v' + cracker_version + ' | ' + tr('locked'))
-        #self.setWindowIcon(QIcon('Style/Cracker_icon.ico'))
+        self.setWindowIcon(QIcon('Style/KRIS_logo_by_surang.ico'))
 
         self.pwd_hshed = pwd
         self.Hasher = Hasher(h, loop).hash
