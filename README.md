@@ -11,10 +11,12 @@ You can generate your own RSA keys. They will be stored in `KRIS/Data/RSA_keys`,
 
 ## Requirements
 
-To run the software, you need to have :
+To run the python script, you need to have :
 
 * [Python3](https://www.python.org/downloads/)
 * [PyQt5](https://pypi.org/project/PyQt5/)
+
+Else you should be able to run the software by downloading the build version for your OS (Linux or Windows, compiled with pyinstaller or auto-py-to-exe) in [releases](https://github.com/lasercata/KRIS/releases).
 
 
 ## Installing
@@ -35,7 +37,7 @@ chmod +x *.py
 ## Running
 
 ### Run
-In the main directory, run `./KRIS_gui.py`.
+In the main directory, run `./KRIS_gui.py` to run the python script. Else you can run `./KRIS_gui` for Linux build, or `KRIS_gui.exe` for Windows build.
 
 ### Password
 The default password is **`swiss_knife`**. It is used to encrypt the RSA keys, so you can leave KRIS on your USB key or on an other computer without the risk of having your keys stolen.
