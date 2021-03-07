@@ -5,7 +5,7 @@
 
 KRIS_gui__auth = 'Lasercata'
 KRIS_gui__last_update = '07.03.2021'
-KRIS_gui__version = '1.2'
+KRIS_gui__version = '1.2.1'
 
 # Note : there are still part of code which are useless here (like DoubleInput)
 # and maybe some imported modules too.
@@ -291,7 +291,7 @@ class KrisGui(QMainWindow):
         #------ini
         super().__init__(parent)
         self.setWindowTitle('KRIS v' + kris_version)
-        #self.setWindowIcon(QIcon('Style/Cracker_icon.ico'))
+        self.setWindowIcon(QIcon('Style/KRIS_logo_by_surang.ico'))
 
         #---the QTabWidget
         self.app_widget = QTabWidget()
