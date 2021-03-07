@@ -4,8 +4,8 @@
 '''Launch KRIS with PyQt5 graphical interface. It is a part of Cracker.'''
 
 KRIS_gui__auth = 'Lasercata'
-KRIS_gui__last_update = '06.03.2021'
-KRIS_gui__version = '1.1'
+KRIS_gui__last_update = '07.03.2021'
+KRIS_gui__version = '1.2'
 
 # Note : there are still part of code which are useless here (like DoubleInput)
 # and maybe some imported modules too.
@@ -1696,13 +1696,18 @@ class UseCipherTab:
         if txt in (-1, -2, -3):
             return txt #Abort
 
-        key = self._get_key(0)
-        if key == -3:
-            return -3 #Abort
-
         ciph = self.cipher.currentText()
         encod = self.txt_d.get_encod()
         bytes_md = self.txt_d.get_bytes()
+
+        if ciph != 'RSA signature':
+            key = self._get_key(0)
+
+        else:
+            key = self._get_key(1)
+
+        if key == -3:
+            return -3 #Abort
 
 
         #------encrypt with the good cipher
@@ -1774,14 +1779,19 @@ class UseCipherTab:
         if txt in (-1, -2, -3):
             return txt #Abort
 
-        key = self._get_key(1)
-        if key == -3:
-            return -3 #Abort
-
         ciph = self.cipher.currentText()
         encod = self.txt_e.get_encod()
         bytes_md = self.txt_e.get_bytes()
         bytes_md_d = self.txt_d.get_bytes()
+
+        if ciph != 'RSA signature':
+            key = self._get_key(1)
+
+        else:
+            key = self._get_key(0)
+
+        if key == -3:
+            return -3 #Abort
 
 
         #------decrypt using the good cipher
