@@ -1,7 +1,7 @@
 # KRIS
 A PyQt5 python3 software that allow you to encrypt messages and files with secure ciphers. It it implements RSA, AES and KRIS. KRIS encrypt the message with AES (which is faster than RSA), and then encrypt the used AES key with RSA (like PGP do).
 
-The name come from the esperanto "kriptosistemo" ("KRIptoSistemo").
+The name come from the esperanto for cryptosystem, "kriptosistemo" ("KRIptoSistemo").
 
 You can generate your own RSA keys. They will be stored in `KRIS/Data/RSA_keys`, encrypted with AES, using the application password as base for the key.
 
