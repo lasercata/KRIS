@@ -4,8 +4,8 @@
 '''This program allow you to encrypt and decrypt with RSA cipher.'''
 
 RSA__auth = 'Lasercata, Elerias'
-RSA__last_update = '05.03.2021'
-RSA__version = '3.6_kris'
+RSA__last_update = '15.03.2021'
+RSA__version = '3.7_kris'
 
 
 ##-import
@@ -1124,6 +1124,8 @@ class RsaKeys:
         If the keys are stored in decimal, it write them in hexadecimal ;
         it write them in decimal else.
 
+        It remove keys in the old storage mode.
+
         If the keys were not found, return -1 ;
         if the keys already exists, return -2 ;
         return None else.
@@ -1174,6 +1176,15 @@ class RsaKeys:
             row = v
             CSV(fn).write(fdn, row)
 
+            old_md = ('d', 'h')[stg_md == 'hexa']
+            remove(fn[:-1] + old_md)
+
+            try:
+                remove(fn[:-1] + old_md + '.enc')
+
+            except FileNotFoundError:
+                pass
+
             chdir(old_path)
 
         else: #pbk
@@ -1208,11 +1219,20 @@ class RsaKeys:
 
             CSV(fn).write(fdn, row)
 
+            old_md = ('d', 'h')[stg_md == 'hexa']
+            remove(fn[:-1] + old_md)
+
+            try:
+                remove(fn[:-1] + old_md + '.enc')
+
+            except FileNotFoundError:
+                pass
+
             chdir(old_path)
 
 
 
-    #------renmae
+    #------rename
     def rename(self, new_name):
         '''
         Function which can rename a set of keys
@@ -1240,6 +1260,12 @@ class RsaKeys:
             ext = ('.pbk-h', '.pbk-d')[stg_md == 'dec']
 
         rename(str(self.k_name) + ext, new_name + ext)
+
+        try:
+            remove(str(self.k_name) + ext + '.enc')
+
+        except FileNotFoundError:
+            pass
 
         chdir(old_path)
 
@@ -1304,25 +1330,43 @@ class RsaKeys:
 
 
     #------Encrypt key
-    def encrypt(self, key):
+    def encrypt(self, key, full=False):
         '''
         Encrypt 'self.k_name' with AES-256-CBC using the password
         `RSA_keys_pwd` (Hasher('sha256').hash(clear_KRIS_pwd)[:32])
         and make a file 'self.k_name' + ext + '.enc'
+
+        - key : the password ;
+        - full : a bool which indicates if self.k_name contain the extension.
         '''
 
-        file = '{}/RSA_keys/{}'.format(glb.KRIS_data_path, self.get_fn('d'))
+        if full:
+            fn = self.k_name
+
+        else:
+            fn = self.get_fn('d')
+
+        file = '{}/RSA_keys/{}'.format(glb.KRIS_data_path, fn)
         AES(256, key).encryptFile(file, file + '.enc')
 
 
     #------Encrypt key
-    def decrypt(self, key):
+    def decrypt(self, key, full=False):
         '''
         Decrypt self.keys_name with AES-256-CBC using the password
         `RSA_keys_pwd` (Hasher('sha256').hash(clear_KRIS_pwd)[:32])
+
+        - key : the password ;
+        - full : a bool which indicates if self.k_name contain the extension.
         '''
 
-        file = '{}/RSA_keys/{}'.format(glb.KRIS_data_path, self.get_fn('e'))
+        if full:
+            fn = self.k_name
+
+        else:
+            fn = self.get_fn('e')
+
+        file = '{}/RSA_keys/{}'.format(glb.KRIS_data_path, fn)
         AES(256, key).decryptFile(file, file[:-4])
 
 
@@ -1349,45 +1393,91 @@ class SecureRsaKeys:
 
 
     def encrypt(self):
-        '''Encrypt all the RSA keys present in Data/RSA_keys using RsaKeys.encrypt'''
+        '''Encrypt all the private RSA keys present in Data/RSA_keys using RsaKeys.encrypt'''
 
-        RSA_keys = list_keys('all')
+        RSA_keys = self._get_pvk()
 
         for k in RSA_keys:
             RsaKeys(k, self.interface).encrypt(self.key)
 
 
     def decrypt(self):
-        '''Decrypt all the RSA keys present in Data/RSA_keys using RsaKeys.decrypt'''
+        '''Decrypt all the private RSA keys present in Data/RSA_keys using RsaKeys.decrypt'''
 
-        RSA_keys = list_keys('enc')
+        RSA_keys = self._get_pvk_enc()
 
         for k in RSA_keys:
             RsaKeys(k, self.interface).decrypt(self.key)
 
 
     def rm_clear(self):
-        '''Delete the clear RSA keys.'''
+        '''Delete the clear private RSA keys.'''
 
-        enc_keys = list_keys('enc')
+        enc_keys = self._get_pvk_enc(True)
 
-        for k in list_keys('all'):
+        for k in self._get_pvk(True):
             if k not in enc_keys:
-                RsaKeys(k, self.interface).encrypt(self.key)
+                RsaKeys(k, self.interface).encrypt(self.key, True)
 
-            remove('{}/RSA_keys/{}'.format(glb.KRIS_data_path, RsaKeys(k, self.interface).get_fn('d')))
+            remove('{}/RSA_keys/{}'.format(glb.KRIS_data_path, k))
 
 
     def rm_enc(self):
-        '''Delete the encrypted RSA keys. Used when changing password.'''
+        '''Delete the encrypted private RSA keys. Used when changing password.'''
 
-        RSA_keys = list_keys('all')
+        RSA_keys = self._get_pvk(True)
 
-        for k in list_keys('enc'):
+        for k in self._get_pvk_enc(True):
             if k not in RSA_keys:
                 RsaKeys(k, self.interface).decrypt(self.old_key)
 
-            remove('{}/RSA_keys/{}'.format(glb.KRIS_data_path, RsaKeys(k, self.interface).get_fn('e')))
+            remove('{}/RSA_keys/{}'.format(glb.KRIS_data_path, k))
+
+
+    def _get_pvk(self, ext=False):
+        '''
+        Return the list of all the *.pvk-* files.
+
+        - ext : a bool which indicate if keep the extension in the file names.
+        '''
+
+        old_path = chd_rsa('.')
+        lst_k = listdir()
+        chdir(old_path)
+
+        pvk_l = []
+
+        for k in lst_k:
+            if k[-6:] in ('.pvk-d', '.pvk-h'):
+                if ext:
+                    pvk_l.append(k)
+                else:
+                    pvk_l.append(k[:-6])
+
+        return pvk_l
+
+
+    def _get_pvk_enc(self, ext=False):
+        '''
+        Return the list of all the *.pvk-*.enc files, without the extension.
+
+        - ext : a bool which indicate if keep the extension in the file names.
+        '''
+
+        old_path = chd_rsa('.')
+        lst_k = listdir()
+        chdir(old_path)
+
+        pvk_enc_l = []
+
+        for k in lst_k:
+            if k[-10:] in ('.pvk-d.enc', '.pvk-h.enc'):
+                if ext:
+                    pvk_enc_l.append(k)
+                else:
+                    pvk_enc_l.append(k[:-10])
+
+        return pvk_enc_l
 
 
 
