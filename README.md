@@ -40,7 +40,7 @@ chmod +x *.py
 In the main directory, run `./KRIS_gui.py` to run the python script. Else you can run `./KRIS_gui` for Linux build, or `KRIS_gui.exe` for Windows build.
 
 ### Password
-The default password is **`swiss_knife`**. It is used to encrypt the RSA keys, so you can leave KRIS on your USB key or on an other computer without the risk of having your keys stolen.
+The default password is **`swiss_knife`**. It is used to encrypt the private RSA keys, so you can leave KRIS on your USB key or on an other computer without the risk of having your keys stolen.
 
 You can change the password in the Settings part.
 
