@@ -4,7 +4,7 @@
 '''Launch KRIS with PyQt5 graphical interface. It is a part of Cracker.'''
 
 KRIS_gui__auth = 'Lasercata'
-KRIS_gui__last_update = '07.03.2021'
+KRIS_gui__last_update = '15.03.2021'
 KRIS_gui__version = '1.2.1'
 
 # Note : there are still part of code which are useless here (like DoubleInput)
@@ -1570,7 +1570,7 @@ class CvrtKeyWin(QMainWindow):
         '''Collect the infos and convert RSA keys.'''
 
         k_name = self.keys_opt.currentText()
-        exp = ('hexadecimal', 'decimal')[self.rb_dec.isChecked()]
+        exp = ('decimal', 'hexadecimal')[self.rb_dec.isChecked()]
 
         if k_name == tr('-- Select a key --'):
             QMessageBox.critical(None, '!!! No selected key !!!', '<h2>Please select a key !!!</h2>')
