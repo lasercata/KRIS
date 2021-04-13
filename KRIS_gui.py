@@ -4,11 +4,11 @@
 '''Launch KRIS with PyQt5 graphical interface. It is a part of Cracker.'''
 
 KRIS_gui__auth = 'Lasercata'
-KRIS_gui__last_update = '15.03.2021'
-KRIS_gui__version = '1.2.1'
+KRIS_gui__last_update = '13.04.2021'
+KRIS_gui__version = '2.0'
 
-# Note : there are still part of code which are useless here (like DoubleInput)
-# and maybe some imported modules too.
+# Note : there may still be parts of code which are useless in this file
+# and maybe some imported modules too (TextEditor, ...).
 
 
 ##-import
@@ -18,41 +18,38 @@ KRIS_gui__version = '1.2.1'
 from modules.base import glb
 
 from PyQt5.QtCore import QSize, Qt
-from PyQt5.QtGui import QIcon, QPixmap, QCloseEvent, QPalette, QColor
+from PyQt5.QtGui import QIcon, QPixmap, QCloseEvent, QPalette, QColor, QFont
 from PyQt5.QtWidgets import (QApplication, QMainWindow, QComboBox, QStyleFactory,
     QLabel, QGridLayout, QLineEdit, QMessageBox, QWidget, QPushButton, QCheckBox,
     QHBoxLayout, QVBoxLayout, QGroupBox, QTabWidget, QTableWidget, QFileDialog,
     QRadioButton, QTextEdit, QButtonGroup, QSizePolicy, QSpinBox, QFormLayout,
-    QSlider)
+    QSlider, QMenuBar, QMenu, QPlainTextEdit, QAction, QToolBar)
 
 #------other
 from os import chdir, getcwd
 from os.path import isfile
 import sys
 
-#from datetime import datetime as dt
-
 from ast import literal_eval #safer than eval
 
 #---------KRIS modules
 try:
+
+    from Languages.lang import translate as tr
+    from Languages.lang import langs_lst, lang
+
     from modules.base.base_functions import *
     from modules.base.progress_bars import *
 
     from modules.base.gui.lock_gui import Lock
     from modules.base.gui.GuiStyle import GuiStyle
-    from modules.base.gui.TextEditor import TextEditor
     from modules.base.gui.Popup import Popup
 
     from modules.ciphers.hashes import hasher
-    #from modules.ciphers.crypta import crypta
     from modules.ciphers.kris import AES, RSA, KRIS
+    from modules.base.FormatMsg import FormatMsg
 
     from modules.base.mini_pwd_testor import get_sth
-
-    from Languages.lang import translate as tr
-    from Languages.lang import langs_lst, lang
-
 
 except ModuleNotFoundError as ept:
     err = str(ept).strip("No module named")
@@ -61,7 +58,11 @@ except ModuleNotFoundError as ept:
         cl_out(c_error, tr('Put the module {} back !!!').format(err))
 
     except NameError:
-        print('\n' + tr('Put the module {} back !!!').format(err))
+        try:
+            print('\n' + tr('Put the module {} back !!!').format(err))
+
+        except NameError:
+            print('\n' + 'Put the module {} back !!!'.format(err))
 
     sys.exit()
 
@@ -78,20 +79,15 @@ try:
 
 except FileNotFoundError:
     cl_out(c_error, tr('The file "version.txt" was not found. A version will be set but can be wrong.'))
-    kris_version = '1.0.0 ?'
+    kris_version = '2.0.0 ?'
 
 else:
     if len(kris_version) > 16:
         cl_out(c_error, tr('The file "version.txt" contain more than 16 characters, so it certainly doesn\'t contain the actual version. A version will be set but can be wrong.'))
-        kris_version = '1.0.0 ?'
+        kris_version = '2.0.0 ?'
 
 
 #---------passwords
-
-#todo: Check if there is a file with this data in ./Data/pwd
-#todo + add a salt for passwords ?
-
-
 pwd_h = 'SecHash'
 pwd_loop = 512
 
@@ -122,7 +118,7 @@ admin_pwd = '164c53d1a85ae8eff014e162af6ee7dfe6d8eaeb0f01cefcf451b6ed2894c3d4f92
 # admin_pwd = '0e1faf4b92c262ea33c915792b3245b890bc9c30efc3aed327ac559b2731355a8531a2ba7a04efc36eefda6aa64fca6e375e123a4c8c84a856c1121429a6357d'
 
 
-#---------Usefull lists/dicts
+#---------Useful lists/dicts
 lst_encod = ('utf-8', 'ascii', 'latin-1')
 
 
@@ -133,36 +129,8 @@ ciphers_list = {
 
     'RSA' : ('RSA', tr('RSA signature')),
 
-    #'Crypta' : tuple(crypta.crypta_ciphers.keys()),
-
-    # tr('analysis') : (tr('Text analysis'), tr('Frequence analysis'), tr('Index of coincidence'), \
-    #     tr('Kasiki examination'), tr("Friedman's test")),
-
     'hash' : hasher.h_str + ('SecHash',)
 }
-
-#crack_method_list = (tr('Brute-force'), tr('Dictionary attack'), tr('Advanced brute-force'), tr('Code break'))
-
-
-# prima_algo_list = {
-#     tr('Decomposition') : (tr('Trial division'), tr('Wheel factorization'), tr("Fermat's factorization"), \
-#     tr("Pollard's rho"), 'p - 1'),
-#
-#     tr('Probabilistic') : (tr("Fermat's test"), tr("Miller-Rabin's test")),
-#
-#     tr('Sieves') : (tr('Sieve of Erathostenes'), tr('Segmented sieve of Erathostenes'))
-# }
-#
-# b_cvrt_alf_list = {
-#     'alf_base10': '0123456789',
-#     'alf_base16': '0123456789ABCDEF',
-#     'alf_base32': 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567',
-#     'alf_base32hex': '0123456789ABCDEFGHIJKLMNOPQRSTUV',
-#     'alf_base36': '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ',
-#     'alf_base62': 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789',
-#     'alf_base64': 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/',
-#     'alf_base140': r'0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZαβγδεζηθικλμνξοπρςστυφχψωϊϋόύώϐϑϒϓϔϕϖϗϘϙϚϛϜϝϞϟϠϡϢϣϤϥϦϧϨϩϪϫϬϭϮϯϰϱϲϳϴϵ϶ϷϸϹϺϻϼϽϾϿ'
-# }
 
 alf_az = 'abcdefghijklmnopqrstuvwxyz'
 alf_az09 = alf_az + '0123456789'
@@ -186,100 +154,6 @@ crypta_alf_list = {
 }
 
 
-##-helpful functions / classes
-#---------Double input
-class DoubleInput(QWidget):
-    '''Class defining a double input.'''
-
-    def __init__(self, type_=QLineEdit, n=2, parent=None):
-        '''
-        Initiate the DoubleInput object.
-
-        - type_ : The type of the two widgets. Should be QLineEdit, or QSpinBox ;
-        - n : the number of inputs.
-        '''
-
-        if type_ not in (QLineEdit, QSpinBox):
-            raise ValueError(tr('The arg "type_" should be QLineEdit or QSpinBox, but "{}" was found !!!').format(type_))
-
-        if type(n) != int:
-            raise ValueError(tr('The arg "n" should be an int !!!'))
-
-        elif n < 1:
-            raise ValueError(tr('The arg "n" should be greater or equal to 1 !!!'))
-
-        #------ini
-        super().__init__(parent)
-
-        self.type_ = type_
-        self.n = n
-
-        #------widgets
-        #---layout
-        main_lay = QGridLayout()
-        self.setLayout(main_lay)
-
-        #---inputs
-        self.inp_lst = []
-
-        if type_ == QLineEdit:
-            for k in range(n):
-                self.inp_lst.append(QLineEdit())
-
-        elif type_ == QSpinBox:
-            for k in range(n):
-                self.inp_lst.append(QSpinBox())
-
-        for j, w in enumerate(self.inp_lst):
-            main_lay.addWidget(w, 0, j)
-
-
-    def setStyleSheet(self, style):
-        '''Apply the stylesheet 'style'.'''
-
-        for w in self.inp_lst:
-            w.setStyleSheet(style)
-
-
-    def setObjectName(self, name):
-        '''Set the object's name.'''
-
-        for w in self.inp_lst:
-            w.setObjectName(name)
-
-
-    def setMinimum(self, n):
-        '''Set the minimal number in the QSpinBoxes.'''
-
-        for w in self.inp_lst:
-            w.setMinimum(n)
-
-
-    def setMaximum(self, n):
-        '''Set the maximal number in the QSpinBoxes.'''
-
-        for w in self.inp_lst:
-            w.setMaximum(n)
-
-
-    def value(self):
-        '''Return the value of the inputs, in a tuple.'''
-
-        if self.type_ == QLineEdit:
-            ret = [w.text() for w in self.inp_lst]
-
-        elif self.type_ == QSpinBox:
-            ret = [w.value() for w in self.inp_lst]
-
-        return tuple(ret)
-
-
-    def text(self):
-        '''Same as self.value()'''
-
-        return self.value()
-
-
 
 ##-GUI
 class KrisGui(QMainWindow):
@@ -293,132 +167,709 @@ class KrisGui(QMainWindow):
         self.setWindowTitle('KRIS v' + kris_version)
         self.setWindowIcon(QIcon('Style/KRIS_logo_by_surang.ico'))
 
-        #---the QTabWidget
-        self.app_widget = QTabWidget()
-        self.setCentralWidget(self.app_widget)
-
-        self.path_ent = {} #List of all the QLineEdit in paths bar, by tab index (Ig. : {0 : QLineEdit(), 1 : QLineEdit()})
-        self.lst_txt = [] #List of all the TextEditor object, used to reload them when changing directory.
-
-        self.lst_wrdlst_opt = {} #List of all the ComboBox selecting the wordlists, by sender text.
-        self.lst_selected_wrdlst = {
-            tr('Select a wordlist ...') : [],
-            tr('Select a location ...') : []
-            } #Dict which contain all the selected wordlists, by sender text.
-        self.lst_selected_wrdlst[tr('Select a file ...')] = self.lst_selected_wrdlst[tr('Select a wordlist ...')]
-
         #self.style = style_test
         self.app_style = GuiStyle()
         self.style = self.app_style.style_sheet
 
-        #------create the tabs
-        self.tabs = {
-            0 : tr('Ciphers'),
-            1 : tr('Settings')
-        }
+        #------Widgets
+        #---Central widget
+        #-font
+        self.fixed_font = QFont('monospace')
+        self.fixed_font.setStyleHint(QFont.TypeWriter)
 
-        self.create_ciphers()
-        self.create_settings()
+        #-The widget
+        self.txt_in = QPlainTextEdit()
+        self.txt_in.textChanged.connect(self._show_wc)
+        self.txt_in.textChanged.connect(lambda: self._txt_changed('in'))
+        self.txt_in.setFont(self.fixed_font)
+        self.setCentralWidget(self.txt_in)
 
-        self.app_widget.currentChanged.connect(self.chk_tab)
+        #---Statusbar
+        self._create_statusbar()
 
-        #QCloseEvent.ignore()
+        #---Toolbars
+        self.setContextMenuPolicy(Qt.NoContextMenu) #Not be able to hide bar.
+        self._create_out_txt()
+        self._create_ciph_toolbar()
 
-        #------show
-        self.chk_tab(0) #Resize the window and set a mnimum size.
+        #---Menu
+        self._create_menu_bar() #The order (statusbar, out_txt, ciph_toolbar, and menu bar) is important (things needs to be created).
+        self.txt_in.undoAvailable.connect(self.undo_ac.setEnabled)
+        self.txt_in.redoAvailable.connect(self.redo_ac.setEnabled)
+
+        #------File
+        self.txt_in_is_saved = False
+        self.txt_out_is_saved = False
+
+        self.fn_in = None #Used to remember the file in the one save.
+        self.fn_out = None
+
+        #------Show
         self.show()
+        self.resize(1100, 600)
 
 
-    #---------create cipher tab
-    def create_ciphers(self):
-        '''Create the "Cipher" tab.'''
+    def _create_menu_bar(self):
+        '''Create the menu bar.'''
 
-        #------ini
-        tab_cipher = QWidget()
+        #------Menu
+        menu_bar = QMenuBar(self)
+        self.setMenuBar(menu_bar)
 
-        tab_cipher_lay = QGridLayout()
-        tab_cipher_lay.setColumnStretch(0, 1)
-        tab_cipher_lay.setContentsMargins(5, 5, 5, 5)
-        tab_cipher.setLayout(tab_cipher_lay)
+        #------The menus
+        #---File
+        self.file_m = menu_bar.addMenu(tr('&File'))
 
-        #------check functions
-        def chk_ciph(cipher):
-            '''Check the cipher's combo box and dislable or not some widgets, and change the key's entry.'''
+        #-New
+        self.new_ac = QAction(tr('&New'), self)
+        self.new_ac.setShortcut('Ctrl+N')
+        self.new_ac.triggered.connect(self.new)
+        self.file_m.addAction(self.new_ac)
 
-            if cipher in (*ciphers_list['KRIS'], *ciphers_list['RSA']): #RSA
-                self.cipher_opt_keys.setHidden(False)
-                self.cipher_ledit_keys.setHidden(True)
-                self.cipher_nb_key.setHidden(True)
-                self.cipher_db_ledit_key.setHidden(True)
-                self.cipher_db_nb_key.setHidden(True)
+        self.file_m.addSeparator()
 
-            elif cipher == 'SecHash': #QSpinBox
-                self.cipher_nb_key.setHidden(False)
-                self.cipher_ledit_keys.setHidden(True)
-                self.cipher_opt_keys.setHidden(True)
-                self.cipher_db_ledit_key.setHidden(True)
-                self.cipher_db_nb_key.setHidden(True)
+        #-Open
+        self.open_ac = QAction(tr('&Open ...'), self)
+        self.open_ac.setShortcut('Ctrl+O')
+        self.open_ac.triggered.connect(self.open)
+        self.file_m.addAction(self.open_ac)
 
-            else: #QLinEdit
-                self.cipher_ledit_keys.setHidden(False)
-                self.cipher_opt_keys.setHidden(True)
-                self.cipher_nb_key.setHidden(True)
-                self.cipher_db_ledit_key.setHidden(True)
-                self.cipher_db_nb_key.setHidden(True)
+        #-Open
+        self.open_recent_m = QMenu(tr('Open &Recent'), self)
+        self.op_rec_dct = {}
+        self.file_m.addMenu(self.open_recent_m)
+
+        self.file_m.addSeparator()
+
+        #-Save
+        self.save_ac = QAction(tr('&Save'), self)
+        self.save_ac.setShortcut('Ctrl+S')
+        self.save_ac.triggered.connect(lambda: self.save('in', False))
+        #self.save_ac.setStatusTip("Save editor's text in a file")
+        self.file_m.addAction(self.save_ac)
+
+        #-Save As
+        self.save_as_ac = QAction(tr('Save &As'), self)
+        self.save_as_ac.setShortcut('Ctrl+Shift+S')
+        self.save_as_ac.triggered.connect(lambda: self.save('in', True))
+        self.file_m.addAction(self.save_as_ac)
+
+        #-Save Output
+        self.save_out_ac = QAction(tr('S&ave Output'), self)
+        self.save_out_ac.setShortcut('Ctrl+D')
+        self.save_out_ac.triggered.connect(lambda: self.save('out', False))
+        self.file_m.addAction(self.save_out_ac)
+
+        #-Save Output As
+        self.save_out_as_ac = QAction(tr('Sa&ve Output As'), self)
+        self.save_out_as_ac.setShortcut('Ctrl+Shift+D')
+        self.save_out_as_ac.triggered.connect(lambda: self.save('out', True))
+        self.file_m.addAction(self.save_out_as_ac)
+
+        self.file_m.addSeparator()
+
+        #-Exit
+        self.exit_ac = QAction(tr('&Quit'), self)
+        self.exit_ac.setShortcut('Ctrl+Q')
+        self.exit_ac.triggered.connect(self.quit)
+        self.file_m.addAction(self.exit_ac)
 
 
-            if cipher == 'RSA signature':
-                self.cipher_bt_enc.setText(tr('Si&gn ↓'))
-                self.cipher_bt_dec.setText(tr('Chec&k'))
+        #---Edit
+        self.edit_m = menu_bar.addMenu(tr('&Edit'))
 
-            elif cipher in ciphers_list['hash']:
-                self.cipher_bt_enc.setText(tr('H&ash ↓'))
+        #-Undo
+        self.undo_ac = QAction(tr('&Undo'), self)
+        self.undo_ac.setEnabled(False)
+        self.undo_ac.setShortcut('Ctrl+Z')
+        self.undo_ac.triggered.connect(self.txt_in.undo)
+        self.edit_m.addAction(self.undo_ac)
+
+        #-Redo
+        self.redo_ac = QAction(tr('Re&do'), self)
+        self.redo_ac.setEnabled(False)
+        self.redo_ac.setShortcut('Ctrl+Shift+Z')
+        self.redo_ac.triggered.connect(self.txt_in.redo)
+        self.edit_m.addAction(self.redo_ac)
+
+        self.edit_m.addSeparator()
+
+        #-Swap texts
+        self.swap_txt_ac = QAction(tr('&Swap texts'), self) #Todo: Also swap self.fn_in and self.fn_out ?
+        self.swap_txt_ac.setShortcut('Ctrl+W')
+        self.swap_txt_ac.setStatusTip(tr('Toggle input text and output text.'))
+        self.swap_txt_ac.triggered.connect(self._swap_txt)
+        self.edit_m.addAction(self.swap_txt_ac)
+
+        #-Clear output
+        self.cls_out_ac = QAction(tr('&Clear output'), self)
+        #self.cls_out_ac.setShortcut('')
+        self.cls_out_ac.triggered.connect(self._clear_out)
+        self.edit_m.addAction(self.cls_out_ac)
+
+        self.edit_m.addSeparator()
+
+        #-Formated output
+        self.formated_out_ac = QAction(tr('&Formatted Output'), self, checkable=True)
+        #self.formated_out_ac.setShortcut('')
+        self.formated_out_ac.setStatusTip(tr('Set the encrypted text in a good form.'))
+        self.formated_out_ac.setChecked(True)
+        self.edit_m.addAction(self.formated_out_ac)
+
+
+        #---View
+        self.view_m = menu_bar.addMenu(tr('&View'))
+
+        #-Show output
+        self.show_out_ac = QAction(tr('&Show Output'), self, checkable=True)
+        self.show_out_ac.setShortcut('Ctrl+M')
+        self.show_out_ac.triggered.connect(self.out_toolbar.setVisible)
+        self.show_out_ac.setChecked(True)
+        self.view_m.addAction(self.show_out_ac)
+
+        self.view_m.addSeparator()
+
+        #-Resize original
+        self.resize_ac = QAction(tr('&Resize to original size'), self)
+        self.resize_ac.triggered.connect(lambda: self.resize(1100, 600))
+        self.view_m.addAction(self.resize_ac)
+
+
+        # #---Encrypt
+        # self.enc_m = menu_bar.addMenu('E&ncrypt')
+        #
+        # #--KRIS menu
+        # self.kris_m = QMenu('&KRIS', self)
+        # self.enc_m.addMenu(self.kris_m)
+        #
+        # #-KRIS-AES-256
+        # self.kris_aes_256_ac = QAction('&KRIS-AES-256', self)
+        # #self.kris_aes_256_ac.setShortcut('')
+        # #self.kris_aes_256_ac.triggered.connect()
+        # self.kris_m.addAction(self.kris_aes_256_ac)
+        #
+        # #-KRIS-AES-192
+        # self.kris_aes_192_ac = QAction('K&RIS-AES-192', self)
+        # #self.kris_aes_192_ac.setShortcut('')
+        # #self.kris_aes_192_ac.triggered.connect()
+        # self.kris_m.addAction(self.kris_aes_192_ac)
+        #
+        # #-KRIS-AES-128
+        # self.kris_aes_128_ac = QAction('KR&IS-AES-128', self)
+        # #self.kris_aes_128_ac.setShortcut('')
+        # #self.kris_aes_128_ac.triggered.connect()
+        # self.kris_m.addAction(self.kris_aes_128_ac)
+
+
+        #---Keys
+        self.keys_m = menu_bar.addMenu(tr('&Keys'))
+
+        #-Show info
+        self.k_info_ac = QAction(tr('&Show informations about keys ...'), self)
+        self.k_info_ac.setShortcut('Ctrl+I')
+        self.k_info_ac.triggered.connect(lambda: InfoKeyWin.use(self.style, parent=self))
+        self.keys_m.addAction(self.k_info_ac)
+
+        #-Generate
+        self.gen_k_ac = QAction(tr('&Generate ...'), self)
+        self.gen_k_ac.setShortcut('Ctrl+G')
+        self.gen_k_ac.triggered.connect(lambda: GenKeyWin.use(self.style, parent=self))
+        self.keys_m.addAction(self.gen_k_ac)
+
+        #-Export
+        self.exp_k_ac = QAction(tr('&Export ...'), self)
+        self.exp_k_ac.setShortcut('Ctrl+E')
+        self.exp_k_ac.triggered.connect(lambda: ExpKeyWin.use(self.style, parent=self))
+        self.keys_m.addAction(self.exp_k_ac)
+
+        #-Rename
+        self.rn_k_ac = QAction(tr('&Rename ...'), self)
+        #self.rn_k_ac.setShortcut('Ctrl+R')
+        self.rn_k_ac.triggered.connect(lambda: RenKeyWin.use(self.style, parent=self))
+        self.keys_m.addAction(self.rn_k_ac)
+
+        #-Convert
+        self.cvrt_k_ac = QAction(tr('&Convert ...'), self)
+        #self.cvrt_k_ac.setShortcut('Ctrl+R')
+        self.cvrt_k_ac.triggered.connect(lambda: CvrtKeyWin.use(self.style, parent=self))
+        self.keys_m.addAction(self.cvrt_k_ac)
+
+        #-Reload box
+        self.reload_k_ac = QAction(tr('Re&load box'), self)
+        #self.reload_k_ac.setShortcut('Ctrl+R')
+        self.reload_k_ac.triggered.connect(self.ciph_bar.reload_keys)
+        self.keys_m.addAction(self.reload_k_ac)
+
+
+        #---Settings
+        self.settings_m = menu_bar.addMenu(tr('&Settings'))
+
+        #-Configure KRIS
+        self.config_ac = QAction(tr('&Configure KRIS ...'), self)
+        self.config_ac.setShortcut('Ctrl+R')
+        self.config_ac.triggered.connect(lambda: SettingsWin.use(self.style, self.app_style, parent=self))
+        self.settings_m.addAction(self.config_ac)
+
+        #Todo: help and about.
+        # #---Help
+        # self.help_m = menu_bar.addMenu('&Help')
+        #
+        # #-About
+        # self.help_ac = QAction('&Help', self)
+        # #self.help_ac.triggered.connect()
+        # self.help_m.addAction(self.help_ac)
+        #
+        # #-About
+        # self.about_ac = QAction('&About', self)
+        # #self.about_ac.triggered.connect()
+        # self.help_m.addAction(self.about_ac)
+
+
+    def _create_ciph_toolbar(self):
+        '''Create the toolbar which contain the encrypt, decrypt buttons, ciphers , keys.'''
+
+        self.ciph_toolbar = QToolBar('Cipher', self)
+        self.ciph_toolbar.setMovable(False)
+        self.addToolBar(Qt.TopToolBarArea, self.ciph_toolbar) #Qt.BottomToolBarArea
+
+        self.ciph_bar = CipherKeyWidget(self.style, self)
+        self.ciph_toolbar.addWidget(self.ciph_bar)
+
+        #------connection
+        use_ciph = UseCiphers(
+            self.txt_in,
+            self.txt_out,
+            self.ciph_bar.cipher_opt_keys,
+            self.ciph_bar.cipher_ledit_keys,
+            self.ciph_bar.cipher_nb_key,
+            self.ciph_bar.cipher_opt_ciphs,
+            self.encod_box
+        )
+
+        self.ciph_bar.cipher_bt_enc.clicked.connect(lambda: use_ciph.encrypt(self.formated_out_ac.isChecked()))
+        self.ciph_bar.cipher_bt_dec.clicked.connect(lambda: use_ciph.decrypt())
+
+
+    def _create_out_txt(self):
+        '''Create the output text viewer.'''
+
+        self.out_toolbar = QToolBar('Output', self)
+        self.out_toolbar.setMovable(False)
+        self.addToolBar(Qt.BottomToolBarArea, self.out_toolbar)
+
+        self.txt_out = QPlainTextEdit()
+        self.txt_out.textChanged.connect(self._show_wc)
+        self.txt_out.textChanged.connect(lambda: self._txt_changed('out'))
+        self.txt_out.setReadOnly(True)
+        self.txt_out.setMaximumHeight(180)
+        self.txt_out.setFont(self.fixed_font)
+        self.out_toolbar.addWidget(self.txt_out)
+
+
+    def _create_statusbar(self):
+        '''Create the status bar.'''
+
+        self.statusbar = self.statusBar()
+
+        #------Widgets
+        #---Words count
+        self.wc_lb = QLabel()
+        self.statusbar.addPermanentWidget(self.wc_lb)
+
+        self.statusbar.addPermanentWidget(QLabel('  ')) #Spacing
+
+        #---Saved
+        self.saved_lb = QLabel()
+        self.statusbar.addPermanentWidget(self.saved_lb)
+
+        self.statusbar.addPermanentWidget(QLabel('  ')) #Spacing
+
+        #---Encoding
+        self.encod_box = QComboBox()
+        self.encod_box.addItems(lst_encod)
+        self.statusbar.addPermanentWidget(self.encod_box)
+
+
+    def _clear_out(self):
+        '''Clear the output text viewer'''
+
+        if self.txt_out.toPlainText() != '':
+            answer = QMessageBox.question(None, 'Sure ?', '<h2>Are you sure ?</h2>', QMessageBox.Yes | QMessageBox.No, QMessageBox.Yes)
+
+            if answer == QMessageBox.No:
+                return -3 # Abort
+
+        self.txt_out.setPlainText('')
+
+
+    def _swap_txt(self):
+        '''Swap the output text with the input text.'''
+
+        in_txt = self.txt_in.toPlainText()
+        out_txt = self.txt_out.toPlainText()
+
+        self.txt_out.setPlainText(in_txt)
+        self.txt_in.setPlainText(out_txt)
+
+
+    def _get_word_count(self, txt):
+        '''Return the number of characters and the number of words which are `txt`.'''
+
+        if txt == '':
+            return 0, 0
+
+        txt_l = txt.split(' ')
+
+        cc = len(txt.replace('\n', '')) # Char count
+        wc = len(txt_l) - txt_l.count('') # Word count (may not be accurate, ';' will be counted as a word for example).
+
+        return cc, wc
+
+    def _show_wc(self, sender=False):
+        '''Show the word count in the status bar.'''
+
+        if sender == False:
+            txt = self.sender().toPlainText()
+
+        elif sender in (self.txt_in, self.txt_out):
+            txt = sender.toPlainText()
+
+        else:
+            return -3 #Abort
+
+        cc, wc = self._get_word_count(txt)
+        self.wc_lb.setText(tr('{} words, {} chars.').format(format(wc, '_').replace('_', ' '), format(cc, '_').replace('_', ' ')))
+
+
+    def _set_save_lb_txt(self):
+        '''Set the correct text to self.save_lb.'''
+
+        if self.txt_in_is_saved and self.txt_out_is_saved:
+            self.saved_lb.setText(tr('Saved'))
+            self.saved_lb.setStyleSheet('color: #0f0')
+
+        elif self.txt_in_is_saved:
+            self.saved_lb.setText(tr('Output unsaved'))
+            self.saved_lb.setStyleSheet('color: #ff0')
+
+        elif self.txt_out_is_saved:
+            self.saved_lb.setText(tr('Input unsaved'))
+            self.saved_lb.setStyleSheet('color: #ff0')
+
+        else:
+            self.saved_lb.setText(tr('Unsaved'))
+            self.saved_lb.setStyleSheet('color: #f00')
+
+
+    def _txt_changed(self, from_='in'):
+        '''
+        Set the self.txt_[in | out]_is_saved attribute to False. Called when signal 'textChanged' recieved.
+
+        - from_ : In ('in', 'out'). Used to choose from where read text to save it ;
+        '''
+
+        #------Test
+        if from_ not in ('in', 'out'):
+            raise ValueError('The argument `from_` is not in ("in", "out").')
+
+        #------Change attribute value to False
+        if from_ == 'in':
+            self.txt_in_is_saved = False
+
+        else:
+            self.txt_out_is_saved = False
+
+        #Todo: count undos to set it to True if (nb_do - nb_undo) == 0
+
+        #------Set label
+        self._set_save_lb_txt()
+
+
+    def _msg_box_save(self, part='all', title='Quit KRIS'):
+        '''
+        Check if there are things unsaved (text), and show a QMessageBox question.
+        Return a bool indicating if continue (True) or not (False).
+
+        - part : In ('all', 'in', 'out'). Only check that text part ;
+        - title : QMessageBox window's title.
+        '''
+
+        if part not in ('all', 'in', 'out'):
+            raise ValueError('The argument `part` is not in ("all", "in", "out").')
+
+
+        txt_ = False
+        txt_wid = []
+        if (not self.txt_in_is_saved) and self.txt_in.toPlainText() != '' and part != 'out':
+            txt_ = True
+            txt_wid.append('text editor')
+
+        if (not self.txt_out_is_saved) and self.txt_out.toPlainText() != '' and part != 'in':
+            txt_ = True
+            txt_wid.append('output')
+
+
+        if txt_:
+            if len(txt_wid) == 1:
+                msg = tr('The ' + set_prompt(txt_wid) + \
+                ' part has been modified.\nDo you want to save your changes or discard them ?')
 
             else:
-                self.cipher_bt_enc.setText(tr('&Encrypt ↓'))
-                self.cipher_bt_dec.setText(tr('&Decrypt ↑'))
+                msg = tr('The ' + set_prompt(txt_wid) + \
+                ' parts have been modified.\nDo you want to save your changes or discard them ?')
 
 
-            dis = cipher in ciphers_list['hash'][:-1]
-            self.cipher_opt_keys.setDisabled(dis)
-            self.cipher_ledit_keys.setDisabled(dis)
-            self.cipher_nb_key.setDisabled(dis)
-            self.cipher_db_ledit_key.setDisabled(dis)
-            self.cipher_db_nb_key.setDisabled(dis)
+            answer = QMessageBox.question(self, title, msg, \
+                QMessageBox.Save | QMessageBox.Discard | QMessageBox.Cancel, QMessageBox.Save)
 
-            self.cipher_opt_alf.setDisabled(True) #cipher not in crypta.ciph_sort['alf'])
-            self.cipher_bt_dec.setDisabled(cipher in ciphers_list['hash'])
+            if answer == QMessageBox.Cancel:
+                return False
 
-            self.cipher_nb_key.setRange(-2**16, 2**16)
-            key_label.setText(tr('Key :'))
+            elif answer == QMessageBox.Save:
+                if 'text editor' in txt_wid:
+                    ret = self.save('in')
 
-            self.reload_keys()
+                if 'output' in txt_wid:
+                    ret = self.save('out')
 
+                if ret == -3:
+                    return False #Canceled
 
-        #------path bar
-        tab_cipher_lay.addWidget(self.create_path_bar(tab=0, mn_size=610), 0, 0, 1, -1)#, alignment=Qt.AlignTop)
-
-        #------widgets
-        #---text editor e
-        self.txt_e = TextEditor(txt_height=120)
-        self.lst_txt.append(self.txt_e) # used to reload when changing directory.
-        tab_cipher_lay.addWidget(self.txt_e, 1, 0)
+        return True
 
 
+
+
+    def new(self):
+        '''Clear the two text editors (input and output).'''
+
+        if self._msg_box_save(title=tr('New - KRIS')):
+            self.txt_in.setPlainText('')
+            self.txt_out.setPlainText('')
+
+        self.statusbar.showMessage(tr('Text editors cleared !'), 3000)
+
+
+    def open(self, filename=False):
+        '''
+        Select, read, and set text from a file to `self.txt_in`.
+
+        - filename : the filename, or False. If it is False, ask the user for it.
+
+        Return :
+            -1 if file not found ;
+            -2 if encoding error ;
+            None otherwise.
+        '''
+
+        if not self._msg_box_save(part='in', title=tr('Open - KRIS')):
+            return -3
+
+        if filename == False:
+            fn = QFileDialog.getOpenFileName(self, tr('Open file') + ' - KRIS')[0]#, getcwd())[0]
+
+            if fn in ((), ''):
+                return -3 #Canceled
+
+            if fn not in self.op_rec_dct:
+                f = fn.split('/')[-1]
+                self.op_rec_dct[fn] = QAction('{} [{}]'.format(f, fn), self)
+                self.op_rec_dct[fn].triggered.connect(lambda: self.open(fn))
+                self.open_recent_m.addAction(self.op_rec_dct[fn])
+
+        else:
+            fn = filename
+
+
+        try:
+            with open(fn, mode='r', encoding=str(self.encod_box.currentText())) as f:
+                file_content = f.read()
+
+        except FileNotFoundError:
+            QMessageBox.critical(None, '!!! ' + tr('Error') + ' !!!', '<h2>' + tr('The file was NOT found') + ' !!!</h2>')
+            return -1 #stop
+
+        except UnicodeDecodeError:
+            QMessageBox.critical(None, '!!! ' + tr('Encoding error') + ' !!!', \
+                '<h2>' + tr('The file can\'t be decoded with this encoding') + '.</h2>')
+
+            return -2 #stop
+
+        self.txt_in.setPlainText(file_content)
+        self.fn_in = fn
+
+        self.statusbar.showMessage('File opened !', 3000)
+
+
+
+    def is_saved(self):
+        '''Return two bool, (txt_in_is_saved, txt_out_is_saved)'''
+
+        return self.txt_in_is_saved, self.txt_out_is_saved
+
+
+    def save(self, from_='in', as_=False):
+        '''
+        Save text into a file.
+
+        - from_ : In ('in', 'out'). Used to choose from where read text to save it ;
+        - as_ : a bool which indicates if clicked on 'Save' (True) or 'Save As' (False).
+
+        Return -3 if canceled.
+        '''
+
+        #------Tests
+        if from_ not in ('in', 'out'):
+            raise ValueError('The argument `from_` is not in ("in", "out").')
+
+        if as_ not in (True, False):
+            raise ValueError('The argument `as_` is not a bool.')
+
+        #------Get filename (fn) and text (txt)
+        if from_ == 'in':
+            txt = self.txt_in.toPlainText()
+
+            if self.fn_in == None or as_:
+                fn = QFileDialog.getSaveFileName(self, tr('Save file') + ' - KRIS', getcwd(), tr('Text files(*.txt);;All files(*)'))[0]
+                self.fn_in = fn
+
+            else:
+                fn = self.fn_in
+
+        else:
+            txt = self.txt_out.toPlainText()
+
+            if self.fn_out == None or as_:
+                fn = QFileDialog.getSaveFileName(self, tr('Save file') + ' - KRIS', getcwd(), tr('Text files(*.txt);;All files(*)'))[0]
+                self.fn_out = fn
+
+            else:
+                fn = self.fn_out
+
+        if fn in ((), ''):
+            return -3 # Canceled
+
+        #------Write
+        with open(fn, 'w', encoding=str(self.encod_box.currentText())) as f:
+            f.write(txt)
+
+        if from_ == 'in':
+            self.txt_in_is_saved = True
+
+        else:
+            self.txt_out_is_saved = True
+
+        self._set_save_lb_txt()
+
+        t = {'in': tr('Input text'), 'out': tr('Output text')}[from_]
+        self.statusbar.showMessage(tr('{} saved in file "{}" !').format(t, fn.split('/')[-1]), 3000)
+
+
+
+
+
+    #---------lock
+    def lock(self, tries=5):
+        '''Dislable the widgets and ask for the password.'''
+
+        if tries == False:
+            tries = 5
+
+        def chk_lock():
+            if not self.locker.is_locked():
+                self.setDisabled(False)
+
+                global RSA_keys_pwd
+                RSA_keys_pwd = self.locker.get_RSA_keys_pwd()
+
+                RSA.SecureRsaKeys(RSA_keys_pwd, interface='gui').decrypt()
+
+                #---Show 'Ready' in status bar
+                self.statusbar.showMessage(tr('Ready !'), 3000)
+
+        self.locker = Lock(pwd, pwd_h, pwd_loop, tries)
+
+        self.setDisabled(True)
+        self.locker.show()
+
+        self.locker.connect(chk_lock)
+
+
+    #---------quit
+    def quit(self, event=None):
+        '''Quit the application. Check if there is text unsaved, and ask confirmation if there is.'''
+
+        global app
+
+        if not self._msg_box_save():
+            if event not in (None, True, False):
+                event.ignore()
+            return -3
+
+        if event not in (None, True, False):
+            RSA.SecureRsaKeys(RSA_keys_pwd, 'gui').rm_clear()
+            event.accept()
+
+        else:
+            RSA.SecureRsaKeys(RSA_keys_pwd, 'gui').rm_clear()
+            app.quit()
+            #todo: use app.close() ? what differences ?
+
+
+    def closeEvent(self, event=None):
+        self.quit(event)
+
+
+    #---------use
+    def use(lock=True):
+        '''Launch the application.'''
+
+        global app, win
+
+        app = QApplication(sys.argv)
+        win = KrisGui()
+
+        app.focusChanged.connect(lambda old, new: win._show_wc(new))
+
+        #-lock
+        if lock:
+            win.lock(3)
+
+        #app.setPalette(KrisGuiStyle.dark_style(None))
+        #app.aboutToQuit.connect(win.quit)
+
+        sys.exit(app.exec_())
+
+
+
+##-Widgets / windows
+class CipherKeyWidget(QGroupBox):
+    '''Defining the bar with the key box, encrypt and decrypt buttons, cipher selection.'''
+
+    def __init__(self, style, parent=None):
+        '''Initiate widget.'''
+
+        #------ini
+        super().__init__(parent)
+
+        #self.style = style_test
+        #self.app_style = GuiStyle()
+        self.style = style #self.app_style.style_sheet
+
+        #------Widgets
         #---keys
-        keys_grp = QGroupBox()
         keys_lay = QGridLayout()
-        keys_grp.setLayout(keys_lay)
-        tab_cipher_lay.addWidget(keys_grp, 2, 0, 1, 2, alignment=Qt.AlignCenter)
+        self.setLayout(keys_lay)
 
-        key_label = QLabel(tr('Key :'))
-        keys_lay.addWidget(key_label, 0, 0)
+        self.key_label = QLabel(tr('Key :'))
+        keys_lay.addWidget(self.key_label, 0, 0)
 
         #-RSA keys' box
         self.cipher_opt_keys = QComboBox()
         self.cipher_opt_keys.setStyleSheet(self.style)
         self.cipher_opt_keys.setObjectName('sec_obj')
         self.cipher_opt_keys.setMinimumSize(200, 0)
+        #self.cipher_opt_keys.setMinimumContentsLength(30)
         self.cipher_opt_keys.addItem(tr('-- Select a key --'))
         self.cipher_opt_keys.insertSeparator(1)
         self.cipher_opt_keys.addItems(RSA.list_keys('all'))
@@ -434,40 +885,24 @@ class KrisGui(QMainWindow):
 
         #-Number key
         self.cipher_nb_key = QSpinBox()
-        self.cipher_nb_key.setMinimum(-2**16)
-        self.cipher_nb_key.setMaximum(2**16)
+        self.cipher_nb_key.setMinimum(0)
+        self.cipher_nb_key.setMaximum(989)
         self.cipher_nb_key.setStyleSheet(self.style)
         self.cipher_nb_key.setObjectName('sec_obj')
         self.cipher_nb_key.setMinimumSize(200, 0)
         self.cipher_nb_key.setHidden(True)
         keys_lay.addWidget(self.cipher_nb_key, 0, 1)#, alignment=Qt.AlignLeft)
 
-        #-Double line edit
-        self.cipher_db_ledit_key = DoubleInput()
-        self.cipher_db_ledit_key.setStyleSheet(self.style)
-        self.cipher_db_ledit_key.setObjectName('sec_obj')
-        self.cipher_db_ledit_key.setMinimumSize(200, 0)
-        self.cipher_db_ledit_key.setHidden(True)
-        keys_lay.addWidget(self.cipher_db_ledit_key, 0, 1)#, alignment=Qt.AlignLeft)
-
-        #-Double number key
-        self.cipher_db_nb_key = DoubleInput(type_=QSpinBox)
-        self.cipher_db_nb_key.setMinimum(-2**16)
-        self.cipher_db_nb_key.setMaximum(2**16)
-        self.cipher_db_nb_key.setStyleSheet(self.style)
-        self.cipher_db_nb_key.setObjectName('sec_obj')
-        self.cipher_db_nb_key.setMinimumSize(200, 0)
-        self.cipher_db_nb_key.setHidden(True)
-        keys_lay.addWidget(self.cipher_db_nb_key, 0, 1)#, alignment=Qt.AlignLeft)
-
         #-Buttons
-        self.cipher_bt_enc = QPushButton('&Encrypt ↓')
+        self.cipher_bt_enc = QPushButton(tr('&Encrypt'))
+        #self.cipher_bt_enc.setShortcut('Ctrl+K')
         self.cipher_bt_enc.setStyleSheet(self.style)
         self.cipher_bt_enc.setObjectName('main_obj')
         self.cipher_bt_enc.setMaximumSize(90, 40)
         keys_lay.addWidget(self.cipher_bt_enc, 0, 2)#, alignment=Qt.AlignLeft)
 
-        self.cipher_bt_dec = QPushButton('&Decrypt ↑')
+        self.cipher_bt_dec = QPushButton(tr('&Decrypt'))
+        #self.cipher_bt_enc.setShortcut('Ctrl+Shift+K')
         self.cipher_bt_dec.setStyleSheet(self.style)
         self.cipher_bt_dec.setObjectName('main_obj')
         self.cipher_bt_dec.setMaximumSize(90, 40)
@@ -475,104 +910,101 @@ class KrisGui(QMainWindow):
 
         keys_lay.setColumnMinimumWidth(4, 20) #Spacing
 
-        #-Alphabets' box
-        self.cipher_opt_alf = QComboBox()
-        self.cipher_opt_alf.setEditable(True)
-        self.cipher_opt_alf.addItem(tr('-- Select an alphabet --'))
-        self.cipher_opt_alf.insertSeparator(1)
-        self.cipher_opt_alf.addItems(list(crypta_alf_list.values()))
-        #keys_lay.addWidget(self.cipher_opt_alf, 0, 5)
-
-        #keys_lay.setColumnMinimumWidth(6, 300) #Spacing
-
         #-Ciphers' box
         self.cipher_opt_ciphs = QComboBox()
-        self.cipher_opt_ciphs.activated[str].connect(chk_ciph)
+        self.cipher_opt_ciphs.activated[str].connect(self.chk_ciph)
         self.cipher_opt_ciphs.addItem(tr('-- Select a cipher --'))
         for k in ciphers_list:
             self.cipher_opt_ciphs.insertSeparator(500)
             self.cipher_opt_ciphs.addItems(ciphers_list[k])
         keys_lay.addWidget(self.cipher_opt_ciphs, 0, 7)#, alignment=Qt.AlignLeft)
 
-
-        #---text editor d
-        self.txt_d = TextEditor(txt_height=125)
-        #self.txt_d.setMaximumSize(10000, 450)
-        self.lst_txt.append(self.txt_d) # used to reload when changing directory.
-        tab_cipher_lay.addWidget(self.txt_d, 3, 0)
-
-
-        #---buttons
-        bt_lay = QVBoxLayout()
-        tab_cipher_lay.addLayout(bt_lay, 1, 1, 1, -1, alignment=Qt.AlignTop)
-
-        bt_lay.addWidget(QLabel('')) # Spacing
-
-        bt_gen = QPushButton(tr('Generate keys'))
-        bt_gen.setStyleSheet(self.style)
-        bt_gen.setObjectName('orange_border_hover')
-        bt_gen.clicked.connect(lambda: GenKeyWin.use(self.style, parent=self))
-        bt_lay.addWidget(bt_gen, alignment=Qt.AlignRight)
-
-        bt_exp = QPushButton(tr('Export public keys'))
-        bt_exp.setStyleSheet(self.style)
-        bt_exp.setObjectName('orange_border_hover')
-        bt_exp.clicked.connect(lambda: ExpKeyWin.use(self.style, parent=self))
-        bt_lay.addWidget(bt_exp, alignment=Qt.AlignRight)
-
-        bt_info_k = QPushButton(tr('Show info about keys'))
-        bt_info_k.setStyleSheet(self.style)
-        bt_info_k.setObjectName('orange_border_hover')
-        bt_info_k.clicked.connect(lambda: InfoKeyWin.use(self.style, parent=self))
-        bt_lay.addWidget(bt_info_k, alignment=Qt.AlignRight)
-
-        bt_rn_k = QPushButton(tr('Rename keys'))
-        bt_rn_k.setStyleSheet(self.style)
-        bt_rn_k.setObjectName('orange_border_hover')
-        bt_rn_k.clicked.connect(lambda: RenKeyWin.use(self.style, parent=self))
-        bt_lay.addWidget(bt_rn_k, alignment=Qt.AlignRight)
-
-        bt_rn_k = QPushButton(tr('Convert keys'))
-        bt_rn_k.setStyleSheet(self.style)
-        bt_rn_k.setObjectName('orange_border_hover')
-        bt_rn_k.clicked.connect(lambda: CvrtKeyWin.use(self.style, parent=self))
-        bt_lay.addWidget(bt_rn_k, alignment=Qt.AlignRight)
-
-
-        bt_quit = QPushButton(tr('&Quit'))
-        bt_quit.setObjectName('bt_quit')
-        bt_quit.setStyleSheet(self.style)
-        bt_quit.setMaximumSize(QSize(50, 35))
-        bt_quit.clicked.connect(self.quit)
-
-        tab_cipher_lay.addWidget(bt_quit, 3, 1, alignment=Qt.AlignRight | Qt.AlignBottom)
-
-        #------connection
-        use_ciph = UseCipherTab(
-            self.txt_e,
-            self.txt_d,
-            self.cipher_opt_keys,
-            self.cipher_ledit_keys,
-            self.cipher_nb_key,
-            self.cipher_db_ledit_key,
-            self.cipher_db_nb_key,
-            self.cipher_opt_alf,
-            self.cipher_opt_ciphs
-        )
-
-        self.cipher_bt_enc.clicked.connect(lambda: use_ciph.encrypt())
-        self.cipher_bt_dec.clicked.connect(lambda: use_ciph.decrypt())
-
-
-        #------show
-        chk_ciph(tr('-- Select a cipher --'))
-
-        self.app_widget.addTab(tab_cipher, tr('C&ipher'))
+        self.chk_ciph('')
 
 
 
-    def create_settings(self):
-        '''Create the "Settings" tab.'''
+    def chk_ciph(self, cipher):
+        '''Check the cipher's combo box and dislable or not some widgets, and change the key's entry.'''
+
+        if cipher in (*ciphers_list['KRIS'], *ciphers_list['RSA']): #RSA
+            self.cipher_opt_keys.setHidden(False)
+            self.cipher_ledit_keys.setHidden(True)
+            self.cipher_nb_key.setHidden(True)
+
+        elif cipher == 'SecHash': #QSpinBox
+            self.cipher_nb_key.setHidden(False)
+            self.cipher_ledit_keys.setHidden(True)
+            self.cipher_opt_keys.setHidden(True)
+
+        else: #QLinEdit
+            self.cipher_ledit_keys.setHidden(False)
+            self.cipher_opt_keys.setHidden(True)
+            self.cipher_nb_key.setHidden(True)
+
+
+        if cipher == tr('RSA signature'):
+            self.cipher_bt_enc.setText(tr('Si&gn'))
+            self.cipher_bt_dec.setText(tr('Chec&k'))
+
+        elif cipher in ciphers_list['hash']:
+            self.cipher_bt_enc.setText(tr('H&ash'))
+
+        else:
+            self.cipher_bt_enc.setText(tr('&Encrypt'))
+            self.cipher_bt_dec.setText(tr('&Decrypt'))
+
+
+        dis = cipher in ciphers_list['hash'][:-1]
+        self.cipher_opt_keys.setDisabled(dis)
+        self.cipher_ledit_keys.setDisabled(dis)
+        self.cipher_nb_key.setDisabled(dis)
+
+        self.cipher_bt_dec.setDisabled(cipher in ciphers_list['hash'])
+
+        self.cipher_nb_key.setRange(0, 989)
+        self.key_label.setText(tr('Key :'))
+
+        self.reload_keys()
+
+
+
+    def reload_keys(self):
+        '''Reload the RSA keys's box, in the cipher tab.'''
+
+        old_key = self.cipher_opt_keys.currentText()
+
+        keys_list = RSA.list_keys('all')
+
+        self.cipher_opt_keys.clear()
+
+        self.cipher_opt_keys.addItem(tr('-- Select a key --'))
+        self.cipher_opt_keys.insertSeparator(1)
+        self.cipher_opt_keys.addItems(keys_list)
+
+        if old_key in keys_list:
+            self.cipher_opt_keys.setCurrentText(old_key)
+
+
+
+class SettingsWin(QMainWindow):
+    '''Defining the Settings window.'''
+
+    def __init__(self, style, app_style, parent=None):
+        '''Initiate class'''
+
+        #------Ini
+        super().__init__(parent)
+        self.setWindowTitle('KRIS v' + kris_version + ' | ' + tr('Settings'))
+        self.setWindowIcon(QIcon('Style/KRIS_logo_by_surang.ico'))
+
+        self.style = style
+        self.app_style = app_style
+
+        self._create_settings()
+
+
+    def _create_settings(self):
+        '''Create the widgets'''
 
         #------ini
         tab_stng = QWidget()
@@ -584,7 +1016,7 @@ class KrisGui(QMainWindow):
         #------widgets
         #---main style
         #-ini
-        self.style_grp = QGroupBox('Syle')
+        self.style_grp = QGroupBox('Style')
         self.style_grp.setMaximumSize(500, 100)
         #self.style_grp.setMinimumSize(500, 200)
         main_style_lay = QHBoxLayout()
@@ -605,7 +1037,7 @@ class KrisGui(QMainWindow):
         main_style_lay.addWidget(self.stng_main_style_opt)
 
         #-check box
-        self.main_style_std_chkb = QCheckBox("&Use style's standard palette")
+        self.main_style_std_chkb = QCheckBox(tr("&Use style's standard palette"))
         self.main_style_std_chkb.setChecked(True)
         self.main_style_std_chkb.toggled.connect(
             lambda: self.app_style.set_style(
@@ -629,7 +1061,7 @@ class KrisGui(QMainWindow):
                     dct_cb[k].setEchoMode(QLineEdit.Password)
 
         #-ini
-        self.stng_pwd_grp = QGroupBox('Change password')
+        self.stng_pwd_grp = QGroupBox(tr('Change password'))
         self.stng_pwd_grp.setMaximumSize(600, 200)
         self.stng_pwd_grp.setMinimumSize(500, 200)
         stng_pwd_lay = QGridLayout()
@@ -643,18 +1075,18 @@ class KrisGui(QMainWindow):
 
         self.stng_old_pwd = QLineEdit()
         self.stng_old_pwd.setMinimumSize(250, 0)
-        self.stng_old_pwd.setEchoMode(QLineEdit.Password) # don't print pwd
-        stng_pwd_form_lay.addRow('Old password :', self.stng_old_pwd)
+        self.stng_old_pwd.setEchoMode(QLineEdit.Password) # don't show pwd
+        stng_pwd_form_lay.addRow(tr('Old password :'), self.stng_old_pwd)
 
         self.stng_pwd1 = QLineEdit()
         self.stng_pwd1.setMinimumSize(250, 0)
-        self.stng_pwd1.setEchoMode(QLineEdit.Password) # don't print pwd
-        stng_pwd_form_lay.addRow('New password :', self.stng_pwd1)
+        self.stng_pwd1.setEchoMode(QLineEdit.Password)
+        stng_pwd_form_lay.addRow(tr('New password :'), self.stng_pwd1)
 
         self.stng_pwd2 = QLineEdit()
         self.stng_pwd2.setMinimumSize(250, 0)
-        self.stng_pwd2.setEchoMode(QLineEdit.Password) # don't print pwd
-        stng_pwd_form_lay.addRow('Verify :', self.stng_pwd2)
+        self.stng_pwd2.setEchoMode(QLineEdit.Password)
+        stng_pwd_form_lay.addRow(tr('Verify :'), self.stng_pwd2)
 
         #-checkbox widgets (show pwd)
         stng_pwd_cb_lay = QVBoxLayout()
@@ -680,11 +1112,11 @@ class KrisGui(QMainWindow):
         }
 
         #-button
-        self.stng_pwd_bt = QPushButton('Change password')
+        self.stng_pwd_bt = QPushButton(tr('Change password'))
         stng_pwd_lay.addWidget(self.stng_pwd_bt, 1, 1, Qt.AlignRight)
 
         #-connection
-        use_c_pwd = UseSettingsTab(self.stng_old_pwd, self.stng_pwd1, self.stng_pwd2)
+        use_c_pwd = UseSettings(self.stng_old_pwd, self.stng_pwd1, self.stng_pwd2)
 
         self.stng_pwd_bt.clicked.connect(lambda: use_c_pwd.change_pwd())
         self.stng_pwd2.returnPressed.connect(lambda: use_c_pwd.change_pwd())
@@ -710,18 +1142,18 @@ class KrisGui(QMainWindow):
 
             #---close
             rep = QMessageBox.question(
-                None, 'Done !',
-                '<h2>The new lang will apply the next time you launch KRIS.</h2>\n<h2>Quit now ?</h2>',
+                None, tr('Done !'),
+                '<h2>' + tr('The new lang will apply the next time you launch KRIS.') + '</h2>\n<h2>' + tr('Quit now ?') + '</h2>',
                 QMessageBox.No | QMessageBox.Yes,
                 QMessageBox.Yes
             )
 
             if rep == QMessageBox.Yes:
-                self.quit()
+                win.quit()
 
 
         #-ini
-        self.stng_lang_grp = QGroupBox('Change Language')
+        self.stng_lang_grp = QGroupBox(tr('Change Language'))
         self.stng_lang_grp.setMaximumSize(200, 130)
         # self.stng_lang_grp.setMinimumSize(500, 200)
         stng_lang_lay = QGridLayout()
@@ -737,265 +1169,24 @@ class KrisGui(QMainWindow):
         stng_lang_lay.addWidget(self.stng_lang_box, 0, 0, Qt.AlignLeft)
 
         #-Button
-        self.stng_lang_bt = QPushButton('Apply')
+        self.stng_lang_bt = QPushButton(tr('Apply'))
         stng_lang_lay.addWidget(self.stng_lang_bt, 1, 0, Qt.AlignRight)
         self.stng_lang_bt.clicked.connect(chg_lang)
 
+        #---Button close
+        self.close_bt = QPushButton(tr('Close'))
+        self.close_bt.clicked.connect(self.close)
+        tab_stng_lay.addWidget(self.close_bt, 2, 1, Qt.AlignRight)
+
         #------show
-        self.app_widget.addTab(tab_stng, 'Setti&ngs')
+        self.setCentralWidget(tab_stng)
 
 
+    def use(style, app_style, parent=None):
+        '''Function which launch this window.'''
 
-    #---------Path bar
-    def create_path_bar(self, tab, mn_size=700):
-        '''Return a QWidget containing a path bar.
-
-        tab : the tab containing the bar 's index.
-        '''
-
-        #------ini
-        path_bar = QGroupBox()
-        path_bar.setObjectName('path_grp')
-        path_bar.setStyleSheet(self.style)
-        path_bar.setMaximumSize(QSize(7000, 60))
-
-        path_bar_lay = QGridLayout()
-        path_bar_lay.setContentsMargins(5, 5, 5, 5)
-        path_bar.setLayout(path_bar_lay)
-
-        #------widgets
-        path_bar_lay.addWidget(QLabel(tr('Current directory :')), 0 ,0)
-
-        self.path_ent[tab] = QLineEdit()
-        self.path_ent[tab].setObjectName('path_entry')
-        self.path_ent[tab].setStyleSheet(self.style)
-        self.path_ent[tab].setMinimumSize(QSize(mn_size, 20))
-        self.path_ent[tab].setText(getcwd())
-        self.path_ent[tab].returnPressed.connect(self.change_dir) # Don't need to press the button : press <enter>
-        path_bar_lay.addWidget(self.path_ent[tab], 0, 1)
-
-        bt_up = QPushButton('↑')
-        bt_up.setMaximumSize(QSize(40, 50))
-        bt_up.clicked.connect(self.change_dir_up)
-        bt_up.setObjectName('path_bt')
-        bt_up.setStyleSheet(self.style)
-        path_bar_lay.addWidget(bt_up, 0, 2)
-
-        bt_apply = QPushButton(tr('Apply'))
-        bt_apply.clicked.connect(self.change_dir)
-        bt_apply.setObjectName('path_bt')
-        bt_apply.setStyleSheet(self.style)
-        path_bar_lay.addWidget(bt_apply, 0, 3)
-
-        bt_gui = QPushButton(tr('Search'))
-        bt_gui.clicked.connect(self.change_dir)
-        bt_gui.setObjectName('path_bt')
-        bt_gui.setStyleSheet(self.style)
-        bt_gui.clicked.connect(self.change_dir_gui)
-        path_bar_lay.addWidget(bt_gui, 0, 4)
-
-        return path_bar
-
-
-
-    #---------chdir
-    def change_dir(self):
-        '''Change the current directory according to the path bar'''
-
-        new_dir = self.path_ent[self.app_widget.currentIndex()].text()
-
-        try:
-            chdir(new_dir)
-
-        except FileNotFoundError:
-            self.path_ent[self.app_widget.currentIndex()].setText(getcwd())
-            QMessageBox.about(QWidget(), tr('!!! Directory error !!!'), tr('The directory was NOT found !!!'))
-            return False
-
-        for tab in range(1):
-            self.path_ent[tab].setText(getcwd()) #actualise every path bar.
-
-        for text_editor in self.lst_txt:
-            text_editor.reload() #Reload TextEditors' ComboBox.
-
-        self.reload_keys()
-
-
-    def change_dir_up(self):
-        '''Change the current directory up'''
-
-        chdir('..')
-        for tab in range(1):
-            self.path_ent[tab].setText(getcwd()) #actualise every path bar.
-
-        for text_editor in self.lst_txt:
-            text_editor.reload() #Reload TextEditors' ComboBox.
-
-        self.reload_keys()
-
-
-    def change_dir_gui(self):
-        '''Change the current directory by asking to the user with a popup'''
-
-
-        new_dir = QFileDialog.getExistingDirectory(self, tr('Select directory'))
-
-        if new_dir:
-            try:
-                chdir(new_dir)
-
-            except FileNotFoundError:
-                self.path_ent[self.app_widget.currentIndex()].setText(getcwd())
-                QMessageBox.about(QWidget(), tr('!!! Directory error !!!'), tr('The directory was NOT found !!!'))
-                return False
-
-            for tab in range(1):
-                self.path_ent[tab].setText(getcwd()) #actualise every path bar.
-
-            for text_editor in self.lst_txt:
-                text_editor.reload() #Reload TextEditors' ComboBox.
-
-            self.reload_keys()
-
-
-
-    def reload_keys(self):
-        '''Reload the RSA keys's box, in the cipher tab.'''
-
-        old_key = self.cipher_opt_keys.currentText()
-
-        keys_list = RSA.list_keys('all')
-
-        self.cipher_opt_keys.clear()
-
-        self.cipher_opt_keys.addItem(tr('-- Select a key --'))
-        self.cipher_opt_keys.insertSeparator(1)
-        self.cipher_opt_keys.addItems(keys_list)
-
-        if old_key in keys_list:
-            self.cipher_opt_keys.setCurrentText(old_key)
-
-
-
-    #---------chk_tab
-    def chk_tab(self, tab):
-        '''Resize the window according to the tab.'''
-
-        self.current_tab = tab
-
-        if tab == 0: #Cipher
-            self.setMinimumSize(1030, 730)
-            self.resize(1030, 730)
-            self.reload_keys()
-
-        elif tab == 1: #Settings
-            self.setMinimumSize(900, 250)
-            self.resize(900, 250)
-
-
-
-    # #---------infos
-    # def show_infos(self):
-    #     '''Show information about this program using a popup.'''
-    #
-    #     AboutCracker.use(parent=self)
-
-
-
-    #---------lock
-    def lock(self, tries=5):
-        '''Dislable the widgets and ask for the password.'''
-
-        if tries == False:
-            tries = 5
-
-        def chk_lock():
-            if not self.locker.is_locked():
-                self.setDisabled(False)
-
-                global RSA_keys_pwd
-                RSA_keys_pwd = self.locker.get_RSA_keys_pwd()
-
-                RSA.SecureRsaKeys(RSA_keys_pwd, interface='gui').decrypt()
-
-        self.locker = Lock(pwd, pwd_h, pwd_loop, tries)
-
-        self.setDisabled(True)
-        self.locker.show()
-
-        self.locker.connect(chk_lock)
-
-
-
-    #---------quit
-    def quit(self, event=None):
-        '''Quit the application. Check if there is text somewhere, and ask confirmation if there is.'''
-
-        global app
-
-        txt_ = False
-        txt_tab = []
-        if self.txt_e.getText(silent=True, from_='text') != '':
-            txt_ = True
-            txt_tab.append('Cipher (encrypt)')
-
-        if self.txt_d.getText(silent=True, from_='text') != '':
-            txt_ = True
-            txt_tab.append('Cipher (decrypt)')
-
-
-        if txt_:
-            if len(txt_tab) == 1:
-                title = '!!! There is text in ' + set_prompt(txt_tab) + ' tab !!!'
-                msg = '<h2>The text widget in the ' + set_prompt(txt_tab) + \
-                ' tab is not empty !</h2>\n<h4>Your text will be lose if not saved !</h4>\nQuit anyway ?'
-
-            else:
-                title = '!!! There is text in some tabs !!!'
-                msg = '<h2>The text widgets in the ' + set_prompt(txt_tab) + \
-                ' tabs is not empty !</h2>\n<h4>Your text will be lose if not saved !</h4>\nQuit anyway ?'
-
-
-            sure = QMessageBox.question(self, title, msg, \
-                QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
-
-            if sure == QMessageBox.No:
-                if event not in (None, True, False):
-                    event.ignore()
-                return -3
-
-        if event not in (None, True, False):
-            RSA.SecureRsaKeys(RSA_keys_pwd, 'gui').rm_clear()
-            event.accept()
-
-        else:
-            RSA.SecureRsaKeys(RSA_keys_pwd, 'gui').rm_clear()
-            app.quit()
-            #todo: use app.close() ? what differences ?
-
-
-    def closeEvent(self, event=None):
-        self.quit(event)
-
-
-
-    #---------use
-    def use(lock=True):
-        '''Launch the application.'''
-
-        global app, win
-
-        app = QApplication(sys.argv)
-        win = KrisGui()
-
-        #-lock
-        if lock:
-            win.lock(3)
-
-        #app.setPalette(KrisGuiStyle.dark_style(None))
-        #app.aboutToQuit.connect(win.quit)
-
-        sys.exit(app.exec_())
+        stg_win = SettingsWin(style, app_style, parent)
+        stg_win.show()
 
 
 
@@ -1009,7 +1200,7 @@ class GenKeyWin(QMainWindow):
 
         #------ini
         super().__init__(parent)
-        self.setWindowTitle('Generate RSA keys — KRIS')
+        self.setWindowTitle(tr('Generate RSA keys') + ' — KRIS')
 
         #---Central widget
         self.main_wid = QWidget()
@@ -1035,7 +1226,7 @@ class GenKeyWin(QMainWindow):
         self.RSA_wid.setLayout(RSA_lay)
 
         #---label
-        RSA_lay.addWidget(QLabel("Keys' size :"), 0, 0)
+        RSA_lay.addWidget(QLabel(tr("Keys' size :")), 0, 0)
 
         #---Slider
         self.slider_sz = QSlider(Qt.Horizontal)
@@ -1065,7 +1256,7 @@ class GenKeyWin(QMainWindow):
         self.sb.valueChanged.connect(lambda v: self.slider_sz.setValue(v))
 
         #---name label
-        RSA_lay.addWidget(QLabel("Keys' name :"), 1, 0)
+        RSA_lay.addWidget(QLabel(tr("Keys' name :")), 1, 0)
 
         #---line edit
         self.ledt = QLineEdit()
@@ -1074,7 +1265,7 @@ class GenKeyWin(QMainWindow):
         RSA_lay.addWidget(self.ledt, 1, 1)
 
         #---check box hexa
-        self.chbt_h = QCheckBox('Store in hexadecimal')
+        self.chbt_h = QCheckBox(tr('Store in hexadecimal'))
         self.chbt_h.setChecked(True)
         RSA_lay.addWidget(self.chbt_h, 1, 2)
 
@@ -1088,7 +1279,7 @@ class GenKeyWin(QMainWindow):
         self.sp_wid.setLayout(sp_lay)
 
         #---widgets
-        self.sp_lb = QLabel("Key's length :")
+        self.sp_lb = QLabel(tr("Key's length :"))
         sp_lay.addWidget(self.sp_lb, 0, 0)
 
         self.str1_lth = QSpinBox()
@@ -1098,12 +1289,12 @@ class GenKeyWin(QMainWindow):
 
 
         #------buttons
-        self.bt_cancel = QPushButton('Cancel')
+        self.bt_cancel = QPushButton(tr('Cancel'))
         self.bt_cancel.setMaximumSize(55, 35)
         self.bt_cancel.clicked.connect(self.close)
         main_lay.addWidget(self.bt_cancel, 2, 0, Qt.AlignRight)
 
-        self.bt_gen = QPushButton('Generate')
+        self.bt_gen = QPushButton(tr('Generate'))
         self.bt_gen.setMinimumSize(0, 35)
         self.bt_gen.setStyleSheet(style)
         self.bt_gen.setObjectName('main_obj')
@@ -1160,7 +1351,7 @@ class GenKeyWin(QMainWindow):
                 ret = self._show_key(ciph, KRIS.AES_rnd_key_gen(self.str1_lth.value(), int(ciph[-3:])))
 
             except ValueError as err:
-                QMessageBox.warning(None, 'Key size error', '<h2>{}</h2>'.format(err))
+                QMessageBox.warning(None, tr('Key size error'), '<h2>{}</h2>'.format(err))
                 return -3
 
 
@@ -1177,7 +1368,7 @@ class GenKeyWin(QMainWindow):
 
         name = self.ledt.text()
         if name == '':
-            QMessageBox.critical(None, '!!! No name !!!', '<h2>Please enter a name for the RSA keys !!!</h2>')
+            QMessageBox.critical(None, '!!! No name !!!', '<h2>' + tr('Please enter a name for the RSA keys !') + '</h2>')
             return -3 #Abort
 
         size = self.slider_sz.value()
@@ -1189,7 +1380,7 @@ class GenKeyWin(QMainWindow):
             rep = QMessageBox.question(
                 None,
                 'File error !',
-                '<h2>A set of keys named "{}" already exist !</h2>\n<h2>Overwite it !?</h2>\n<h3>This action can NOT be undone !!!</h3>'.format(name),
+                '<h2>' + tr('A set of keys named "{}" already exist !').format(name) + '</h2>\n<h2>' + tr('Overwite it !?') + '</h2>\n<h3>' + tr('This action can NOT be undone !!!') + '</h3>',
                 QMessageBox.Yes | QMessageBox.No,
                 QMessageBox.No
             )
@@ -1200,13 +1391,13 @@ class GenKeyWin(QMainWindow):
             else:
                 return -2
 
-        win.reload_keys()
+        win.ciph_bar.reload_keys()
 
         global RSA_keys_pwd
         RSA.RsaKeys(name, 'gui').encrypt(RSA_keys_pwd)
 
 
-        QMessageBox.about(None, 'Done !', '<h2>Your brand new RSA keys "{}" are ready !</h2>\n<h3>`n` size : {} bits</h3>'.format(name, val[2]))
+        QMessageBox.about(None, 'Done !', '<h2>' + tr('Your brand new RSA keys "{}" are ready !').format(name) + '</h2>\n<h3>' + tr('`n` size : {} bits').format(val[2]) + '</h3>')
 
 
 
@@ -1294,7 +1485,7 @@ class ExpKeyWin(QMainWindow):
         QMessageBox.about(None, 'Done !', '<h2>The keys "{}" have been be exported.</h2>'.format(k_name))
 
         self.close()
-        win.reload_keys()
+        win.ciph_bar.reload_keys()
 
 
     def use(style, parent=None):
@@ -1479,7 +1670,7 @@ class RenKeyWin(QMainWindow):
         QMessageBox.about(None, 'Done !', '<h2>Your keys "{}" have been be renamed "{}" !</h2>'.format(k_name, new_name))
 
         self.close()
-        win.reload_keys()
+        win.ciph_bar.reload_keys()
 
 
     def use(style, parent=None):
@@ -1600,21 +1791,19 @@ class CvrtKeyWin(QMainWindow):
 
 ##-Classes to use the GUI
 #---------Ciphers
-class UseCipherTab:
+class UseCiphers:
     '''Class which allow to use the Cipher tab.'''
 
-    def __init__(self, txt_e, txt_d, key_opt, key_ledit, key_nb, key_2_str, key_2_nb, alf, cipher):
-        '''Create the UseCipherTab object.'''
+    def __init__(self, txt_in, txt_out, key_opt, key_ledit, key_nb, cipher, encod):
+        '''Create the UseCiphers object.'''
 
-        self.txt_e = txt_e
-        self.txt_d = txt_d
+        self.txt_in = txt_in
+        self.txt_out = txt_out
         self.key_opt = key_opt
         self.key_ledit = key_ledit
         self.key_nb = key_nb
-        self.key_2_str = key_2_str
-        self.key_2_nb = key_2_nb
-        self.alf = alf
         self.cipher = cipher
+        self.encod = encod
 
 
     def _verify(self, md):
@@ -1684,7 +1873,7 @@ class UseCipherTab:
         return key
 
 
-    def encrypt(self):
+    def encrypt(self, formated_out=True):
         '''Encrypt the text, using the informations given in init.'''
 
         #------check
@@ -1692,13 +1881,14 @@ class UseCipherTab:
             return -3 #Abort
 
         #------ini
-        txt = self.txt_e.getText()
-        if txt in (-1, -2, -3):
-            return txt #Abort
+        txt = self.txt_in.toPlainText()
+        if txt in ('', '\n'):
+            QMessageBox.critical(None, '!!! No text !!!', '<h2>There is nothing to encrypt.</h2>')
+            return -3 #Abort
 
         ciph = self.cipher.currentText()
-        encod = self.txt_d.get_encod()
-        bytes_md = self.txt_d.get_bytes()
+        encod = self.encod.currentText()
+        #bytes_md = self.txt_d.get_bytes()
 
         if ciph != 'RSA signature':
             key = self._get_key(0)
@@ -1714,7 +1904,7 @@ class UseCipherTab:
         if ciph in ciphers_list['KRIS']:
             AES_md = (256, 192, 128)[ciphers_list['KRIS'].index(ciph)]
 
-            C = KRIS.Kris((key, None), AES_md, encod, bytes_md, interface='gui')
+            C = KRIS.Kris((key, None), AES_md, encod, interface='gui')
             msg_c = C.encrypt(txt)
 
             msg_c = '{} {}'.format(msg_c[0], msg_c[1])
@@ -1732,7 +1922,7 @@ class UseCipherTab:
 
         elif  ciph in ciphers_list['AES']:
             AES_md = (256, 192, 128)[ciphers_list['AES'].index(ciph)]
-            md = {'t' : 'str', 'b' : 'bytes'}[bytes_md]
+            md = 'str' #{'t' : 'str', 'b' : 'bytes'}[bytes_md]
 
             try:
                 C = AES.AES(AES_md, key, False, encod)
@@ -1764,25 +1954,46 @@ class UseCipherTab:
                 return -3
 
 
-        self.txt_d.setText(msg_c)
+        if ciph in (*ciphers_list['KRIS'], *ciphers_list['AES'], *ciphers_list['RSA']) and formated_out:
+            msg_f = FormatMsg(msg_c).set(ciph, 'KRIS_v' + kris_version)
+            self.txt_out.setPlainText(msg_f)
+
+        else:
+            self.txt_out.setPlainText(msg_c)
 
 
     def decrypt(self):
         '''Decrypt the text, using the informations given in init.'''
 
+        global win
+
+        #------ini
+        raw_txt = self.txt_in.toPlainText()
+        if raw_txt in ('', '\n'):
+            QMessageBox.critical(None, '!!! No text !!!', '<h2>There is nothing to decrypt.</h2>')
+            return -3 #Abort
+
+        #------FormatMsg
+        try:
+            txt, ciph = FormatMsg(raw_txt).unset()[:-1] #don't take version
+
+        except ValueError:
+            txt = raw_txt
+            ciph = self.cipher.currentText()
+
+        else:
+            if self.cipher.currentText() == tr('-- Select a cipher --'):
+                self.cipher.setCurrentText(ciph)
+                win.ciph_bar.chk_ciph(ciph)
+
+
         #------check
         if self._verify(1) == -3:
             return -3 #Abort
 
-        #------ini
-        txt = self.txt_d.getText()
-        if txt in (-1, -2, -3):
-            return txt #Abort
-
-        ciph = self.cipher.currentText()
-        encod = self.txt_e.get_encod()
-        bytes_md = self.txt_e.get_bytes()
-        bytes_md_d = self.txt_d.get_bytes()
+        encod = self.encod.currentText()
+        bytes_md = 't' #self.txt_e.get_bytes()
+        bytes_md_d = 't' #self.txt_d.get_bytes()
 
         if ciph != 'RSA signature':
             key = self._get_key(1)
@@ -1794,50 +2005,55 @@ class UseCipherTab:
             return -3 #Abort
 
 
-        #------decrypt using the good cipher
-        if ciph in ciphers_list['KRIS']:
-            AES_md = (256, 192, 128)[ciphers_list['KRIS'].index(ciph)]
+        try:
+            #------decrypt using the good cipher
+            if ciph in ciphers_list['KRIS']:
+                AES_md = (256, 192, 128)[ciphers_list['KRIS'].index(ciph)]
 
-            C = KRIS.Kris((None, key), AES_md, encod, bytes_md, interface='gui')
+                C = KRIS.Kris((None, key), AES_md, encod, bytes_md, interface='gui')
 
-            try:
-                if bytes_md_d == 't':
-                    msg_d = C.decrypt(txt.split(' '))
+                try:
+                    if bytes_md_d == 't':
+                        msg_d = C.decrypt(txt.split(' '))
+                    else:
+                        msg_d = C.decrypt(txt.split(b' '))
+
+                except ValueError:
+                    return -3 #The error message is printed in Kris.
+
+
+            elif ciph == 'RSA':
+                C = RSA.RSA((None, key), interface='gui')
+                msg_d = C.decrypt(txt)
+
+
+            elif ciph == 'RSA signature':
+                C = RSA.RsaSign((key, None), interface='gui')
+                if C.str_check(txt):
+                    QMessageBox.about(None, 'Signature result', '<h2>The signature match to the message.</h2>')
+
                 else:
-                    msg_d = C.decrypt(txt.split(b' '))
+                    QMessageBox.about(None, 'Signature result', '<h2>The signature does not match to the message !</h2>\n<h3>You may not have selected the right RSA key, or the message was modified before you received it !!!</h3>')
 
-            except ValueError:
-                return -3 #The error message is printed in Kris.
-
-
-        elif ciph == 'RSA':
-            C = RSA.RSA((None, key), interface='gui')
-            msg_d = C.decrypt(txt)
+                return None
 
 
-        elif ciph == 'RSA signature':
-            C = RSA.RsaSign((key, None), interface='gui')
-            if C.str_check(txt):
-                QMessageBox.about(None, 'Signature result', '<h2>The signature match to the message.</h2>')
+            elif  ciph in ciphers_list['AES']:
+                AES_md = (256, 192, 128)[ciphers_list['AES'].index(ciph)]
+                md = {'t' : 'str', 'b' : 'bytes'}[bytes_md]
 
-            else:
-                QMessageBox.about(None, 'Signature result', '<h2>The signature does not match to the message !</h2>\n<h3>You may not have selected the right RSA key, or the message was modified before you received it !!!</h3>')
+                C = AES.AES(AES_md, key, False, encod)
+                msg_d = C.decryptText(txt, encoding=encod, mode_c='hexa', mode=md)
 
-            return None
+        except Exception as err:
+            QMessageBox.critical(None, '!!! Decryption error !!!', '<h2>An error occured during decryption. Maybe you tried to decrypt clear text, or the cipher text is not good formated.</h2>\n<h3>The text to be decrypted should be in the main text editor.</h3>\n<h4>Error :</h4>{}'.format(err))
+            return -3 # Abort
 
-
-        elif  ciph in ciphers_list['AES']:
-            AES_md = (256, 192, 128)[ciphers_list['AES'].index(ciph)]
-            md = {'t' : 'str', 'b' : 'bytes'}[bytes_md]
-
-            C = AES.AES(AES_md, key, False, encod)
-            msg_d = C.decryptText(txt, encoding=encod, mode_c='hexa', mode=md)
-
-        self.txt_e.setText(msg_d)
+        self.txt_out.setPlainText(msg_d)
 
 
 #---------Settings
-class UseSettingsTab:
+class UseSettings:
     '''Class which allow to use the Settings tab.'''
 
     def __init__(self, old_pwd, new_pwd1, new_pwd2):
@@ -1902,7 +2118,7 @@ class UseSettingsTab:
 ##-run
 if __name__ == '__main__':
     #------If first time launched, introduce RSA keys
-    chdir(RSA.chd_rsa('.', first=True, interface='gui'))
+    chdir(RSA.chd_rsa('.', first=True, interface='gui')) #Todo: improve this (it is not shown since there is already 'elerias' and 'lasercata_3072' keys).
 
     #------Launch the GUI
     KrisGui.use()
