@@ -2,8 +2,8 @@
 # -*- coding: utf-8 -*-
 
 GuiStyle__auth = 'Lasercata'
-GuiStyle__last_update = '20.09.2020'
-GuiStyle__version = '1.0.1'
+GuiStyle__last_update = '12.04.2021'
+GuiStyle__version = '1.0.2'
 
 ##-imports
 from PyQt5.QtCore import QSize, Qt
@@ -37,10 +37,11 @@ class GuiStyle:
     }
 
 
-    def __init__(self, style_dict=default_style):
+    def __init__(self, style_dict=default_style, set_better_style=False):
         '''Create a GUI style.
 
-        style_dict : the dictonary containing the style colors.
+        - style_dict : the dictonary containing the style colors ;
+        - set_better_style : a bool indicating if set by default 'Breeze' if here or 'Dark fusion'.
         '''
 
         self.style_dict = style_dict
@@ -55,7 +56,8 @@ class GuiStyle:
             self.main_style_name = style_dict['main_style']
 
 
-        self.set_style(self.main_style_name)
+        if set_better_style:
+            self.set_style(self.main_style_name)
 
         #todo: check for file in ~/.Cracker !
 
@@ -93,7 +95,7 @@ class GuiStyle:
 
         if r: # Recursive, to run two time this because style don't apply well else.
             self.set_style(style_name, std_palette, False)
-            
+
         self.main_style_name = style_name
 
         if style_name == 'Dark fusion':
