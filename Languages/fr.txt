@@ -238,12 +238,12 @@ Le fichier "quad_f.wrdlst" est introuvable.
 Le module quad.wrdlst ne peut-être importé.
 Remettez le module {} !!!
 analyse
-Analys&er ↓
-Si&gner ↓
+Analys&er
+Si&gner
 Vérif&ier
-C&alculer l'empreinte ↓
-&Chiffrer ↓
-&Déchiffrer ↑
+C&alculer l'empreinte
+&Chiffrer
+&Déchiffrer
 &Quitter
 Ch&iffrement
 Groupe :
@@ -422,3 +422,73 @@ Sauvegarder dans le dossier :
 Analyser une wordlist
 &Analyser
 Nombre de lignes au début / à la fin :
+&Fichier
+&Nouveau
+&Ouvrir ...
+Ouvrir &Récent
+&Enregistrer
+Enregistrer &Sous
+Enregistrer &la sortie
+En&registrer la sortie sous
+&Quitter
+&Édition
+&Annuler
+&Rétablir
+É&changer les textes
+Échange le texte d'entrée avec celui de sortie.
+E&ffacer la sortie
+&Sortie formatée
+Met le texte chiffré dans une bonne forme.
+&Affichage
+&Voir la sortie
+&Redimensionner à la taille originale
+&Clés
+&Montrer des informations à propos des clés ...
+&Générer ...
+&Exporter ...
+&Rennomer ...
+&Convertir ...
+Recharger &la boite
+&Paramètres
+&Configurer KRIS ...
+{} mots, {} caractères.
+Enregistré
+Sortie non enregistrée
+Entrée non enregistrée
+Non enregistré
+Voulez-vous enregistrer les modifications ou les abandonner ?
+La partie éditeur de texte a été modifiée.
+La partie sortie a été modifiée.
+Les parties éditeur de texte, sortie ont été modifiées.
+Nouveau - KRIS
+Éditeurs de texte nettoyés !
+Ouvrir - KRIS
+Fichiers texte(*.txt);;Tous les fichiers(*)
+Le texte d'entrée
+Le texte de sortie
+{} a été enregistré dans le fichier "{}" !
+Prêt !
+&Utiliser la palette standard
+Changer le mot de passe
+Ancien mot de passe :
+Nouveau mot de passe :
+Vérifier :
+La nouvelle langue sera appliquée lors du prochain lancement de KRIS.
+Quitter maintenant ?
+Changer la langue
+Appliquer
+Fermer
+Générer des clés RSA
+Taille des clés :
+Nom des clés :
+Stocker en format hexadécimal
+Longueur de la clé :
+Annuler
+Générer
+Erreur taille de clé
+Veuillez entrer un nom pour vos clés RSA !
+Une paire de clés nommées "{}" existe déjà !
+L'écraser !?
+Cette action ne peut PAS être annulée !!!
+Vos nouvelles clés RSA "{}" sont prêtes !
+Taille du `n`: {} bits

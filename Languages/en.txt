@@ -238,12 +238,12 @@ File "quad_f.wrdlst" was not found.
 Can't import quad.wrdlst
 Put the module {} back !!!
 analysis
-Analys&e ↓
-Si&gn ↓
+Analys&e
+Si&gn
 Chec&k
-H&ash ↓
-&Encrypt ↓
-&Decrypt ↑
+H&ash
+&Encrypt
+&Decrypt
 &Quit
 C&ipher
 Group :
@@ -422,3 +422,73 @@ Save in folder :
 Analyze a wordlist
 &Analyze
 Number of head / bottom lines :
+&File
+&New
+&Open ...
+Open &Recent
+&Save
+Save &As
+S&ave Output
+Sa&ve Output As
+&Quit
+&Edit
+&Undo
+Re&do
+&Swap texts
+Toggle input text and output text.
+&Clear output
+&Formatted Output
+Set the encrypted text in a good form.
+&View
+&Show Output
+&Resize to original size
+&Keys
+&Show informations about keys ...
+&Generate ...
+&Export ...
+&Rename ...
+&Convert ...
+Re&load box
+&Settings
+&Configure KRIS ...
+{} words, {} chars.
+Saved
+Output unsaved
+Input unsaved
+Unsaved
+Do you want to save your changes or discard them ?
+The text editor part has been modified.
+The output part has been modified.
+The text editor, output parts have been modified.
+New - KRIS
+Text editors cleared !
+Open - KRIS
+Text files(*.txt);;All files(*)
+Input text
+Output text
+{} saved in file "{}" !
+Ready !
+&Use style's standard palette
+Change password
+Old password :
+New password :
+Verify :
+The new lang will apply the next time you launch KRIS.
+Quit now ?
+Change Language
+Apply
+Close
+Generate RSA keys
+Keys' size :
+Keys' name :
+Store in hexadecimal
+Key's length :
+Cancel
+Generate
+Key size error
+Please enter a name for the RSA keys !
+A set of keys named "{}" already exist !
+Overwite it !?
+This action can NOT be undone !!!
+Your brand new RSA keys "{}" are ready !
+`n` size : {} bits
