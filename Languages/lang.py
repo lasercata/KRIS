@@ -2,8 +2,8 @@
 # -*- coding: utf-8 -*-
 
 lang__auth = 'Elerias'
-lang__ver = '1.0.4'
-lang__last_update = '24.11.2020'
+lang__ver = '1.0.5'
+lang__last_update = '13.04.2021'
 
 
 ##-import
@@ -29,7 +29,7 @@ try:
     lang = lang.strip('\n')
 
 except FileNotFoundError:
-    print('The file "lang.txt" was not found')
+    print('The file "lang.txt" was not found. Default langage will be set (English).')
     lang = 'en'
 
 try:
@@ -55,4 +55,17 @@ for i in os.listdir('Languages'):
 
 def translate(text_en, lang=lang):
     global D_langs
-    return D_langs[lang][text_en]
+
+    try:
+        ret = D_langs[lang][text_en]
+
+    except KeyError:
+        ret = text_en
+
+        if lang == 'fr':
+            print("KRIS: lang.py: Impossible de traduire '{}' : non trouvé.".format(text_en))
+
+        else:
+            print("KRIS: lang.py: Can't translate '{}' : not found.".format(text_en))
+
+    return ret
