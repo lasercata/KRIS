@@ -41,7 +41,7 @@ In the main directory, run `./KRIS_gui.py` to run the python script. Else you ca
 ### Password
 The default password is **`swiss_knife`**. It is used to encrypt the private RSA keys, so you can leave KRIS on your USB key or on an other computer without the risk of having your keys stolen.
 
-You can change the password in the Settings part.
+You can (and should) change the password in the Settings part.
 
 
 ## Authors
