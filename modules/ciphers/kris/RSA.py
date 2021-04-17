@@ -4,14 +4,15 @@
 '''This program allow you to encrypt and decrypt with RSA cipher.'''
 
 RSA__auth = 'Lasercata, Elerias'
-RSA__last_update = '15.03.2021'
-RSA__version = '3.7_kris'
+RSA__last_update = '15.04.2021'
+RSA__version = '3.8_kris'
 
 
 ##-import
 #---------KRIS' modules
 #from modules.base.console.color import color, cl_inp, cl_out, c_error, c_wrdlt, c_output, c_prog, c_succes
 from modules.base.base_functions import chd, NewLine
+from modules.base.FormatMsg import FormatMsg
 from modules.base.progress_bars import *
 from modules.ciphers.hashes.hasher import Hasher
 from modules.base import glb
@@ -70,6 +71,24 @@ def sp_grp(n, grp, sep=' ', rev_lst=True):
 
 ##-ini
 alf_36 = '0123456789abcdefghijklmnopkrstuvwxyz'
+
+#---------KRIS version
+try:
+    with open('version.txt', 'r') as f:
+        kris_version_0 = f.read()
+    kris_version = ""
+    for k in kris_version_0:
+        if not ord(k) in (10, 13):
+            kris_version += k
+
+except FileNotFoundError:
+    cl_out(c_error, tr('The file "version.txt" was not found. A version will be set but can be wrong.'))
+    kris_version = '2.0.0 ?'
+
+else:
+    if len(kris_version) > 16:
+        cl_out(c_error, tr('The file "version.txt" contain more than 16 characters, so it certainly doesn\'t contain the actual version. A version will be set but can be wrong.'))
+        kris_version = '2.0.0 ?'
 
 ##-test / base functions
 #---------date
@@ -601,6 +620,7 @@ class RsaSign:
         self.interface = interface
 
         self.RSA = RSA(keys, interface)
+        self.h = h
         self.Hasher = Hasher(h)
 
 
@@ -630,31 +650,53 @@ class RsaSign:
         return msg_h == unsign
 
 
-    def str_sign(self, txt):
+    def str_sign(self, msg):
         '''
-        Sign 'txt' and return it, with the message, in a string of this form :
+        Sign 'txt' and return it, with the message, in a string of this form (the commented lines are set with FormatedMsg, in KRIS_gui.py) :
 
-            msg
-            '-'*40 + 'RSA_sign'
-            newline([signature], 40)
-            '-'*40 + 'end RSA_sign'
+            #------BEGIN KRIS SIGNED MESSAGE------
+            #Version: KRIS_v2.0.0
+            #Cipher: RSA signature
+            #Hash: sha256
+            #Key_name: test
+            #---
+            #
+            This is the signed message.
+
+            ------BEGIN KRIS SIGNATURE------
+            943807048734946125391551838892825323881224874134114102624258821
+            777497503175465732577498770633243452810041947630081594914335102
+            030685948454325645230350182968575318427660604935974297921249620
+            145627119142786967888460883779427870903491284297486553549313557
+            036484594229863184367664486859688319969288882500317784306881247
+            986697247977081407162090788619940533970560140434587970906714139
+            290858878587907236987805719455479320536481924920579051146037063
+            173431947005158307628367242387336720592701482187812886188311982
+            087888289689323511419214457508164027138556866752536079927267033
+            1287543493615931451357930596408267945537776650957
+            ------END KRIS SIGNATURE------
+            #------END KRIS SIGNED MESSAGE------
         '''
 
-        return '{0}\n{1}RSA_sign\n{2}\n{1}end RSA_sign'.format(txt, '-'*40, NewLine(40).set(self.sign(txt)))
+        sign = self.sign(msg)
+
+        txt = '{}\n\n------BEGIN KRIS SIGNATURE------\n{}\n------END KRIS SIGNATURE------'.format(msg, NewLine(64).set(sign))
+
+
+        return txt #FormatMsg(txt, nl=False).set(self.d)
 
 
     def str_check(self, txt):
         '''Same as self.check, but for a message formatted by self.str_sign.'''
 
-        begin = txt.find('\n' + '-'*40 + 'RSA_sign')
-        end = txt.find('\n' + '-' *40 + 'end RSA_sign')
+        begin = txt.find('\n\n------BEGIN KRIS SIGNATURE------\n')
+        end = txt.find('\n------END KRIS SIGNATURE------')
 
         if -1 in (begin, end):
             raise ValueError('The text is not well formatted !!!')
 
         msg = txt[:begin]
-        sign = txt[begin + 49:end]
-        sign = NewLine(40).unset(sign)
+        sign = txt[begin + 35:end].replace('\n', '')
 
         return self.check(msg, sign)
 
