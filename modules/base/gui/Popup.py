@@ -2,12 +2,12 @@
 # -*- coding: utf-8 -*-
 
 Popup__auth = 'Lasercata'
-Popup__last_update = '14.07.2020'
-Popup__version = '1.0'
+Popup__last_update = '16.04.2021'
+Popup__version = '1.1'
 
 ##-imports
 from PyQt5.QtCore import QSize, Qt
-from PyQt5.QtGui import QIcon, QPixmap, QCloseEvent, QPalette, QColor
+from PyQt5.QtGui import QIcon, QPixmap, QCloseEvent, QPalette, QColor, QFont
 from PyQt5.QtWidgets import (QApplication, QMainWindow, QComboBox, QStyleFactory,
     QLabel, QGridLayout, QLineEdit, QMessageBox, QWidget, QPushButton, QCheckBox,
     QHBoxLayout, QGroupBox, QButtonGroup, QRadioButton, QTextEdit, QFileDialog)
@@ -20,12 +20,20 @@ from modules.base.gui.GuiStyle import GuiStyle
 class Popup(QMainWindow):
     '''Class which define a popup.'''
 
-    def __init__(self, title, msg, width=850, height=350, parent=None):
+    def __init__(self, width=850, height=350, bt_align='center', parent=None):
         '''Initiate the popup window.'''
+
+        if bt_align.lower() == 'center':
+            a = Qt.AlignCenter
+
+        elif bt_align.lower() == 'right':
+            a = Qt.AlignRight
+
+        else:
+            a = Qt.AlignLeft
 
         #------ini
         super().__init__(parent)
-        self.setWindowTitle(title)
 
         self.style = GuiStyle().style_sheet
 
@@ -33,22 +41,50 @@ class Popup(QMainWindow):
         self.main_wid = QWidget()
         self.setCentralWidget(self.main_wid)
 
-        main_lay = QGridLayout()
-        self.main_wid.setLayout(main_lay)
+        self.main_lay = QGridLayout()
+        self.main_wid.setLayout(self.main_lay)
 
         #---txt
+        #-font
+        self.fixed_font = QFont('monospace')
+        self.fixed_font.setStyleHint(QFont.TypeWriter)
+
+        #-txt
         self.txt = QTextEdit()
         self.txt.setReadOnly(True)
-        self.txt.setAcceptRichText(False)
         self.txt.setMinimumSize(width, height)
         self.txt.setStyleSheet(self.style)
         self.txt.setObjectName('orange_border_hover')
-        self.txt.setPlainText(msg)
-        main_lay.addWidget(self.txt, 0, 0)
+        self.txt.setFont(self.fixed_font)
+        self.main_lay.addWidget(self.txt, 0, 0)
 
         #---bt OK
         self.bt = QPushButton('OK')
         self.bt.clicked.connect(self.close)
-        main_lay.addWidget(self.bt, 1, 0, Qt.AlignCenter)
+        self.main_lay.addWidget(self.bt, 1, 0, a)
+
+
+    def pop(self, title, msg, html=False):
+        '''Show the popup window.'''
+
+        self.setWindowTitle(title)
+
+        if html:
+            self.txt.setHtml(msg)
+
+        else:
+            self.txt.setPlainText(msg)
 
         self.show()
+
+
+##-run
+if __name__ == '__main__':
+    import sys
+
+    #app = QApplication(sys.argv)
+
+    win = Popup()
+    win.pop('Title', '<b><i>This</i> is the message.</b> Of course.', True)
+
+    #sys.exit(app.exec_())
