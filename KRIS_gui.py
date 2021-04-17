@@ -4,8 +4,8 @@
 '''Launch KRIS with PyQt5 graphical interface. It is a part of Cracker.'''
 
 KRIS_gui__auth = 'Lasercata'
-KRIS_gui__last_update = '13.04.2021'
-KRIS_gui__version = '2.0'
+KRIS_gui__last_update = '16.04.2021'
+KRIS_gui__version = '2.1'
 
 # Note : there may still be parts of code which are useless in this file
 # and maybe some imported modules too (TextEditor, ...).
@@ -23,7 +23,7 @@ from PyQt5.QtWidgets import (QApplication, QMainWindow, QComboBox, QStyleFactory
     QLabel, QGridLayout, QLineEdit, QMessageBox, QWidget, QPushButton, QCheckBox,
     QHBoxLayout, QVBoxLayout, QGroupBox, QTabWidget, QTableWidget, QFileDialog,
     QRadioButton, QTextEdit, QButtonGroup, QSizePolicy, QSpinBox, QFormLayout,
-    QSlider, QMenuBar, QMenu, QPlainTextEdit, QAction, QToolBar)
+    QSlider, QMenuBar, QMenu, QPlainTextEdit, QAction, QToolBar, QShortcut)
 
 #------other
 from os import chdir, getcwd
@@ -31,6 +31,8 @@ from os.path import isfile
 import sys
 
 from ast import literal_eval #safer than eval
+
+import webbrowser #Open web page (in About)
 
 #---------KRIS modules
 try:
@@ -310,11 +312,18 @@ class KrisGui(QMainWindow):
         self.edit_m.addSeparator()
 
         #-Formated output
-        self.formated_out_ac = QAction(tr('&Formatted Output'), self, checkable=True)
-        #self.formated_out_ac.setShortcut('')
-        self.formated_out_ac.setStatusTip(tr('Set the encrypted text in a good form.'))
-        self.formated_out_ac.setChecked(True)
-        self.edit_m.addAction(self.formated_out_ac)
+        self.formatted_out_ac = QAction(tr('&Formatted Output'), self, checkable=True)
+        #self.formatted_out_ac.setShortcut('')
+        self.formatted_out_ac.setStatusTip(tr('Set the encrypted text in a good form.'))
+        self.formatted_out_ac.setChecked(True)
+        self.edit_m.addAction(self.formatted_out_ac)
+
+        #-Auto decrypt
+        self.auto_dec_ac = QAction(tr('&Auto Decrypt'), self, checkable=True)
+        #self.auto_dec_ac.setShortcut('')
+        self.auto_dec_ac.setStatusTip(tr('Select automaticly the cipher and the key (if message formatted).'))
+        self.auto_dec_ac.setChecked(True)
+        self.edit_m.addAction(self.auto_dec_ac)
 
 
         #---View
@@ -378,7 +387,7 @@ class KrisGui(QMainWindow):
 
         #-Export
         self.exp_k_ac = QAction(tr('&Export ...'), self)
-        self.exp_k_ac.setShortcut('Ctrl+E')
+        #self.exp_k_ac.setShortcut('Ctrl+')
         self.exp_k_ac.triggered.connect(lambda: ExpKeyWin.use(self.style, parent=self))
         self.keys_m.addAction(self.exp_k_ac)
 
@@ -410,19 +419,21 @@ class KrisGui(QMainWindow):
         self.config_ac.triggered.connect(lambda: SettingsWin.use(self.style, self.app_style, parent=self))
         self.settings_m.addAction(self.config_ac)
 
-        #Todo: help and about.
-        # #---Help
-        # self.help_m = menu_bar.addMenu('&Help')
-        #
-        # #-About
-        # self.help_ac = QAction('&Help', self)
-        # #self.help_ac.triggered.connect()
-        # self.help_m.addAction(self.help_ac)
-        #
-        # #-About
-        # self.about_ac = QAction('&About', self)
-        # #self.about_ac.triggered.connect()
-        # self.help_m.addAction(self.about_ac)
+
+        #---Help
+        self.help_m = menu_bar.addMenu('&Help')
+
+        #-Help
+        self.help_ac = QAction(tr('&Help'), self)
+        self.help_ac.setShortcut('F1')
+        self.help_ac.triggered.connect(self.show_help)
+        self.help_m.addAction(self.help_ac)
+
+        #-About
+        self.about_ac = QAction(tr('&About'), self)
+        self.about_ac.setShortcut('Shift+F1')
+        self.about_ac.triggered.connect(self.show_about)
+        self.help_m.addAction(self.about_ac)
 
 
     def _create_ciph_toolbar(self):
@@ -446,8 +457,13 @@ class KrisGui(QMainWindow):
             self.encod_box
         )
 
-        self.ciph_bar.cipher_bt_enc.clicked.connect(lambda: use_ciph.encrypt(self.formated_out_ac.isChecked()))
-        self.ciph_bar.cipher_bt_dec.clicked.connect(lambda: use_ciph.decrypt())
+        enc = lambda: use_ciph.encrypt(self.formatted_out_ac.isChecked())
+        dec = lambda: use_ciph.decrypt(self.auto_dec_ac.isChecked())
+
+        self.ciph_bar.cipher_bt_enc.clicked.connect(enc)
+        QShortcut('Ctrl+E', self).activated.connect(enc)
+        self.ciph_bar.cipher_bt_dec.clicked.connect(dec)
+        QShortcut('Ctrl+Shift+E', self).activated.connect(dec)
 
 
     def _create_out_txt(self):
@@ -493,13 +509,9 @@ class KrisGui(QMainWindow):
     def _clear_out(self):
         '''Clear the output text viewer'''
 
-        if self.txt_out.toPlainText() != '':
-            answer = QMessageBox.question(None, 'Sure ?', '<h2>Are you sure ?</h2>', QMessageBox.Yes | QMessageBox.No, QMessageBox.Yes)
-
-            if answer == QMessageBox.No:
-                return -3 # Abort
-
-        self.txt_out.setPlainText('')
+        if self._msg_box_save('out', tr('Clear') + ' ' + tr('Output text') + ' - KRIS'):
+            self.txt_out.setPlainText('')
+            self.statusbar.showMessage(tr('Output cleared !'), 3000)
 
 
     def _swap_txt(self):
@@ -612,11 +624,11 @@ class KrisGui(QMainWindow):
         if txt_:
             if len(txt_wid) == 1:
                 msg = tr('The ' + set_prompt(txt_wid) + \
-                ' part has been modified.\nDo you want to save your changes or discard them ?')
+                ' part has been modified.') + '\n' + tr('Do you want to save your changes or discard them ?')
 
             else:
                 msg = tr('The ' + set_prompt(txt_wid) + \
-                ' parts have been modified.\nDo you want to save your changes or discard them ?')
+                ' parts have been modified.') + '\n' + tr('Do you want to save your changes or discard them ?')
 
 
             answer = QMessageBox.question(self, title, msg, \
@@ -647,7 +659,7 @@ class KrisGui(QMainWindow):
             self.txt_in.setPlainText('')
             self.txt_out.setPlainText('')
 
-        self.statusbar.showMessage(tr('Text editors cleared !'), 3000)
+            self.statusbar.showMessage(tr('Text editors cleared !'), 3000)
 
 
     def open(self, filename=False):
@@ -730,7 +742,7 @@ class KrisGui(QMainWindow):
             txt = self.txt_in.toPlainText()
 
             if self.fn_in == None or as_:
-                fn = QFileDialog.getSaveFileName(self, tr('Save file') + ' - KRIS', getcwd(), tr('Text files(*.txt);;All files(*)'))[0]
+                fn = QFileDialog.getSaveFileName(self, tr('Save') + ' ' + tr('Input text') + ' - KRIS', getcwd(), tr('Text files(*.txt);;All files(*)'))[0]
                 self.fn_in = fn
 
             else:
@@ -740,7 +752,7 @@ class KrisGui(QMainWindow):
             txt = self.txt_out.toPlainText()
 
             if self.fn_out == None or as_:
-                fn = QFileDialog.getSaveFileName(self, tr('Save file') + ' - KRIS', getcwd(), tr('Text files(*.txt);;All files(*)'))[0]
+                fn = QFileDialog.getSaveFileName(self, tr('Save') + ' ' + tr('Output text') + ' - KRIS', getcwd(), tr('Text files(*.txt);;All files(*)'))[0]
                 self.fn_out = fn
 
             else:
@@ -765,6 +777,71 @@ class KrisGui(QMainWindow):
         self.statusbar.showMessage(tr('{} saved in file "{}" !').format(t, fn.split('/')[-1]), 3000)
 
 
+    def show_help(self):
+        '''Show help using Popup.'''
+
+        help_ = '<center><h1>KRIS_v{} — {}</h1></center>\n'.format(kris_version, tr('Help'))
+
+        help_ += tr('KRIS is a simple software that allow to encrypt some text. The UI is in three main parts : the text editor (at center), the cipher toolbar (top), and the output (bottom).')
+
+        help_ += '<h2>{}</h2>'.format(tr('Ciphers'))
+        help_ += '<p>{}</p>'.format(tr('In KRIS, there are three types of cryptographic function : the symetric ciphers, the asymetric ciphers, and the hash functions.'))
+
+        help_ += '<p>{}</p>'.format(tr('The symetric ciphers (AES-256, AES-192, AES-256) use the same key to encrypt and decrypt. They are faster than the asymetric ciphers (RSA).'))
+        help_ += '<p>{}</p>'.format(tr('The asymetric ciphers uses key pairs : one public and available key to encrypt, and one private and safely kept key to decrypt. With these ciphers, anyone can send an encrypted message to a person, and only that person can decrypt it. It is not needed to share a secret (the key) with the recipent. Since RSA is a lot slower than AES, KRIS cipher is a mix of both : it generate a random AES key, encrypt the message with this key, and encrypt the AES key with RSA.'))
+        help_ += '<p>{}</p>'.format(tr('The hash functions calculate a unique fingerprint for every text. The output has a fixed length, and totaly changes if there is even a small change in the input. It is not possible to get the clear text from a hash (or try to hash word per word). It is used to check the integrity of documents, and to store passwords.'))
+
+        help_ += '<h2>{}</h2>'.format(tr('Encryption'))
+        help_ += '<p>{}</p>'.format(tr('To encrypt some text, first select the cipher (in the cipher toolbar, at right), and then choose your key. You can thereafter press the Encrypt button, or use the shortcut Ctrl+E. The output appears in the bottom text viewer.'))
+        #help_ += '<p></p>'
+
+        help_ += '<h2>{}</h2>'.format(tr('Decryption'))
+        help_ += '<p>{}</p>'.format(tr('To decrypt text, simply paste the cipher text in the text editor, and if it is formatted, you can just press the button Decrypt (or use the shortcut Ctrl+Shift+E). The cipher and key is automaticly detected if the cipher is `KRIS-*` or `RSA`. Otherwise, you need to select the cipher and enter the key before clicking on Decrypt.'))
+
+        help_ += '<h2>{}</h2>'.format(tr('File menu'))
+        help_ += '<p>{}</p>'.format(tr('The File menu allow you to open and save text documents. The input and output parts are saved in different files (Ctrl+S to save input (main editor), Ctrl+D to save output).'))
+
+        help_ += '<h2>{}</h2>'.format(tr('Edit menu'))
+        help_ += '<p>{}</p>'.format(tr('The Edit menu allow you to undo (Ctrl+Z) and redo (Ctrl+Shit+Z) actions in the editor. You can also swap texts (Ctrl+W) to toggle input and output texts, clear output, activate or not Formatted Output (set the output text in a good form) and Auto Decrypt (automaticly detect cipher and key while decrypting).'))
+
+        help_ += '<h2>{}</h2>'.format(tr('View menu'))
+        help_ += '<p>{}</p>'.format(tr('The View menu allow you to show or hide the output text, and to resize the window to its original size.'))
+
+        help_ += '<h2>{}</h2>'.format(tr('Keys menu'))
+        help_ += '<p>{}</p>'.format(tr('The Keys menu allow you to manage your RSA keys. You can get information on them (Ctrl+I), generate new ones (Ctrl+G), export the public key to share it (the file to share is in `KRIS/Data/RSA_keys` directory, with the extention `.pbk-h` or `.pbk-d`), rename keys.'))
+
+        help_ += '<br>'
+        help_ += '<p>{} : https://github.com/lasercata/KRIS</p>'.format(tr('More information on the GitHub repository'))
+
+
+        bt_repo = QPushButton('Open repo')
+        bt_repo.clicked.connect(lambda: webbrowser.open_new_tab('https://github.com/lasercata/KRIS'))
+
+        p = Popup(bt_align='right', parent=self)
+        p.main_lay.addWidget(bt_repo, 1, 0, Qt.AlignLeft)
+        p.pop(tr('Help') + ' — KRIS', help_, html=True)
+
+
+    def show_about(self):
+        '''Show the about popup.'''
+
+        about = '<center><h1>KRIS_v{}</h1></center>\n'.format(kris_version)
+
+        about += tr('KRIS is an open source software that implements secure ciphers in a GUI. It allow to encrypt, decrypt, sign, and hash text.')
+
+        about += '<h2>{}</h2>'.format(tr('Authors'))
+        about += '<p>Lasercata (https://github.com/lasercata)</p>'
+        about += '<p>Elerias (https://github.com/EleriasQueflunn)</p>'
+        about += '<br>'
+        about += '<p>{} : https://github.com/lasercata/KRIS</p>'.format(tr('More information on the GitHub repository'))
+
+
+        bt_repo = QPushButton('Open repo')
+        bt_repo.clicked.connect(lambda: webbrowser.open_new_tab('https://github.com/lasercata/KRIS'))
+
+        p = Popup(bt_align='right', parent=self)
+        p.main_lay.addWidget(bt_repo, 1, 0, Qt.AlignLeft)
+        p.pop(tr('About') + ' — KRIS', about, html=True)
 
 
 
@@ -1404,7 +1481,7 @@ class GenKeyWin(QMainWindow):
     def _show_key(self, ciph, key):
         '''Show the key using Popup.'''
 
-        Popup('{} key — KRIS'.format(ciph), str(key), parent=self)
+        Popup(500, 100, parent=self).pop('{} key — KRIS'.format(ciph), str(key))
 
 
     def use(style, parent=None):
@@ -1580,7 +1657,7 @@ class InfoKeyWin(QMainWindow):
 
             prnt += '\n\tPublic key : ' + str(pbk) + '.'
 
-        Popup('Info on {}'.format(k_name), prnt, parent=self)
+        Popup(parent=self).pop('Info on {}'.format(k_name), prnt)
 
 
     def use(style, parent=None):
@@ -1860,7 +1937,13 @@ class UseCiphers:
                 key = RSA.RsaKeys(self.key_opt.currentText(), interface='gui').read(md)
 
             except Exception as err:
-                QMessageBox.critical(None, '!!! Error !!!', '<h2>{}</h2>'.format(err))
+                if str(err) == "Can't read the private key of a pbk set of keys !!!":
+                    msg_err = '<h2>' + tr('Impossible to do this, private keys not found.') + '</h2>'
+
+                else:
+                    msg_err = '<h2>{}</h2>'.format(err)
+
+                QMessageBox.critical(None, '!!! Error !!!', msg_err)
                 return -3 #Abort
 
         elif ciph == 'SecHash':
@@ -1873,7 +1956,7 @@ class UseCiphers:
         return key
 
 
-    def encrypt(self, formated_out=True):
+    def encrypt(self, formatted_out=True):
         '''Encrypt the text, using the informations given in init.'''
 
         #------check
@@ -1883,18 +1966,18 @@ class UseCiphers:
         #------ini
         txt = self.txt_in.toPlainText()
         if txt in ('', '\n'):
-            QMessageBox.critical(None, '!!! No text !!!', '<h2>There is nothing to encrypt.</h2>')
+            QMessageBox.critical(None, '!!! ' + tr('No text') + ' !!!', '<h2>' + tr('There is nothing to encrypt.') + '</h2>')
             return -3 #Abort
 
         ciph = self.cipher.currentText()
         encod = self.encod.currentText()
         #bytes_md = self.txt_d.get_bytes()
 
-        if ciph != 'RSA signature':
-            key = self._get_key(0)
+        if ciph == 'RSA signature':
+            key = self._get_key(1)
 
         else:
-            key = self._get_key(1)
+            key = self._get_key(0)
 
         if key == -3:
             return -3 #Abort
@@ -1917,7 +2000,12 @@ class UseCiphers:
 
         elif ciph == 'RSA signature':
             C = RSA.RsaSign((None, key), interface='gui')
-            msg_c = C.str_sign(txt)
+
+            if formatted_out:
+                msg_c = C.str_sign(txt)
+
+            else:
+                msg_c = txt + ' ' + C.sign(txt)
 
 
         elif  ciph in ciphers_list['AES']:
@@ -1954,15 +2042,28 @@ class UseCiphers:
                 return -3
 
 
-        if ciph in (*ciphers_list['KRIS'], *ciphers_list['AES'], *ciphers_list['RSA']) and formated_out:
-            msg_f = FormatMsg(msg_c).set(ciph, 'KRIS_v' + kris_version)
+        if formatted_out and ciph in (*ciphers_list['KRIS'], *ciphers_list['AES'], *ciphers_list['RSA']):
+            if ciph == 'RSA signature':
+                d = {'Version': 'KRIS_v' + kris_version, 'Cipher': ciph, 'Hash': C.h, 'Key_name': self.key_opt.currentText()}
+                msg_f = FormatMsg(msg_c, nl=False, md='sign').set(d)
+
+            else: #ciph in (*ciphers_list['KRIS'], *ciphers_list['AES'], 'RSA'):
+                d = {'Version': 'KRIS_v' + kris_version, 'Cipher': ciph}
+
+                if ciph in (*ciphers_list['KRIS'], 'RSA'):
+                    d['Key_name'] = self.key_opt.currentText()
+
+                msg_f = FormatMsg(msg_c).set(d)
+
             self.txt_out.setPlainText(msg_f)
+            win.out_toolbar.setVisible(True)
 
         else:
             self.txt_out.setPlainText(msg_c)
+            win.out_toolbar.setVisible(True)
 
 
-    def decrypt(self):
+    def decrypt(self, auto=True):
         '''Decrypt the text, using the informations given in init.'''
 
         global win
@@ -1970,21 +2071,45 @@ class UseCiphers:
         #------ini
         raw_txt = self.txt_in.toPlainText()
         if raw_txt in ('', '\n'):
-            QMessageBox.critical(None, '!!! No text !!!', '<h2>There is nothing to decrypt.</h2>')
+            QMessageBox.critical(None, '!!! No text !!!', '<h2>' + tr('There is nothing to decrypt.') + '</h2>')
             return -3 #Abort
 
         #------FormatMsg
         try:
-            txt, ciph = FormatMsg(raw_txt).unset()[:-1] #don't take version
+            txt, d = FormatMsg(raw_txt).unset()
+            formatted_out = True
 
         except ValueError:
             txt = raw_txt
             ciph = self.cipher.currentText()
+            h = None
+            formatted_out = False
 
         else:
-            if self.cipher.currentText() == tr('-- Select a cipher --'):
-                self.cipher.setCurrentText(ciph)
-                win.ciph_bar.chk_ciph(ciph)
+            if d['Cipher'] == 'RSA signature':
+                txt, d = FormatMsg(raw_txt, nl=False).unset()
+
+            if 'Hash' in d:
+                h = d['Hash']
+
+            else:
+                h = None
+
+            if auto:
+                self.cipher.setCurrentText(d['Cipher'])
+                win.ciph_bar.chk_ciph(d['Cipher'])
+
+                ciph = d['Cipher']
+
+                if 'Key_name' in d:
+                    if d['Key_name'] in RSA.list_keys('all'):
+                        self.key_opt.setCurrentText(d['Key_name'])
+
+                    else:
+                        QMessageBox.critical(None, '!!! {} !!!'.format(tr('Not found')), '<h2>{}</h2>'.format(tr('Key not found.')))
+
+            else:
+                ciph = self.cipher.currentText()
 
 
         #------check
@@ -1995,11 +2120,11 @@ class UseCiphers:
         bytes_md = 't' #self.txt_e.get_bytes()
         bytes_md_d = 't' #self.txt_d.get_bytes()
 
-        if ciph != 'RSA signature':
-            key = self._get_key(1)
+        if ciph == 'RSA signature':
+            key = self._get_key(0)
 
         else:
-            key = self._get_key(0)
+            key = self._get_key(1)
 
         if key == -3:
             return -3 #Abort
@@ -2028,14 +2153,25 @@ class UseCiphers:
 
 
             elif ciph == 'RSA signature':
-                C = RSA.RsaSign((key, None), interface='gui')
-                if C.str_check(txt):
-                    QMessageBox.about(None, 'Signature result', '<h2>The signature match to the message.</h2>')
+                if h == None:
+                    C = RSA.RsaSign((key, None), interface='gui')
 
                 else:
-                    QMessageBox.about(None, 'Signature result', '<h2>The signature does not match to the message !</h2>\n<h3>You may not have selected the right RSA key, or the message was modified before you received it !!!</h3>')
+                    C = RSA.RsaSign((key, None), h, interface='gui')
 
-                return None
+                if formatted_out:
+                    b = C.str_check(txt)
+
+                else:
+                    b = C.check(*txt.split(' '))
+
+                if b:
+                    msg_d = tr('The signature match to the message.')
+                    QMessageBox.about(None, tr('Signature result'), '<h2>' + msg_d + '</h2>')
+
+                else:
+                    msg_d = tr('The signature does not match to the message !') + '\n' + tr('You may not have selected the right RSA key, or the message was modified before you received it !!!')
+                    QMessageBox.about(None, tr('Signature result'), '<h2>' + tr('The signature does not match to the message !') + '</h2>\n<h3>' + tr('You may not have selected the right RSA key, or the message was modified before you received it !!!') + '</h3>')
 
 
             elif  ciph in ciphers_list['AES']:
@@ -2046,10 +2182,11 @@ class UseCiphers:
                 msg_d = C.decryptText(txt, encoding=encod, mode_c='hexa', mode=md)
 
         except Exception as err:
-            QMessageBox.critical(None, '!!! Decryption error !!!', '<h2>An error occured during decryption. Maybe you tried to decrypt clear text, or the cipher text is not good formated.</h2>\n<h3>The text to be decrypted should be in the main text editor.</h3>\n<h4>Error :</h4>{}'.format(err))
+            QMessageBox.critical(None, '!!! ' + tr('Decryption error') + ' !!!', '<h2>' + tr('An error occured during decryption. Maybe you tried to decrypt clear text, or the cipher text is not good formated.') + '</h2>\n<h3>' + tr('The text to be decrypted should be in the main text editor.') + '</h3>\n<h4>' + tr('Error') + ' :</h4>{}'.format(err))
             return -3 # Abort
 
         self.txt_out.setPlainText(msg_d)
+        win.out_toolbar.setVisible(True)
 
 
 #---------Settings
