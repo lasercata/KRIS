@@ -376,7 +376,7 @@ Paramètres
 &Verrouiller
 &Quitter
 &Accueil
-Chiffrements
+Chiffres
 Répertoire courant :
 Appliquer
 Chercher
@@ -439,6 +439,8 @@ En&registrer la sortie sous
 E&ffacer la sortie
 &Sortie formatée
 Met le texte chiffré dans une bonne forme.
+&Déchiffrement Automatique
+Sélectionne automatiquement le chiffre et la clé (si le message est formaté).
 &Affichage
 &Voir la sortie
 &Redimensionner à la taille originale
@@ -451,6 +453,8 @@ Met le texte chiffré dans une bonne forme.
 Recharger &la boite
 &Paramètres
 &Configurer KRIS ...
+&Aide
+À &propos
 {} mots, {} caractères.
 Enregistré
 Sortie non enregistrée
@@ -492,3 +496,39 @@ L'écraser !?
 Cette action ne peut PAS être annulée !!!
 Vos nouvelles clés RSA "{}" sont prêtes !
 Taille du `n`: {} bits
+Sortie nettoyée !
+Il n'y a rien à chiffrer.
+Il n'y a rien à déchiffrer.
+Pas de texte
+Impossble de faire cela, les clés privés n'ont pas été trouvées.
+Résultat de la signature
+La signature correspond au message.
+La signature ne correspond pas au message !
+Vous n'avez peut-être pas sélectionné la bonne clé RSA, ou alors le message a été modifié avant que vous l'ayez reçut !!!
+Erreur de déchiffrement
+Une erreur est survenue lors du déchiffrement. Peut-être avez-vous essayé de déchiffrer le texte clair, ou alors le texte chiffré n'est pas bien formaté.
+Le texte à déchiffrer doit être dans l'éditeur principal.
+Non trouvé
+Clé non trouvée.
+KRIS est un logiciel open source qui met en œuvre des chiffres sécurisés dans une interface graphique. Il permet de chiffer ("crypter"), déchiffrer, signer, et de calculer l'empreinte d'un texte.
+Auteurs
+Aide
+À propos
+Plus d'informations sur le dépôt GitHub
+KRIS est un simple logiciel qui permet de chiffer du texte. L'interface est en trois parties principales : l'éditeur de texte (au centre), la barre d'outils pour le chiffrement (en haut), et la sortie (en bas).
+Dans KRIS, il y a trois types de fonctions cryptographiques : les chiffres symétriques, les chiffres asymétriques, et les fonctions de hachage.
+Les chiffres symétriques (AES-256, AES-192, AES-256) utilisent la même clé pour chiffer et pour déchiffrer. Ils sont plus rapides que les chiffres asymétriques (RSA).
+Les chiffres asymétriques utilisent des paires de clés : une clé publique et disponible pour chiffrer, et une clé privée et bien gardée pour déchiffrer. Avec ces chiffres, tout le monde peut envoyer un message à une personne, et seulement cette personne pourra le déchiffrer. Il n'y a pas besoin de partager un secret (la clé) avec le destinataire. Comme RSA est largement plus lent que AES, le chiffre KRIS est un mix des deux : il génère une clé AES aléatoirement, chiffre le texte avec cette clé, et enfin chiffre la clé AES avec RSA.
+Les fonctions de hachage calculent une unique empreinte pour chaque entrée. La sortie est de taille fixée, et le moindre changement sur le texte d'entrée change totalement la sortie. Il n'est pas possible de revenir en arrière à partir d'un hash (à moins d'essayer de hasher mot par mot). Les hashes sont utilisés pour vérifier l'intégrité de documents, et pour enregistrer les mots de passe.
+Chiffrement
+Pour chiffrer du texte, d'abord sélectionnez le chiffre (dans la barre d'outils de chiffrement, à droite), puis choisissez la clé. Vous pouvez ensuite appuyer sur le bouton Chiffer ou utiliser le raccourci Ctrl+E. La sortie apparaît dans visionneur de texte en bas.
+Déchiffrement
+Pour déchiffrer du texte, il faut simplement coller le texte dans l'éditeur principal, et si le texte est formaté, il suffit d'appuyer sur le bouton Déchiffrer (ou utiliser le raccourci Ctrl+Shift+E). Le chiffre est automatiquement détecté, tout comme la clé, si le chiffre est `KRIS-*` ou `RSA`. Sinon, il faut choisir le chiffre et entrer la clé avant de cliquer sur Déchiffrer.
+Menu Fichier
+Le menu Fichier permet d'ouvrir et de sauvegarder des documents texte. La partie entrée (éditeur principal) et sortie sont sauvegardées dans des fichiers différents (Ctrl+S pour sauvegarder l'entrée, Ctrl+D pour sauvegarder la sortie).
+Menu Édition
+Le menu Édition permet de défaire (Ctrl+Z) et refaire (Ctrl+Shift+Z) les actions dans l'éditeur. Il permet aussi d'échanger les textes d'entré et de sortie (Ctrl+W), de nettoyer la sortie, d'activer ou de désactiver le formatage de sortie (met le texte dans une bonne forme) et le déchiffrement automatique (détecte automatiquement le chiffre et la clé lors du déchiffrement).
+Menu Affichage
+Le menu Affichage permet de montrer ou de cacher la sortie, et de redimensionner la fenêtre à sa taille originale.
+Menu Clés
+Le menu Clés permet de gérer vos clés RSA. Vous pouvez obtenir des informations sur elles (Ctrl+I), en générer de nouvelles (Ctrl+G), exporter la clé publique pour la partager (le fichier est dans le répertoire `KRIS/Data/RSA_keys`, avec l'extension `.pbk-h` ou `.pbk-d`), rennomer des clés.

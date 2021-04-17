@@ -439,6 +439,8 @@ Toggle input text and output text.
 &Clear output
 &Formatted Output
 Set the encrypted text in a good form.
+&Auto Decrypt
+Select automaticly the cipher and the key (if message formatted).
 &View
 &Show Output
 &Resize to original size
@@ -451,6 +453,8 @@ Set the encrypted text in a good form.
 Re&load box
 &Settings
 &Configure KRIS ...
+&Help
+&About
 {} words, {} chars.
 Saved
 Output unsaved
@@ -492,3 +496,39 @@ Overwite it !?
 This action can NOT be undone !!!
 Your brand new RSA keys "{}" are ready !
 `n` size : {} bits
+Output cleared !
+There is nothing to encrypt.
+There is nothing to decrypt.
+No text
+Impossible to do this, private keys not found.
+Signature result
+The signature match to the message.
+The signature does not match to the message !
+You may not have selected the right RSA key, or the message was modified before you received it !!!
+Decryption error
+An error occured during decryption. Maybe you tried to decrypt clear text, or the cipher text is not good formated.
+The text to be decrypted should be in the main text editor.
+Not found
+Key not found.
+KRIS is an open source software that implements secure ciphers in a GUI. It allow to encrypt, decrypt, sign, and hash text.
+Authors
+Help
+About
+More information on the GitHub repository
+KRIS is a simple software that allow to encrypt some text. The UI is in three main parts : the text editor (at center), the cipher toolbar (top), and the output (bottom).
+In KRIS, there are three types of cryptographic function : the symetric ciphers, the asymetric ciphers, and the hash functions.
+The symetric ciphers (AES-256, AES-192, AES-256) use the same key to encrypt and decrypt. They are faster than the asymetric ciphers (RSA).
+The asymetric ciphers uses key pairs : one public and available key to encrypt, and one private and safely kept key to decrypt. With these ciphers, anyone can send an encrypted message to a person, and only that person can decrypt it. It is not needed to share a secret (the key) with the recipent. Since RSA is a lot slower than AES, KRIS cipher is a mix of both : it generate a random AES key, encrypt the message with this key, and encrypt the AES key with RSA.
+The hash functions calculate a unique fingerprint for every text. The output has a fixed length, and totaly changes if there is even a small change in the input. It is not possible to get the clear text from a hash (or try to hash word per word). It is used to check the integrity of documents, and to store passwords.
+Encryption
+To encrypt some text, first select the cipher (in the cipher toolbar, at right), and then choose your key. You can thereafter press the Encrypt button, or use the shortcut Ctrl+E. The output appears in the bottom text viewer.
+Decryption
+To decrypt text, simply paste the cipher text in the text editor, and if it is formatted, you can just press the button Decrypt (or use the shortcut Ctrl+Shift+E). The cipher and key is automaticly detected if the cipher is `KRIS-*` or `RSA`. Otherwise, you need to select the cipher and enter the key before clicking on Decrypt.
+File menu
+The File menu allow you to open and save text documents. The input and output parts are saved in different files (Ctrl+S to save input (main editor), Ctrl+D to save output).
+Edit menu
+The Edit menu allow you to undo (Ctrl+Z) and redo (Ctrl+Shit+Z) actions in the editor. You can also swap texts (Ctrl+W) to toggle input and output texts, clear output, activate or not Formatted Output (set the output text in a good form) and Auto Decrypt (automaticly detect cipher and key while decrypting).
+View menu
+The View menu allow you to show or hide the output text, and to resize the window to its original size.
+Keys menu
+The Keys menu allow you to manage your RSA keys. You can get information on them (Ctrl+I), generate new ones (Ctrl+G), export the public key to share it (the file to share is in `KRIS/Data/RSA_keys` directory, with the extention `.pbk-h` or `.pbk-d`), rename keys.
