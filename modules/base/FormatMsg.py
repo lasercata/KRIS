@@ -4,8 +4,8 @@
 '''Format output from cryptographic functions.'''
 
 FormatMsg__auth = 'Lasercata'
-FormatMsg__last_update = '11.04.2021'
-FormatMsg__version = '1.0'
+FormatMsg__last_update = '15.04.2021'
+FormatMsg__version = '1.1'
 
 ##-import
 from modules.base.base_functions import NewLine
@@ -26,25 +26,53 @@ ciphers_list = {
 class FormatMsg:
     '''Format output from KRIS ciphers.'''
 
-    def __init__(self, msg):
+    def __init__(self, msg, nl=True, md='msg'):
         '''
         Initiate FormatMsg.
 
-        - msg : the message text.
+        - msg : the message text ;
+        - nl : a bool indicating if use NewLine (False used with RSA signature) ;
+        - md : in ('msg', 'sign'). Indicate the BEGIN and END text.
         '''
 
+        if md not in ('msg', 'sign'):
+            raise ValueError('The argument `md` is not in ("msg", "sign"). found "{}".'.format(md))
+
         self.msg = msg
+        self.nl = nl
+
+        if md == 'msg':
+            self.begin = '------BEGIN KRIS MESSAGE------\n'
+            self.end = '\n------END KRIS MESSAGE------'
+
+        else:
+            self.begin = '------BEGIN KRIS SIGNED MESSAGE------\n'
+            self.end = '\n------END KRIS SIGNED MESSAGE------'
 
 
-    def set(self, cipher_name, kris_version):
-        '''Format the message msg.'''
+    def set(self, dct):
+        '''
+        Format the message msg.
 
-        if cipher_name not in (*ciphers_list['KRIS'], *ciphers_list['AES'], *ciphers_list['RSA']):
-            raise ValueError('The argument `cipher_name` is not correct.')
+        - dct : a dict of the form {'Arg': 'value', ...}
+        '''
 
-        ret = '------BEGIN KRIS MESSAGE------\nVersion: {}\nCipher: {}\n---\n'.format(kris_version, cipher_name)
-        ret += NewLine(64).set(self.msg)
-        ret += '\n------END KRIS MESSAGE------'
+        if ('Cipher' not in dct) or ('Version' not in dct):
+            raise ValueError('The dict `dct` should contain at least "Cipher" and "Version".')
+
+        ret = self.begin
+
+        for k in dct:
+            ret += '{}: {}\n'.format(k, dct[k])
+
+        ret += '---\n'
+        if self.nl:
+            ret += NewLine(64).set(self.msg)
+
+        else:
+            ret += self.msg
+
+        ret += self.end
 
         return ret
 
@@ -53,58 +81,33 @@ class FormatMsg:
         '''
         Get data from formated message
         Return :
-            msg, cipher, version
+            msg, dct
         '''
 
         if False in [k in self.msg for k in ('------BEGIN KRIS MESSAGE------\n', 'Version: ', 'Cipher: ', '---\n', '\n------END KRIS MESSAGE------')]:
-            raise ValueError('FormatMsg: The message is not well formated')
+            if False not in [k in self.msg for k in ('------BEGIN KRIS SIGNED MESSAGE------\n', 'Version: ', 'Cipher: ', '---\n', '\n------END KRIS SIGNED MESSAGE------')]:
+                self.begin = '------BEGIN KRIS SIGNED MESSAGE------\n'
+                self.end = '\n------END KRIS SIGNED MESSAGE------'
 
-        begin = self.msg.find('------BEGIN KRIS MESSAGE------\n') + len('------BEGIN KRIS MESSAGE------\n')
-        end = self.msg.find('\n------END KRIS MESSAGE------')
+            else:
+                raise ValueError('FormatMsg: The message is not well formatted')
 
+        begin = self.msg.find(self.begin) + len(self.begin)
+        end_args = self.msg.find('\n---\n')
+        end = self.msg.find(self.end)
+
+        args = self.msg[begin:end_args]
         msg_body = self.msg[begin:end]
 
-        for k in msg_body.split('\n'):
-            if 'Version: ' in k:
-                version = k.replace('Version: ', '')
+        dct = {}
+        for k in args.split('\n'):
+            a, b = k.split(': ')
+            dct[a] = b
 
-            elif 'Cipher: ' in k:
-                ciph = k.replace('Cipher: ', '')
+        msg = msg_body[msg_body.find('---\n') + 4:]
 
-        if ciph not in (*ciphers_list['KRIS'], *ciphers_list['AES'], *ciphers_list['RSA']):
-            raise ValueError('FormatMsg: The message is not well formated')
+        if self.nl:
+            msg = msg.replace('\n', '')
 
-        msg = msg_body[msg_body.find('---\n') + 4:].replace('\n', '')
-
-        return msg, ciph, version
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+        return msg, dct
 
