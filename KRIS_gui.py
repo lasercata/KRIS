@@ -4,8 +4,8 @@
 '''Launch KRIS with PyQt5 graphical interface. It is a part of Cracker.'''
 
 KRIS_gui__auth = 'Lasercata'
-KRIS_gui__last_update = '16.04.2021'
-KRIS_gui__version = '2.1'
+KRIS_gui__last_update = '21.04.2021'
+KRIS_gui__version = '2.2'
 
 # Note : there may still be parts of code which are useless in this file
 # and maybe some imported modules too (TextEditor, ...).
@@ -23,11 +23,12 @@ from PyQt5.QtWidgets import (QApplication, QMainWindow, QComboBox, QStyleFactory
     QLabel, QGridLayout, QLineEdit, QMessageBox, QWidget, QPushButton, QCheckBox,
     QHBoxLayout, QVBoxLayout, QGroupBox, QTabWidget, QTableWidget, QFileDialog,
     QRadioButton, QTextEdit, QButtonGroup, QSizePolicy, QSpinBox, QFormLayout,
-    QSlider, QMenuBar, QMenu, QPlainTextEdit, QAction, QToolBar, QShortcut)
+    QSlider, QMenuBar, QMenu, QPlainTextEdit, QAction, QToolBar, QShortcut, QDialog)
 
 #------other
 from os import chdir, getcwd
 from os.path import isfile
+from shutil import copy
 import sys
 
 from ast import literal_eval #safer than eval
@@ -42,6 +43,7 @@ try:
 
     from modules.base.base_functions import *
     from modules.base.progress_bars import *
+    # from modules.base.AskPwd import AskPwd
 
     from modules.base.gui.lock_gui import Lock
     from modules.base.gui.GuiStyle import GuiStyle
@@ -403,6 +405,28 @@ class KrisGui(QMainWindow):
         self.cvrt_k_ac.triggered.connect(lambda: CvrtKeyWin.use(self.style, parent=self))
         self.keys_m.addAction(self.cvrt_k_ac)
 
+        self.keys_m.addSeparator()
+
+        #-Encrypt
+        self.enc_k_ac = QAction(tr('E&ncrypt ...'), self)
+        #self.enc_k_ac.setShortcut('Ctrl+R')
+        self.enc_k_ac.triggered.connect(lambda: EncKeyWin.use(self.style, parent=self))
+        self.keys_m.addAction(self.enc_k_ac)
+
+        #-Decrypt
+        self.dec_k_ac = QAction(tr('&Decrypt ...'), self)
+        #self.dec_k_ac.setShortcut('Ctrl+R')
+        self.dec_k_ac.triggered.connect(lambda: DecKeyWin.use(self.style, parent=self))
+        self.keys_m.addAction(self.dec_k_ac)
+
+        #-Change password
+        self.chg_pwd_k_ac = QAction(tr('C&hange password ...'), self)
+        #self.chg_pwd_k_ac.setShortcut('Ctrl+R')
+        self.chg_pwd_k_ac.triggered.connect(lambda: ChPwdKeyWin.use(self.style, parent=self))
+        self.keys_m.addAction(self.chg_pwd_k_ac)
+
+        self.keys_m.addSeparator()
+
         #-Reload box
         self.reload_k_ac = QAction(tr('Re&load box'), self)
         #self.reload_k_ac.setShortcut('Ctrl+R')
@@ -413,6 +437,19 @@ class KrisGui(QMainWindow):
         #---Settings
         self.settings_m = menu_bar.addMenu(tr('&Settings'))
 
+        #-Theme
+        self.theme_m = QMenu(tr('Color &Scheme'), self)
+        self.settings_m.addMenu(self.theme_m)
+
+        #-Themes
+        self.style_dct = {}
+        for k in self.app_style.main_styles:
+            self.style_dct[k] = QAction(k, self)
+            self.style_dct[k].triggered.connect(self._set_style) #lambda: self.app_style.set_style(k))
+            self.theme_m.addAction(self.style_dct[k])
+
+        self.settings_m.addSeparator()
+
         #-Configure KRIS
         self.config_ac = QAction(tr('&Configure KRIS ...'), self)
         self.config_ac.setShortcut('Ctrl+R')
@@ -421,7 +458,7 @@ class KrisGui(QMainWindow):
 
 
         #---Help
-        self.help_m = menu_bar.addMenu('&Help')
+        self.help_m = menu_bar.addMenu(tr('&Help'))
 
         #-Help
         self.help_ac = QAction(tr('&Help'), self)
@@ -434,6 +471,12 @@ class KrisGui(QMainWindow):
         self.about_ac.setShortcut('Shift+F1')
         self.about_ac.triggered.connect(self.show_about)
         self.help_m.addAction(self.about_ac)
+
+
+    def _set_style(self, a=False):
+        '''Used with the menu to set the style.'''
+
+        self.app_style.set_style(self.sender().text())
 
 
     def _create_ciph_toolbar(self):
@@ -674,11 +717,11 @@ class KrisGui(QMainWindow):
             None otherwise.
         '''
 
-        if not self._msg_box_save(part='in', title=tr('Open - KRIS')):
+        if not self._msg_box_save(part='in', title=tr('Open — KRIS')):
             return -3
 
         if filename == False:
-            fn = QFileDialog.getOpenFileName(self, tr('Open file') + ' - KRIS')[0]#, getcwd())[0]
+            fn = QFileDialog.getOpenFileName(self, tr('Open file') + ' — KRIS')[0]#, getcwd())[0]
 
             if fn in ((), ''):
                 return -3 #Canceled
@@ -742,7 +785,7 @@ class KrisGui(QMainWindow):
             txt = self.txt_in.toPlainText()
 
             if self.fn_in == None or as_:
-                fn = QFileDialog.getSaveFileName(self, tr('Save') + ' ' + tr('Input text') + ' - KRIS', getcwd(), tr('Text files(*.txt);;All files(*)'))[0]
+                fn = QFileDialog.getSaveFileName(self, tr('Save') + ' ' + tr('Input text') + ' — KRIS', getcwd(), tr('Text files(*.txt);;All files(*)'))[0]
                 self.fn_in = fn
 
             else:
@@ -856,11 +899,6 @@ class KrisGui(QMainWindow):
             if not self.locker.is_locked():
                 self.setDisabled(False)
 
-                global RSA_keys_pwd
-                RSA_keys_pwd = self.locker.get_RSA_keys_pwd()
-
-                RSA.SecureRsaKeys(RSA_keys_pwd, interface='gui').decrypt()
-
                 #---Show 'Ready' in status bar
                 self.statusbar.showMessage(tr('Ready !'), 3000)
 
@@ -884,13 +922,10 @@ class KrisGui(QMainWindow):
             return -3
 
         if event not in (None, True, False):
-            RSA.SecureRsaKeys(RSA_keys_pwd, 'gui').rm_clear()
             event.accept()
 
         else:
-            RSA.SecureRsaKeys(RSA_keys_pwd, 'gui').rm_clear()
             app.quit()
-            #todo: use app.close() ? what differences ?
 
 
     def closeEvent(self, event=None):
@@ -1063,7 +1098,7 @@ class CipherKeyWidget(QGroupBox):
 
 
 
-class SettingsWin(QMainWindow):
+class SettingsWin(QDialog): #QMainWindow):
     '''Defining the Settings window.'''
 
     def __init__(self, style, app_style, parent=None):
@@ -1084,11 +1119,12 @@ class SettingsWin(QMainWindow):
         '''Create the widgets'''
 
         #------ini
-        tab_stng = QWidget()
+        #tab_stng = QWidget()
 
         tab_stng_lay = QGridLayout()
         tab_stng_lay.setContentsMargins(5, 5, 5, 5)
-        tab_stng.setLayout(tab_stng_lay)
+        # tab_stng.setLayout(tab_stng_lay)
+        self.setLayout(tab_stng_lay)
 
         #------widgets
         #---main style
@@ -1125,78 +1161,78 @@ class SettingsWin(QMainWindow):
         main_style_lay.addWidget(self.main_style_std_chkb)
 
 
-        #---change password
-        #-chk function
-        def chk_pwd_shown():
-            '''Actualise if the password needs to be shown.'''
-
-            for k in dct_cb:
-                if k.isChecked():
-                    dct_cb[k].setEchoMode(QLineEdit.Normal)
-
-                else:
-                    dct_cb[k].setEchoMode(QLineEdit.Password)
-
-        #-ini
-        self.stng_pwd_grp = QGroupBox(tr('Change password'))
-        self.stng_pwd_grp.setMaximumSize(600, 200)
-        self.stng_pwd_grp.setMinimumSize(500, 200)
-        stng_pwd_lay = QGridLayout()
-        self.stng_pwd_grp.setLayout(stng_pwd_lay)
-
-        tab_stng_lay.addWidget(self.stng_pwd_grp, 0, 1, 2, 1)#, Qt.AlignRight)
-
-        #-form widgets (ask for pwd)
-        stng_pwd_form_lay = QFormLayout()
-        stng_pwd_lay.addLayout(stng_pwd_form_lay, 0, 0)
-
-        self.stng_old_pwd = QLineEdit()
-        self.stng_old_pwd.setMinimumSize(250, 0)
-        self.stng_old_pwd.setEchoMode(QLineEdit.Password) # don't show pwd
-        stng_pwd_form_lay.addRow(tr('Old password :'), self.stng_old_pwd)
-
-        self.stng_pwd1 = QLineEdit()
-        self.stng_pwd1.setMinimumSize(250, 0)
-        self.stng_pwd1.setEchoMode(QLineEdit.Password)
-        stng_pwd_form_lay.addRow(tr('New password :'), self.stng_pwd1)
-
-        self.stng_pwd2 = QLineEdit()
-        self.stng_pwd2.setMinimumSize(250, 0)
-        self.stng_pwd2.setEchoMode(QLineEdit.Password)
-        stng_pwd_form_lay.addRow(tr('Verify :'), self.stng_pwd2)
-
-        #-checkbox widgets (show pwd)
-        stng_pwd_cb_lay = QVBoxLayout()
-        stng_pwd_cb_lay.setSpacing(15)
-        stng_pwd_lay.addLayout(stng_pwd_cb_lay, 0, 1)
-
-        self.stng_old_pwd_cb = QCheckBox()
-        stng_pwd_cb_lay.addWidget(self.stng_old_pwd_cb)
-        self.stng_old_pwd_cb.toggled.connect(chk_pwd_shown)
-
-        self.stng_pwd1_cb = QCheckBox()
-        stng_pwd_cb_lay.addWidget(self.stng_pwd1_cb)
-        self.stng_pwd1_cb.toggled.connect(chk_pwd_shown)
-
-        self.stng_pwd2_cb = QCheckBox()
-        stng_pwd_cb_lay.addWidget(self.stng_pwd2_cb)
-        self.stng_pwd2_cb.toggled.connect(chk_pwd_shown)
-
-        dct_cb = {
-            self.stng_old_pwd_cb: self.stng_old_pwd,
-            self.stng_pwd1_cb: self.stng_pwd1,
-            self.stng_pwd2_cb: self.stng_pwd2
-        }
-
-        #-button
-        self.stng_pwd_bt = QPushButton(tr('Change password'))
-        stng_pwd_lay.addWidget(self.stng_pwd_bt, 1, 1, Qt.AlignRight)
-
-        #-connection
-        use_c_pwd = UseSettings(self.stng_old_pwd, self.stng_pwd1, self.stng_pwd2)
-
-        self.stng_pwd_bt.clicked.connect(lambda: use_c_pwd.change_pwd())
-        self.stng_pwd2.returnPressed.connect(lambda: use_c_pwd.change_pwd())
+        # #---change password
+        # #-chk function
+        # def chk_pwd_shown():
+        #     '''Actualise if the password needs to be shown.'''
+        #
+        #     for k in dct_cb:
+        #         if k.isChecked():
+        #             dct_cb[k].setEchoMode(QLineEdit.Normal)
+        #
+        #         else:
+        #             dct_cb[k].setEchoMode(QLineEdit.Password)
+        #
+        # #-ini
+        # self.stng_pwd_grp = QGroupBox(tr('Change password'))
+        # self.stng_pwd_grp.setMaximumSize(600, 200)
+        # self.stng_pwd_grp.setMinimumSize(500, 200)
+        # stng_pwd_lay = QGridLayout()
+        # self.stng_pwd_grp.setLayout(stng_pwd_lay)
+        #
+        # tab_stng_lay.addWidget(self.stng_pwd_grp, 0, 1, 2, 1)#, Qt.AlignRight)
+        #
+        # #-form widgets (ask for pwd)
+        # stng_pwd_form_lay = QFormLayout()
+        # stng_pwd_lay.addLayout(stng_pwd_form_lay, 0, 0)
+        #
+        # self.stng_old_pwd = QLineEdit()
+        # self.stng_old_pwd.setMinimumSize(250, 0)
+        # self.stng_old_pwd.setEchoMode(QLineEdit.Password) # don't show pwd
+        # stng_pwd_form_lay.addRow(tr('Old password :'), self.stng_old_pwd)
+        #
+        # self.stng_pwd1 = QLineEdit()
+        # self.stng_pwd1.setMinimumSize(250, 0)
+        # self.stng_pwd1.setEchoMode(QLineEdit.Password)
+        # stng_pwd_form_lay.addRow(tr('New password :'), self.stng_pwd1)
+        #
+        # self.stng_pwd2 = QLineEdit()
+        # self.stng_pwd2.setMinimumSize(250, 0)
+        # self.stng_pwd2.setEchoMode(QLineEdit.Password)
+        # stng_pwd_form_lay.addRow(tr('Verify :'), self.stng_pwd2)
+        #
+        # #-checkbox widgets (show pwd)
+        # stng_pwd_cb_lay = QVBoxLayout()
+        # stng_pwd_cb_lay.setSpacing(15)
+        # stng_pwd_lay.addLayout(stng_pwd_cb_lay, 0, 1)
+        #
+        # self.stng_old_pwd_cb = QCheckBox()
+        # stng_pwd_cb_lay.addWidget(self.stng_old_pwd_cb)
+        # self.stng_old_pwd_cb.toggled.connect(chk_pwd_shown)
+        #
+        # self.stng_pwd1_cb = QCheckBox()
+        # stng_pwd_cb_lay.addWidget(self.stng_pwd1_cb)
+        # self.stng_pwd1_cb.toggled.connect(chk_pwd_shown)
+        #
+        # self.stng_pwd2_cb = QCheckBox()
+        # stng_pwd_cb_lay.addWidget(self.stng_pwd2_cb)
+        # self.stng_pwd2_cb.toggled.connect(chk_pwd_shown)
+        #
+        # dct_cb = {
+        #     self.stng_old_pwd_cb: self.stng_old_pwd,
+        #     self.stng_pwd1_cb: self.stng_pwd1,
+        #     self.stng_pwd2_cb: self.stng_pwd2
+        # }
+        #
+        # #-button
+        # self.stng_pwd_bt = QPushButton(tr('Change password'))
+        # stng_pwd_lay.addWidget(self.stng_pwd_bt, 1, 1, Qt.AlignRight)
+        #
+        # #-connection
+        # use_c_pwd = UseSettings(self.stng_old_pwd, self.stng_pwd1, self.stng_pwd2)
+        #
+        # self.stng_pwd_bt.clicked.connect(lambda: use_c_pwd.change_pwd())
+        # self.stng_pwd2.returnPressed.connect(lambda: use_c_pwd.change_pwd())
 
 
         #---Change language
@@ -1253,23 +1289,20 @@ class SettingsWin(QMainWindow):
         #---Button close
         self.close_bt = QPushButton(tr('Close'))
         self.close_bt.clicked.connect(self.close)
-        tab_stng_lay.addWidget(self.close_bt, 2, 1, Qt.AlignRight)
-
-        #------show
-        self.setCentralWidget(tab_stng)
+        tab_stng_lay.addWidget(self.close_bt, 2, 0, Qt.AlignRight)
 
 
     def use(style, app_style, parent=None):
         '''Function which launch this window.'''
 
         stg_win = SettingsWin(style, app_style, parent)
-        stg_win.show()
+        stg_win.exec_()
 
 
 
 ##-Ciphers' keys management
 #---------Generate RSA keys
-class GenKeyWin(QMainWindow):
+class GenKeyWin(QDialog): #QMainWindow):
     '''Class which define a window which allow to generate RSA keys.'''
 
     def __init__(self, style, parent=None):
@@ -1280,11 +1313,12 @@ class GenKeyWin(QMainWindow):
         self.setWindowTitle(tr('Generate RSA keys') + ' — KRIS')
 
         #---Central widget
-        self.main_wid = QWidget()
-        self.setCentralWidget(self.main_wid)
+        #self.main_wid = QWidget()
+        #self.setCentralWidget(self.main_wid)
 
         main_lay = QGridLayout()
-        self.main_wid.setLayout(main_lay)
+        #self.main_wid.setLayout(main_lay)
+        self.setLayout(main_lay)
 
         #------Main chooser
         self.cipher_box = QComboBox()
@@ -1346,6 +1380,60 @@ class GenKeyWin(QMainWindow):
         self.chbt_h.setChecked(True)
         RSA_lay.addWidget(self.chbt_h, 1, 2)
 
+        #---Check box pwd
+        self.chbt_rsa_enc = QCheckBox(tr('Also encrypt'))
+        self.chbt_rsa_enc.setChecked(True)
+        RSA_lay.addWidget(self.chbt_rsa_enc, 2, 0)
+
+        #---Pwd widget
+        #-chk function
+        def chk_pwd_shown():
+            '''Actualise if the password needs to be shown.'''
+
+            for k in dct_cb:
+                if k.isChecked():
+                    dct_cb[k].setEchoMode(QLineEdit.Normal)
+
+                else:
+                    dct_cb[k].setEchoMode(QLineEdit.Password)
+
+        self.RSA_pwd_wid = QWidget()
+        RSA_lay.addWidget(self.RSA_pwd_wid, 3, 0, 1, 3)
+        self.chbt_rsa_enc.toggled.connect(self.RSA_pwd_wid.setEnabled)
+
+        RSA_pwd_lay = QGridLayout()
+        self.RSA_pwd_wid.setLayout(RSA_pwd_lay)
+
+        #-pwd1
+        RSA_pwd_lay.addWidget(QLabel('Password :'), 0, 0)
+
+        self.pwd1_ledit = QLineEdit()
+        self.pwd1_ledit.setEchoMode(QLineEdit.Password)
+        RSA_pwd_lay.addWidget(self.pwd1_ledit, 0, 1)
+
+        #-pwd2
+        RSA_pwd_lay.addWidget(QLabel('Confirm :'), 1, 0)
+
+        self.pwd2_ledit = QLineEdit()
+        self.pwd2_ledit.setEchoMode(QLineEdit.Password)
+        self.pwd2_ledit.returnPressed.connect(self.gen)
+        RSA_pwd_lay.addWidget(self.pwd2_ledit, 1, 1)
+
+        #-pwd1 show
+        self.pwd1_show = QCheckBox()
+        self.pwd1_show.toggled.connect(chk_pwd_shown)
+        RSA_pwd_lay.addWidget(self.pwd1_show, 0, 2)
+
+        #-pwd2 show
+        self.pwd2_show = QCheckBox()
+        self.pwd2_show.toggled.connect(chk_pwd_shown)
+        RSA_pwd_lay.addWidget(self.pwd2_show, 1, 2)
+
+        dct_cb = {
+            self.pwd1_show: self.pwd1_ledit,
+            self.pwd2_show: self.pwd2_ledit
+        }
+
 
         #------One int arg (Label - QSpinBox)
         #---ini
@@ -1366,12 +1454,12 @@ class GenKeyWin(QMainWindow):
 
 
         #------buttons
-        self.bt_cancel = QPushButton(tr('Cancel'))
+        self.bt_cancel = QPushButton('&' + tr('Cancel'))
         self.bt_cancel.setMaximumSize(55, 35)
         self.bt_cancel.clicked.connect(self.close)
         main_lay.addWidget(self.bt_cancel, 2, 0, Qt.AlignRight)
 
-        self.bt_gen = QPushButton(tr('Generate'))
+        self.bt_gen = QPushButton('&' + tr('Generate'))
         self.bt_gen.setMinimumSize(0, 35)
         self.bt_gen.setStyleSheet(style)
         self.bt_gen.setObjectName('main_obj')
@@ -1408,7 +1496,6 @@ class GenKeyWin(QMainWindow):
                 w.hide()
             self.sp_wid.show()
             self.sp_lb.setText("Key's size :")
-
 
 
     def gen(self):
@@ -1448,10 +1535,26 @@ class GenKeyWin(QMainWindow):
             QMessageBox.critical(None, '!!! No name !!!', '<h2>' + tr('Please enter a name for the RSA keys !') + '</h2>')
             return -3 #Abort
 
+        if self.chbt_rsa_enc.isChecked():
+            if self.pwd1_ledit.text() != self.pwd2_ledit.text():
+                QMessageBox.critical(self, '!!! Wrong passwords !!!', '<h2>' + tr('The passwords does not correspond !') + '</h2>')
+                return -3
+
+            elif self.pwd1_ledit.text() == '':
+                QMessageBox.critical(self, '!!! Empty passwords !!!', '<h2>{}</h2>'.format(tr('Please fill the two passwords fields.')))
+                return -3
+
+            else:
+                pwd_clear = self.pwd1_ledit.text()
+                pwd = hasher.Hasher('sha256').hash(pwd_clear)
+
+        else:
+            pwd = None
+
         size = self.slider_sz.value()
         md_st = ('dec', 'hexa')[self.chbt_h.isChecked()]
 
-        val = RSA.RsaKeys(name, 'gui').generate(size, md_stored=md_st)
+        val = RSA.RsaKeys(name, 'gui').generate(size, pwd, md_stored=md_st)
 
         if val == -2: #The set of keys already exists
             rep = QMessageBox.question(
@@ -1463,16 +1566,12 @@ class GenKeyWin(QMainWindow):
             )
 
             if rep == QMessageBox.Yes:
-                val = RSA.RsaKeys(name, 'gui').generate(size, md_stored=md_st, overwrite=True)
+                val = RSA.RsaKeys(name, 'gui').generate(size, pwd, md_stored=md_st, overwrite=True)
 
             else:
                 return -2
 
         win.ciph_bar.reload_keys()
-
-        global RSA_keys_pwd
-        RSA.RsaKeys(name, 'gui').encrypt(RSA_keys_pwd)
-
 
         QMessageBox.about(None, 'Done !', '<h2>' + tr('Your brand new RSA keys "{}" are ready !').format(name) + '</h2>\n<h3>' + tr('`n` size : {} bits').format(val[2]) + '</h3>')
 
@@ -1488,11 +1587,12 @@ class GenKeyWin(QMainWindow):
         '''Function which launch this window.'''
 
         gen_win = GenKeyWin(style, parent)
-        gen_win.show()
+        #gen_win.show()
+        gen_win.exec_()
 
 
 #---------export RSA keys
-class ExpKeyWin(QMainWindow):
+class ExpKeyWin(QDialog): #QMainWindow):
     '''Class which define a window which allow to export RSA keys.'''
 
     def __init__(self, style, parent=None):
@@ -1503,92 +1603,11 @@ class ExpKeyWin(QMainWindow):
         self.setWindowTitle('Export RSA keys — KRIS')
 
         #---Central widget
-        self.main_wid = QWidget()
-        self.setCentralWidget(self.main_wid)
+        # self.main_wid = QWidget()
+        # self.setCentralWidget(self.main_wid)
 
         main_lay = QGridLayout()
-        self.main_wid.setLayout(main_lay)
-
-        #------Widgets
-        #---label
-        main_lay.addWidget(QLabel("Keys' name :"), 0, 0)
-
-        #---Keys combo box
-        self.keys_opt = QComboBox()
-        self.keys_opt.setStyleSheet(style)
-        self.keys_opt.setObjectName('sec_obj')
-        self.keys_opt.setMinimumSize(200, 0)
-        self.keys_opt.addItem(tr('-- Select a key --'))
-        self.keys_opt.insertSeparator(1)
-        self.keys_opt.addItems(RSA.list_keys('pvk_without_pbk'))
-        main_lay.addWidget(self.keys_opt, 0, 1)
-
-        #---check box hexa
-        self.chbt_h = QCheckBox('Store in hexadecimal')
-        self.chbt_h.setChecked(True)
-        main_lay.addWidget(self.chbt_h, 1, 2)
-
-        #---buttons
-        self.bt_cancel = QPushButton('Cancel')
-        self.bt_cancel.setMaximumSize(55, 35)
-        self.bt_cancel.clicked.connect(self.close)
-        main_lay.addWidget(self.bt_cancel, 2, 2, Qt.AlignRight)
-
-        self.bt_gen = QPushButton('Export')
-        self.bt_gen.setStyleSheet(style)
-        self.bt_gen.setObjectName('main_obj')
-        self.bt_gen.clicked.connect(self.exp)
-        main_lay.addWidget(self.bt_gen, 2, 3)
-
-
-    def exp(self):
-        '''Collect the info and export the public RSA keys.'''
-
-        global win
-
-        k_name = self.keys_opt.currentText()
-        md_st = ('dec', 'hexa')[self.chbt_h.isChecked()]
-
-        if k_name == tr('-- Select a key --'):
-            QMessageBox.critical(None, '!!! No selected key !!!', '<h2>Please select a key !!!</h2>')
-            return -3
-
-        ret = RSA.RsaKeys(k_name, 'gui').export(md_st)
-
-        if ret == -1:
-            QMessageBox.critical(None, '!!! Key not found !!!', '<h2>The keys were NOT found !!!</h2>')
-            return -1
-
-        QMessageBox.about(None, 'Done !', '<h2>The keys "{}" have been be exported.</h2>'.format(k_name))
-
-        self.close()
-        win.ciph_bar.reload_keys()
-
-
-    def use(style, parent=None):
-        '''Function which launch this window.'''
-
-        exp_win = ExpKeyWin(style, parent)
-        exp_win.show()
-
-
-#---------RSA keys infos
-class InfoKeyWin(QMainWindow):
-    '''Class which define a window which allow to get info on RSA keys.'''
-
-    def __init__(self, style, parent=None):
-        '''Initiate the InfoKeyWin window.'''
-
-        #------ini
-        super().__init__(parent)
-        self.setWindowTitle('Infos on RSA keys — KRIS')
-
-        #---Central widget
-        self.main_wid = QWidget()
-        self.setCentralWidget(self.main_wid)
-
-        main_lay = QGridLayout()
-        self.main_wid.setLayout(main_lay)
+        self.setLayout(main_lay)
 
         #------Widgets
         #---label
@@ -1605,12 +1624,97 @@ class InfoKeyWin(QMainWindow):
         main_lay.addWidget(self.keys_opt, 0, 1)
 
         #---buttons
-        self.bt_cancel = QPushButton('Close')
+        self.bt_cancel = QPushButton('&Cancel')
+        self.bt_cancel.setMaximumSize(55, 35)
+        self.bt_cancel.clicked.connect(self.close)
+        main_lay.addWidget(self.bt_cancel, 2, 2, Qt.AlignRight)
+
+        self.bt_gen = QPushButton('&Export')
+        self.bt_gen.setStyleSheet(style)
+        self.bt_gen.setObjectName('main_obj')
+        self.bt_gen.clicked.connect(self.exp)
+        main_lay.addWidget(self.bt_gen, 2, 3)
+
+
+    def exp(self):
+        '''Collect the info and copy the public RSA keys where the user asked.'''
+
+        k_name = self.keys_opt.currentText()
+
+        if k_name == tr('-- Select a key --'):
+            QMessageBox.critical(None, '!!! No selected key !!!', '<h2>Please select a key !!!</h2>')
+            return -3
+
+        key = RSA.RsaKeys(k_name, interface='gui')
+        fn_src0, (md, md_stored) = key.get_fn('pbk', also_ret_md=True)
+
+        fn_src = '{}/RSA_keys/{}'.format(glb.KRIS_data_path, fn_src0)
+
+        if md_stored == 'hexa':
+            f_ext = 'KRIS hex public keys(*.pbk-h);;All files(*)'
+
+        else:
+            f_ext = 'KRIS decimal public keys(.pbk-d);;All files(*)'
+
+        fn_dest = QFileDialog.getSaveFileName(self, tr('Export RSA key') + ' — KRIS', getcwd() + '/' + fn_src0, f_ext)[0]
+
+        if fn_dest in ((), ''):
+            return -3 #Canceled
+
+        copy(fn_src, fn_dest)
+
+        QMessageBox.about(None, 'Done !', '<h2>The keys "{}" have been exported.</h2>'.format(k_name))
+
+        self.close()
+
+
+    def use(style, parent=None):
+        '''Function which launch this window.'''
+
+        exp_win = ExpKeyWin(style, parent)
+        exp_win.exec_()
+
+
+#---------RSA keys infos
+class InfoKeyWin(QDialog): #QMainWindow):
+    '''Class which define a window which allow to get info on RSA keys.'''
+
+    def __init__(self, style, parent=None):
+        '''Initiate the InfoKeyWin window.'''
+
+        #------ini
+        super().__init__(parent)
+        self.setWindowTitle('Infos on RSA keys — KRIS')
+
+        #---Central widget
+        # self.main_wid = QWidget()
+        # self.setCentralWidget(self.main_wid)
+
+        main_lay = QGridLayout()
+        # self.main_wid.setLayout(main_lay)
+        self.setLayout(main_lay)
+
+        #------Widgets
+        #---label
+        main_lay.addWidget(QLabel("Keys' name :"), 0, 0)
+
+        #---Keys combo box
+        self.keys_opt = QComboBox()
+        self.keys_opt.setStyleSheet(style)
+        self.keys_opt.setObjectName('sec_obj')
+        self.keys_opt.setMinimumSize(200, 0)
+        self.keys_opt.addItem(tr('-- Select a key --'))
+        self.keys_opt.insertSeparator(1)
+        self.keys_opt.addItems(RSA.list_keys('all'))
+        main_lay.addWidget(self.keys_opt, 0, 1)
+
+        #---buttons
+        self.bt_cancel = QPushButton('&Close')
         self.bt_cancel.setMaximumSize(55, 35)
         self.bt_cancel.clicked.connect(self.close)
         main_lay.addWidget(self.bt_cancel, 1, 1, Qt.AlignRight)
 
-        self.bt_info = QPushButton('Get infos')
+        self.bt_info = QPushButton('&Get infos')
         self.bt_info.setMinimumSize(0, 35)
         self.bt_info.setStyleSheet(style)
         self.bt_info.setObjectName('main_obj')
@@ -1628,14 +1732,18 @@ class InfoKeyWin(QMainWindow):
 
         keys = RSA.RsaKeys(k_name, 'gui')
 
-        md_stg = keys.show_keys(get_stg_md=True)
+        md_stg = keys.get_fn(also_ret_md=True)[1][1]
 
         if md_stg == -1:
             return -1 #File not found
 
-        lst_keys, lst_values, lst_infos = keys.show_keys()
+        keys_read = keys.read()
+        if keys_read in (-1, -2, -3):
+            return keys_read
 
-        if len(lst_infos) == 2: #Full keys
+        lst_keys, lst_values, lst_infos = keys_read
+
+        if len(lst_keys) == 2: #Full keys
             (pbk, pvk), (p, q, n, phi, e, d), (n_strth, date_) = lst_keys, lst_values, lst_infos
 
             prnt = 'The keys were created the ' + date_
@@ -1648,9 +1756,9 @@ class InfoKeyWin(QMainWindow):
             prnt += '\n\tPrivate key : ' + str(pvk) + '.'
 
         else: #Public keys
-            pbk, (n, e), (n_strth, date_, date_exp) = lst_keys, lst_values, lst_infos
+            (pbk,), (n, e), (n_strth, date_) = lst_keys, lst_values, lst_infos
 
-            prnt = 'The keys were created the ' + date_ + '\nAnd exported the ' + date_exp
+            prnt = 'The keys were created the ' + date_
             prnt += '\nThe n\'s strenth : ' + n_strth + ' bytes ;\n'
 
             prnt += '\n\nValues :\n\tn : ' + str(n) + ' ;\n\te : ' + str(e) + ' ;\n'
@@ -1664,11 +1772,12 @@ class InfoKeyWin(QMainWindow):
         '''Function which launch this window.'''
 
         info_win = InfoKeyWin(style, parent)
-        info_win.show()
+        # info_win.show()
+        info_win.exec_()
 
 
 #---------Rename RSA keys
-class RenKeyWin(QMainWindow):
+class RenKeyWin(QDialog): #QMainWindow):
     '''Class which define a window which allow to rename RSA keys.'''
 
     def __init__(self, style, parent=None):
@@ -1679,11 +1788,12 @@ class RenKeyWin(QMainWindow):
         self.setWindowTitle('Rename RSA keys — KRIS')
 
         #---Central widget
-        self.main_wid = QWidget()
-        self.setCentralWidget(self.main_wid)
+        # self.main_wid = QWidget()
+        # self.setCentralWidget(self.main_wid)
 
         main_lay = QGridLayout()
-        self.main_wid.setLayout(main_lay)
+        # self.main_wid.setLayout(main_lay)
+        self.setLayout(main_lay)
 
         #------Widgets
         #---label
@@ -1704,15 +1814,16 @@ class RenKeyWin(QMainWindow):
 
         self.ledit = QLineEdit()
         self.ledit.setMinimumSize(150, 35)
+        self.ledit.returnPressed.connect(self.rn)
         main_lay.addWidget(self.ledit, 1, 1)
 
         #---buttons
-        self.bt_cancel = QPushButton('Cancel')
+        self.bt_cancel = QPushButton('&Cancel')
         self.bt_cancel.setMaximumSize(55, 35)
         self.bt_cancel.clicked.connect(self.close)
         main_lay.addWidget(self.bt_cancel, 2, 1, Qt.AlignRight)
 
-        self.bt_rn = QPushButton('Rename')
+        self.bt_rn = QPushButton('&Rename')
         self.bt_rn.setMinimumSize(0, 35)
         self.bt_rn.setStyleSheet(style)
         self.bt_rn.setObjectName('main_obj')
@@ -1744,7 +1855,7 @@ class RenKeyWin(QMainWindow):
             QMessageBox.critical(None, '!!! Keys not found !!!', '<h2>The set of keys was NOT found !!!</h2>')
             return -1
 
-        QMessageBox.about(None, 'Done !', '<h2>Your keys "{}" have been be renamed "{}" !</h2>'.format(k_name, new_name))
+        QMessageBox.about(None, 'Done !', '<h2>Your keys "{}" have been renamed "{}" !</h2>'.format(k_name, new_name))
 
         self.close()
         win.ciph_bar.reload_keys()
@@ -1754,11 +1865,11 @@ class RenKeyWin(QMainWindow):
         '''Function which launch this window.'''
 
         rn_win = RenKeyWin(style, parent)
-        rn_win.show()
+        rn_win.exec_()
 
 
 #---------Convert RSA keys
-class CvrtKeyWin(QMainWindow):
+class CvrtKeyWin(QDialog): #QMainWindow):
     '''Class which define a window which allow to convert RSA keys.'''
 
     def __init__(self, style, parent=None):
@@ -1769,11 +1880,11 @@ class CvrtKeyWin(QMainWindow):
         self.setWindowTitle('Convert RSA keys — KRIS')
 
         #---Central widget
-        self.main_wid = QWidget()
-        self.setCentralWidget(self.main_wid)
+        # self.main_wid = QWidget()
+        # self.setCentralWidget(self.main_wid)
 
         main_lay = QGridLayout()
-        self.main_wid.setLayout(main_lay)
+        self.setLayout(main_lay)
 
         #------Widgets
         #---Radio buttons
@@ -1804,12 +1915,12 @@ class CvrtKeyWin(QMainWindow):
         main_lay.addWidget(self.keys_opt, 1, 1)
 
         #---buttons
-        self.bt_cancel = QPushButton('Cancel')
+        self.bt_cancel = QPushButton('&Cancel')
         self.bt_cancel.setMaximumSize(55, 35)
         self.bt_cancel.clicked.connect(self.close)
         main_lay.addWidget(self.bt_cancel, 2, 1, Qt.AlignRight)
 
-        self.bt_cvrt = QPushButton('Convert in hexa')
+        self.bt_cvrt = QPushButton('Convert &in hexa')
         self.bt_cvrt.setMinimumSize(0, 35)
         self.bt_cvrt.setStyleSheet(style)
         self.bt_cvrt.setObjectName('main_obj')
@@ -1854,7 +1965,7 @@ class CvrtKeyWin(QMainWindow):
             QMessageBox.critical(None, '!!! Keys already exist !!!', '<h2>The set of keys already exist !!!</h2>\n<h3>You may already have converted them.</h3>')
             return -2
 
-        QMessageBox.about(None, 'Done !', '<h2>Your set of keys has been be converted in "{}" !</h2>'.format(exp))
+        QMessageBox.about(None, 'Done !', '<h2>Your set of keys has been converted in "{}" !</h2>'.format(exp))
         self.close()
 
 
@@ -1862,7 +1973,397 @@ class CvrtKeyWin(QMainWindow):
         '''Function which launch this window.'''
 
         cvrt_win = CvrtKeyWin(style, parent)
-        cvrt_win.show()
+        cvrt_win.exec_()
+
+
+#---------Encrypt RSA keys
+class EncKeyWin(QDialog): #QMainWindow):
+    '''Class which define a window which allow to encrypt RSA keys.'''
+
+    def __init__(self, style, parent=None):
+        '''Initiate the EncKeyWin window.'''
+
+        #------ini
+        super().__init__(parent)
+        self.setWindowTitle('Encrypt RSA keys — KRIS')
+
+        main_lay = QGridLayout()
+        self.setLayout(main_lay)
+
+        #------Widgets
+        #---label
+        main_lay.addWidget(QLabel("Keys' name :"), 0, 0)
+
+        #---Keys combo box
+        self.keys_opt = QComboBox()
+        self.keys_opt.setStyleSheet(style)
+        self.keys_opt.setObjectName('sec_obj')
+        self.keys_opt.setMinimumSize(200, 0)
+        self.keys_opt.addItem(tr('-- Select a key --'))
+        self.keys_opt.insertSeparator(1)
+        self.keys_opt.addItems(RSA.list_keys('dec'))
+        main_lay.addWidget(self.keys_opt, 0, 1)
+
+        #---Password line edit
+        #-pwd1
+        main_lay.addWidget(QLabel('Password :'), 1, 0)
+
+        self.pwd1_ledit = QLineEdit()
+        self.pwd1_ledit.setEchoMode(QLineEdit.Password)
+        main_lay.addWidget(self.pwd1_ledit, 1, 1)
+
+        #-pwd2
+        main_lay.addWidget(QLabel('Confirm :'), 2, 0)
+
+        self.pwd2_ledit = QLineEdit()
+        self.pwd2_ledit.setEchoMode(QLineEdit.Password)
+        self.pwd2_ledit.returnPressed.connect(self.enc)
+        main_lay.addWidget(self.pwd2_ledit, 2, 1)
+
+        #-pwd1 show
+        self.pwd1_show = QCheckBox()
+        self.pwd1_show.toggled.connect(self._chk_pwd_shown)
+        main_lay.addWidget(self.pwd1_show, 1, 2)
+
+        #-pwd2 show
+        self.pwd2_show = QCheckBox()
+        self.pwd2_show.toggled.connect(self._chk_pwd_shown)
+        main_lay.addWidget(self.pwd2_show, 2, 2)
+
+        self.dct_cb = {
+            self.pwd1_show: self.pwd1_ledit,
+            self.pwd2_show: self.pwd2_ledit
+        }
+
+        #---buttons
+        self.bt_cancel = QPushButton('&Cancel')
+        self.bt_cancel.setMaximumSize(55, 35)
+        self.bt_cancel.clicked.connect(self.close)
+        main_lay.addWidget(self.bt_cancel, 3, 1, Qt.AlignRight)
+
+        self.bt_rn = QPushButton('&Encrypt')
+        self.bt_rn.setMinimumSize(0, 35)
+        self.bt_rn.setStyleSheet(style)
+        self.bt_rn.setObjectName('main_obj')
+        self.bt_rn.clicked.connect(self.enc)
+        main_lay.addWidget(self.bt_rn, 3, 2)
+
+
+    def _chk_pwd_shown(self):
+        '''Actualise if the password needs to be shown.'''
+
+        for k in self.dct_cb:
+            if k.isChecked():
+                self.dct_cb[k].setEchoMode(QLineEdit.Normal)
+
+            else:
+                self.dct_cb[k].setEchoMode(QLineEdit.Password)
+
+
+    def enc(self):
+        '''Collect the infos and encrypt RSA keys.'''
+
+        k_name = self.keys_opt.currentText()
+
+        if k_name == tr('-- Select a key --'):
+            QMessageBox.critical(None, '!!! No selected key !!!', '<h2>Please select a key !!!</h2>')
+            return -3
+
+        if self.pwd1_ledit.text() != self.pwd2_ledit.text():
+            QMessageBox.critical(self, '!!! Wrong passwords !!!', '<h2>' + tr('The passwords does not correspond !') + '</h2>')
+            return -3
+
+        elif self.pwd1_ledit.text() == '':
+            QMessageBox.critical(self, '!!! Empty passwords !!!', '<h2>{}</h2>'.format(tr('Please fill the two passwords fields.')))
+            return -3
+
+        else:
+            pwd_clear = self.pwd1_ledit.text()
+            pwd = hasher.Hasher('sha256').hash(pwd_clear)
+
+
+        keys = RSA.RsaKeys(k_name, 'gui')
+
+        try:
+            keys.encrypt(pwd)
+
+        except KeyError as err:
+            QMessageBox.critical(None, '!!! Already encrypted !!!', '<h2>{}</h2>'.format(err))
+            return -3
+
+        except Exception as err:
+            QMessageBox.critical(None, '!!! Error !!!', '<h2>{}</h2>'.format(err))
+            return -3
+
+        QMessageBox.about(None, 'Done !', '<h2>Your keys "{}" have been encrypted !</h2>'.format(k_name))
+
+        self.close()
+
+
+    def use(style, parent=None):
+        '''Function which launch this window.'''
+
+        rn_win = EncKeyWin(style, parent)
+        rn_win.exec_()
+
+
+#---------Encrypt RSA keys
+class DecKeyWin(QDialog): #QMainWindow):
+    '''Class which define a window which allow to encrypt RSA keys.'''
+
+    def __init__(self, style, parent=None):
+        '''Initiate the DecKeyWin window.'''
+
+        #------ini
+        super().__init__(parent)
+        self.setWindowTitle('Encrypt RSA keys — KRIS')
+
+        main_lay = QGridLayout()
+        self.setLayout(main_lay)
+
+        #------Widgets
+        #---label
+        main_lay.addWidget(QLabel("Keys' name :"), 0, 0)
+
+        #---Keys combo box
+        self.keys_opt = QComboBox()
+        self.keys_opt.setStyleSheet(style)
+        self.keys_opt.setObjectName('sec_obj')
+        self.keys_opt.setMinimumSize(200, 0)
+        self.keys_opt.addItem(tr('-- Select a key --'))
+        self.keys_opt.insertSeparator(1)
+        self.keys_opt.addItems(RSA.list_keys('enc'))
+        main_lay.addWidget(self.keys_opt, 0, 1)
+
+        #---Password line edit
+        #-pwd
+        main_lay.addWidget(QLabel('Password :'), 1, 0)
+
+        self.pwd_ledit = QLineEdit()
+        self.pwd_ledit.setEchoMode(QLineEdit.Password)
+        self.pwd_ledit.returnPressed.connect(self.dec)
+        main_lay.addWidget(self.pwd_ledit, 1, 1)
+
+        #-pwd show
+        self.pwd_show = QCheckBox()
+        self.pwd_show.toggled.connect(self._chk_pwd_shown)
+        main_lay.addWidget(self.pwd_show, 1, 2)
+
+        #---buttons
+        self.bt_cancel = QPushButton('&Cancel')
+        self.bt_cancel.setMaximumSize(55, 35)
+        self.bt_cancel.clicked.connect(self.close)
+        main_lay.addWidget(self.bt_cancel, 3, 1, Qt.AlignRight)
+
+        self.bt_rn = QPushButton('&Decrypt')
+        self.bt_rn.setMinimumSize(0, 35)
+        self.bt_rn.setStyleSheet(style)
+        self.bt_rn.setObjectName('main_obj')
+        self.bt_rn.clicked.connect(self.dec)
+        main_lay.addWidget(self.bt_rn, 3, 2)
+
+
+    def _chk_pwd_shown(self):
+        '''Actualise if the password needs to be shown.'''
+
+        if self.pwd_show.isChecked():
+            self.pwd_ledit.setEchoMode(QLineEdit.Normal)
+
+        else:
+            self.pwd_ledit.setEchoMode(QLineEdit.Password)
+
+
+    def dec(self):
+        '''Collect the infos and encrypt RSA keys.'''
+
+        k_name = self.keys_opt.currentText()
+
+        if k_name == tr('-- Select a key --'):
+            QMessageBox.critical(None, '!!! No selected key !!!', '<h2>Please select a key !!!</h2>')
+            return -3
+
+        if self.pwd_ledit.text() == '':
+            QMessageBox.critical(None, '!!! Password empty !!!', '<h2>{}</h2>'.format(tr('Please fill the password field !')))
+            return -3
+
+        else:
+            pwd_clear = self.pwd_ledit.text()
+            pwd = hasher.Hasher('sha256').hash(pwd_clear)
+
+        sure = QMessageBox.question(None, tr('Are you sure ?'), '<h2>{}</h2>'.format(tr('Do you really want to decrypt "{}" keys ? Anyone with access to this computer will be able to read them !').format(k_name)), QMessageBox.Yes | QMessageBox.Cancel, QMessageBox.Cancel)
+
+        if sure == QMessageBox.Cancel:
+            return -3 #Cancel.
+
+
+        keys = RSA.RsaKeys(k_name, 'gui')
+
+        try:
+            out = keys.decrypt(pwd)
+
+        except KeyError as err:
+            QMessageBox.critical(None, '!!! Not encrypted !!!', '<h2>{}</h2>'.format(err))
+            return -3
+
+        except Exception as err:
+            QMessageBox.critical(None, '!!! Error !!!', '<h2>{}</h2>'.format(err))
+            return -3
+
+        if out in (-1, -2, -3):
+            return out
+
+        QMessageBox.about(None, 'Done !', '<h2>Your keys "{}" have been encrypted !</h2>'.format(k_name))
+
+        self.close()
+
+
+    def use(style, parent=None):
+        '''Function which launch this window.'''
+
+        rn_win = DecKeyWin(style, parent)
+        rn_win.exec_()
+
+
+#---------Encrypt RSA keys
+class ChPwdKeyWin(QDialog): #QMainWindow):
+    '''Class which define a window which allow to encrypt RSA keys.'''
+
+    def __init__(self, style, parent=None):
+        '''Initiate the ChPwdKeyWin window.'''
+
+        #------ini
+        super().__init__(parent)
+        self.setWindowTitle('Change RSA keys password — KRIS')
+
+        main_lay = QGridLayout()
+        self.setLayout(main_lay)
+
+        #------Widgets
+        #---label
+        main_lay.addWidget(QLabel("Keys' name :"), 0, 0)
+
+        #---Keys combo box
+        self.keys_opt = QComboBox()
+        self.keys_opt.setStyleSheet(style)
+        self.keys_opt.setObjectName('sec_obj')
+        self.keys_opt.setMinimumSize(200, 0)
+        self.keys_opt.addItem(tr('-- Select a key --'))
+        self.keys_opt.insertSeparator(1)
+        self.keys_opt.addItems(RSA.list_keys('enc'))
+        main_lay.addWidget(self.keys_opt, 0, 1)
+
+        #---Password line edit
+        #-pwd_old
+        main_lay.addWidget(QLabel('Actual password :'), 1, 0)
+
+        self.pwd_old_ledit = QLineEdit()
+        self.pwd_old_ledit.setEchoMode(QLineEdit.Password)
+        main_lay.addWidget(self.pwd_old_ledit, 1, 1)
+
+        #-pwd1
+        main_lay.addWidget(QLabel('New password :'), 2, 0)
+
+        self.pwd1_ledit = QLineEdit()
+        self.pwd1_ledit.setEchoMode(QLineEdit.Password)
+        main_lay.addWidget(self.pwd1_ledit, 2, 1)
+
+        #-pwd2
+        main_lay.addWidget(QLabel('Confirm :'), 3, 0)
+
+        self.pwd2_ledit = QLineEdit()
+        self.pwd2_ledit.setEchoMode(QLineEdit.Password)
+        self.pwd2_ledit.returnPressed.connect(self.ch_pwd)
+        main_lay.addWidget(self.pwd2_ledit, 3, 1)
+
+        #-pwd_old show
+        self.pwd_old_show = QCheckBox()
+        self.pwd_old_show.toggled.connect(self._chk_pwd_shown)
+        main_lay.addWidget(self.pwd_old_show, 1, 2)
+
+        #-pwd1 show
+        self.pwd1_show = QCheckBox()
+        self.pwd1_show.toggled.connect(self._chk_pwd_shown)
+        main_lay.addWidget(self.pwd1_show, 2, 2)
+
+        #-pwd2 show
+        self.pwd2_show = QCheckBox()
+        self.pwd2_show.toggled.connect(self._chk_pwd_shown)
+        main_lay.addWidget(self.pwd2_show, 3, 2)
+
+        self.dct_cb = {
+            self.pwd_old_show: self.pwd_old_ledit,
+            self.pwd1_show: self.pwd1_ledit,
+            self.pwd2_show: self.pwd2_ledit
+        }
+
+        #---buttons
+        self.bt_cancel = QPushButton('&Cancel')
+        self.bt_cancel.setMaximumSize(55, 35)
+        self.bt_cancel.clicked.connect(self.close)
+        main_lay.addWidget(self.bt_cancel, 4, 1, Qt.AlignRight)
+
+        self.bt_rn = QPushButton('&Change password')
+        self.bt_rn.setMinimumSize(0, 35)
+        self.bt_rn.setStyleSheet(style)
+        self.bt_rn.setObjectName('main_obj')
+        self.bt_rn.clicked.connect(self.ch_pwd)
+        main_lay.addWidget(self.bt_rn, 4, 2)
+
+
+    def _chk_pwd_shown(self):
+        '''Actualise if the password needs to be shown.'''
+
+        for k in self.dct_cb:
+            if k.isChecked():
+                self.dct_cb[k].setEchoMode(QLineEdit.Normal)
+
+            else:
+                self.dct_cb[k].setEchoMode(QLineEdit.Password)
+
+
+    def ch_pwd(self):
+        '''Collect the infos and encrypt RSA keys.'''
+
+        k_name = self.keys_opt.currentText()
+
+        if k_name == tr('-- Select a key --'):
+            QMessageBox.critical(None, '!!! No selected key !!!', '<h2>Please select a key !!!</h2>')
+            return -3
+
+        if '' in (self.pwd_old_ledit.text(), self.pwd1_ledit.text(), self.pwd2_ledit.text()):
+            QMessageBox.critical(None, '!!! Fields empty !!!', '<h2>{}</h2>'.format(tr('Please fill the three passwords fields.')))
+            return -3
+
+        if self.pwd1_ledit.text() != self.pwd2_ledit.text():
+            QMessageBox.critical(self, '!!! Wrong passwords !!!', '<h2>' + tr('The new passwords does not correspond !') + '</h2>')
+            return -3
+
+        old_pwd = hasher.Hasher('sha256').hash(self.pwd_old_ledit.text())
+        new_pwd = hasher.Hasher('sha256').hash(self.pwd1_ledit.text())
+
+
+        keys = RSA.RsaKeys(k_name, 'gui')
+
+        try:
+            out = keys.change_pwd(old_pwd, new_pwd)
+
+        except Exception as err:
+            QMessageBox.critical(None, '!!! Error !!!', '<h2>{}</h2>'.format(err))
+            return -3
+
+        if out in (-1, -2, -3):
+            return out
+
+        QMessageBox.about(None, 'Done !', '<h2>The password for your RSA keys "{}" has been changed !</h2>'.format(k_name))
+
+        self.close()
+
+
+    def use(style, parent=None):
+        '''Function which launch this window.'''
+
+        rn_win = ChPwdKeyWin(style, parent)
+        rn_win.exec_()
 
 
 
@@ -1934,7 +2435,7 @@ class UseCiphers:
 
         if ciph in (*ciphers_list['KRIS'], *ciphers_list['RSA']):
             try:
-                key = RSA.RsaKeys(self.key_opt.currentText(), interface='gui').read(md)
+                key = RSA.RsaKeys(self.key_opt.currentText(), interface='gui').get_key(md)
 
             except Exception as err:
                 if str(err) == "Can't read the private key of a pbk set of keys !!!":
@@ -2220,7 +2721,7 @@ class UseSettings:
             return -3
 
         elif pwd1 != pwd2:
-            QMessageBox.critical(None, '!!! Passwords does not correspond !!!', '<h2>The passwords does not correspond !</h2>')
+            QMessageBox.critical(None, '!!! Passwords does not correspond !!!', '<h2>{}</h2>'.format(tr('The passwords does not correspond !')))
             return -3
 
         elif entro < 40:
@@ -2258,4 +2759,4 @@ if __name__ == '__main__':
     chdir(RSA.chd_rsa('.', first=True, interface='gui')) #Todo: improve this (it is not shown since there is already 'elerias' and 'lasercata_3072' keys).
 
     #------Launch the GUI
-    KrisGui.use()
+    KrisGui.use(lock=False)
