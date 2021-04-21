@@ -3,7 +3,7 @@
 
 GuiStyle__auth = 'Lasercata'
 GuiStyle__last_update = '12.04.2021'
-GuiStyle__version = '1.0.2'
+GuiStyle__version = '1.2'
 
 ##-imports
 from PyQt5.QtCore import QSize, Qt
@@ -13,13 +13,25 @@ from PyQt5.QtWidgets import (QApplication, QMainWindow, QComboBox, QStyleFactory
     QHBoxLayout, QGroupBox, QButtonGroup, QRadioButton, QTextEdit, QFileDialog)
 
 
+##-ini
+try:
+    with open('Data/Theme.txt', 'r') as f:
+        default_theme = f.read()
+
+    default_theme = default_theme.strip('\n')
+
+except FileNotFoundError:
+    print('The file "Theme.txt" was not found. Default theme will be set (Breeze).')
+    default_theme = 'Breeze'
+
+
 ##-main
 class GuiStyle:
     '''Class which define a GUI style'''
 
 
     default_style = {
-        'main_style' : 'Breeze',
+        'main_style' : default_theme,
 
         'main' : '#ff4500', 'main_graz' : 'aa2500',
         'second' : '#0ee', 'sec_hover' : '#0fffff',
@@ -37,11 +49,10 @@ class GuiStyle:
     }
 
 
-    def __init__(self, style_dict=default_style, set_better_style=False):
+    def __init__(self, style_dict=default_style):
         '''Create a GUI style.
 
-        - style_dict : the dictonary containing the style colors ;
-        - set_better_style : a bool indicating if set by default 'Breeze' if here or 'Dark fusion'.
+        - style_dict : the dictonary containing the style colors.
         '''
 
         self.style_dict = style_dict
@@ -49,17 +60,14 @@ class GuiStyle:
 
         self.main_styles = (*QStyleFactory.keys(), 'Dark fusion')
 
-        if style_dict['main_style'] not in self.main_styles:
-            self.main_style_name = 'Dark fusion'
-
-        else:
+        if style_dict['main_style'] in self.main_styles:
             self.main_style_name = style_dict['main_style']
 
+        else:
+            self.main_style_name = self.main_styles[0]
 
-        if set_better_style:
-            self.set_style(self.main_style_name)
 
-        #todo: check for file in ~/.Cracker !
+        self.set_style(self.main_style_name)
 
 
     #todo: def save_style
@@ -104,6 +112,8 @@ class GuiStyle:
             QApplication.setStyle("Fusion")
             QApplication.setPalette(palette)
 
+            self._write_style('Dark fusion')
+
             return None #stop
 
         self.main_style_palette = QApplication.palette()
@@ -113,6 +123,15 @@ class GuiStyle:
             QApplication.setPalette(QApplication.style().standardPalette())
         else:
             QApplication.setPalette(self.main_style_palette)
+
+        self._write_style(style_name)
+
+
+    def _write_style(self, style_name):
+        '''Write `style_name` to KRIS/Data/Theme.txt'''
+
+        with open('Data/Theme.txt', 'w') as f:
+            f.write(style_name)
 
 
 
