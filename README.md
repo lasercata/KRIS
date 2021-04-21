@@ -3,7 +3,7 @@ A PyQt5 python3 software that allow you to encrypt messages and files with secur
 
 The name come from the esperanto for cryptosystem, "kriptosistemo" ("KRIptoSistemo").
 
-You can generate your own RSA keys. They will be stored in `KRIS/Data/RSA_keys`, encrypted with AES, using the application password as base for the key.
+You can generate your own RSA keys. They will be stored in `KRIS/Data/RSA_keys`. You can choose a password in the generate window, it will encrypted your key with AES-256-CBC.
 
 ![Screenshot_2021 04 13_23h55 02](https://user-images.githubusercontent.com/67599917/114626132-cc3b3780-9ca2-11eb-9ecf-e6bebc825e7c.png)
 
@@ -34,14 +34,7 @@ chmod +x *.py
 
 
 ## Running
-
-### Run
 In the main directory, run `./KRIS_gui.py` to run the python script. Else you can run `./KRIS_gui` for Linux build, or `KRIS_gui.exe` for Windows build.
-
-### Password
-The default password is **`swiss_knife`**. It is used to encrypt the private RSA keys, so you can leave KRIS on your USB key or on an other computer without the risk of having your keys stolen.
-
-You can (and should) change the password in the Settings part.
 
 
 ## Authors
