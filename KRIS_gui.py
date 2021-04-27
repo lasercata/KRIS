@@ -4,11 +4,11 @@
 '''Launch KRIS with PyQt5 graphical interface. It is a part of Cracker.'''
 
 KRIS_gui__auth = 'Lasercata'
-KRIS_gui__last_update = '21.04.2021'
-KRIS_gui__version = '2.2'
+KRIS_gui__last_update = '27.04.2021'
+KRIS_gui__version = '2.3'
 
 # Note : there may still be parts of code which are useless in this file
-# and maybe some imported modules too (TextEditor, ...).
+# and maybe some imported modules too.
 
 
 ##-import
@@ -299,7 +299,7 @@ class KrisGui(QMainWindow):
         self.edit_m.addSeparator()
 
         #-Swap texts
-        self.swap_txt_ac = QAction(tr('&Swap texts'), self) #Todo: Also swap self.fn_in and self.fn_out ?
+        self.swap_txt_ac = QAction(tr('&Swap texts'), self)
         self.swap_txt_ac.setShortcut('Ctrl+W')
         self.swap_txt_ac.setStatusTip(tr('Toggle input text and output text.'))
         self.swap_txt_ac.triggered.connect(self._swap_txt)
@@ -386,6 +386,14 @@ class KrisGui(QMainWindow):
         self.gen_k_ac.setShortcut('Ctrl+G')
         self.gen_k_ac.triggered.connect(lambda: GenKeyWin.use(self.style, parent=self))
         self.keys_m.addAction(self.gen_k_ac)
+
+        self.keys_m.addSeparator()
+
+        #-Import
+        self.imp_k_ac = QAction(tr('&Import ...'), self)
+        #self.imp_k_ac.setShortcut('Ctrl+')
+        self.imp_k_ac.triggered.connect(self.import_RSA_key)
+        self.keys_m.addAction(self.imp_k_ac)
 
         #-Export
         self.exp_k_ac = QAction(tr('&Export ...'), self)
@@ -560,11 +568,34 @@ class KrisGui(QMainWindow):
     def _swap_txt(self):
         '''Swap the output text with the input text.'''
 
+        #---Swap fn
+        temp = self.fn_in
+        self.fn_in = self.fn_out
+        self.fn_out = temp
+
+        #---Swap self.txt_[in | out]_is_saved
+        in_saved = self.txt_in_is_saved
+        out_saved = self.txt_out_is_saved
+
+        #---Swap txt
         in_txt = self.txt_in.toPlainText()
         out_txt = self.txt_out.toPlainText()
 
         self.txt_out.setPlainText(in_txt)
         self.txt_in.setPlainText(out_txt)
+
+        if in_saved:
+            self.txt_out_is_saved = True
+        else:
+            self.txt_out_is_saved = False
+
+        if out_saved:
+            self.txt_in_is_saved = True
+        else:
+            self.txt_in_is_saved = False
+
+
+        self._set_save_lb_txt()
 
 
     def _get_word_count(self, txt):
@@ -604,11 +635,11 @@ class KrisGui(QMainWindow):
             self.saved_lb.setStyleSheet('color: #0f0')
 
         elif self.txt_in_is_saved:
-            self.saved_lb.setText(tr('Output unsaved'))
+            self.saved_lb.setText(tr('Output Unsaved'))
             self.saved_lb.setStyleSheet('color: #ff0')
 
         elif self.txt_out_is_saved:
-            self.saved_lb.setText(tr('Input unsaved'))
+            self.saved_lb.setText(tr('Input Unsaved'))
             self.saved_lb.setStyleSheet('color: #ff0')
 
         else:
@@ -698,7 +729,7 @@ class KrisGui(QMainWindow):
     def new(self):
         '''Clear the two text editors (input and output).'''
 
-        if self._msg_box_save(title=tr('New - KRIS')):
+        if self._msg_box_save(title=tr('New — KRIS')):
             self.txt_in.setPlainText('')
             self.txt_out.setPlainText('')
 
@@ -753,6 +784,8 @@ class KrisGui(QMainWindow):
         self.txt_in.setPlainText(file_content)
         self.fn_in = fn
 
+        self.txt_in_is_saved = True
+        self._set_save_lb_txt()
         self.statusbar.showMessage('File opened !', 3000)
 
 
@@ -862,7 +895,7 @@ class KrisGui(QMainWindow):
 
         p = Popup(bt_align='right', parent=self)
         p.main_lay.addWidget(bt_repo, 1, 0, Qt.AlignLeft)
-        p.pop(tr('Help') + ' — KRIS', help_, html=True)
+        p.pop(tr('Help') + ' — KRIS', help_, html=True, dialog=False)
 
 
     def show_about(self):
@@ -888,26 +921,26 @@ class KrisGui(QMainWindow):
 
 
 
-    #---------lock
-    def lock(self, tries=5):
-        '''Dislable the widgets and ask for the password.'''
+    def import_RSA_key(self):
+        '''Choose an RSA key file and copy it in the right directory.'''
 
-        if tries == False:
-            tries = 5
+        f_ext = 'KRIS public keys(*.pbk-*);;KRIS hex public keys(*.pbk-h);;KRIS decimal public keys(.pbk-d);;All files(*)'
 
-        def chk_lock():
-            if not self.locker.is_locked():
-                self.setDisabled(False)
+        fn_src = QFileDialog.getOpenFileName(self, tr('Import RSA key') + ' — KRIS', '', f_ext)[0]
 
-                #---Show 'Ready' in status bar
-                self.statusbar.showMessage(tr('Ready !'), 3000)
+        if fn_src in ((), ''):
+            return -3 #Canceled
 
-        self.locker = Lock(pwd, pwd_h, pwd_loop, tries)
+        k_name = fn_src.split('/')[-1]
 
-        self.setDisabled(True)
-        self.locker.show()
+        fn_dest = '{}/RSA_keys/{}'.format(glb.KRIS_data_path, k_name)
 
-        self.locker.connect(chk_lock)
+        copy(fn_src, fn_dest)
+
+        self.ciph_bar.reload_keys()
+        self.statusbar.showMessage('The keys "{}" have been imported.'.format(k_name), 3000)
+
+        QMessageBox.about(None, 'Done !', '<h2>The keys "{}" have been imported.</h2>'.format(k_name))
 
 
     #---------quit
@@ -933,7 +966,7 @@ class KrisGui(QMainWindow):
 
 
     #---------use
-    def use(lock=True):
+    def use():
         '''Launch the application.'''
 
         global app, win
@@ -943,12 +976,8 @@ class KrisGui(QMainWindow):
 
         app.focusChanged.connect(lambda old, new: win._show_wc(new))
 
-        #-lock
-        if lock:
-            win.lock(3)
-
-        #app.setPalette(KrisGuiStyle.dark_style(None))
-        #app.aboutToQuit.connect(win.quit)
+        #---Show 'Ready' in status bar
+        win.statusbar.showMessage(tr('Ready !'), 3000)
 
         sys.exit(app.exec_())
 
@@ -1580,7 +1609,7 @@ class GenKeyWin(QDialog): #QMainWindow):
     def _show_key(self, ciph, key):
         '''Show the key using Popup.'''
 
-        Popup(500, 100, parent=self).pop('{} key — KRIS'.format(ciph), str(key))
+        Popup(500, 100, parent=self).pop('{} key — KRIS'.format(ciph), str(key), dialog=False)
 
 
     def use(style, parent=None):
@@ -1654,7 +1683,7 @@ class ExpKeyWin(QDialog): #QMainWindow):
             f_ext = 'KRIS hex public keys(*.pbk-h);;All files(*)'
 
         else:
-            f_ext = 'KRIS decimal public keys(.pbk-d);;All files(*)'
+            f_ext = 'KRIS decimal public keys(*.pbk-d);;All files(*)'
 
         fn_dest = QFileDialog.getSaveFileName(self, tr('Export RSA key') + ' — KRIS', getcwd() + '/' + fn_src0, f_ext)[0]
 
@@ -1765,7 +1794,7 @@ class InfoKeyWin(QDialog): #QMainWindow):
 
             prnt += '\n\tPublic key : ' + str(pbk) + '.'
 
-        Popup(parent=self).pop('Info on {}'.format(k_name), prnt)
+        Popup(parent=self).pop('Info on {}'.format(k_name), prnt, dialog=False)
 
 
     def use(style, parent=None):
@@ -2759,4 +2788,4 @@ if __name__ == '__main__':
     chdir(RSA.chd_rsa('.', first=True, interface='gui')) #Todo: improve this (it is not shown since there is already 'elerias' and 'lasercata_3072' keys).
 
     #------Launch the GUI
-    KrisGui.use(lock=False)
+    KrisGui.use()
