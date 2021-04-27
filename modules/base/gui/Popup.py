@@ -3,7 +3,7 @@
 
 Popup__auth = 'Lasercata'
 Popup__last_update = '27.04.2021'
-Popup__version = '1.2'
+Popup__version = '1.2.1'
 
 ##-imports
 from PyQt5.QtCore import QSize, Qt
@@ -20,7 +20,7 @@ from modules.base.gui.GuiStyle import GuiStyle
 class Popup(QDialog):
     '''Class which define a popup.'''
 
-    def __init__(self, width=850, height=350, bt_align='center', parent=None):
+    def __init__(self, width=850, height=350, bt_align='center', style='', parent=None):
         '''Initiate the popup window.'''
 
         if bt_align.lower() == 'center':
@@ -34,8 +34,6 @@ class Popup(QDialog):
 
         #------ini
         super().__init__(parent)
-
-        self.style = GuiStyle().style_sheet
 
         #---Central widget
         #self.main_wid = QWidget()
@@ -54,7 +52,7 @@ class Popup(QDialog):
         self.txt = QTextEdit()
         self.txt.setReadOnly(True)
         self.txt.setMinimumSize(width, height)
-        self.txt.setStyleSheet(self.style)
+        self.txt.setStyleSheet(style)
         self.txt.setObjectName('orange_border_hover')
         self.txt.setFont(self.fixed_font)
         self.main_lay.addWidget(self.txt, 0, 0)
