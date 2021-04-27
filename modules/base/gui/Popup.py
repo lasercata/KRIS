@@ -2,22 +2,22 @@
 # -*- coding: utf-8 -*-
 
 Popup__auth = 'Lasercata'
-Popup__last_update = '16.04.2021'
-Popup__version = '1.1'
+Popup__last_update = '27.04.2021'
+Popup__version = '1.2'
 
 ##-imports
 from PyQt5.QtCore import QSize, Qt
 from PyQt5.QtGui import QIcon, QPixmap, QCloseEvent, QPalette, QColor, QFont
 from PyQt5.QtWidgets import (QApplication, QMainWindow, QComboBox, QStyleFactory,
     QLabel, QGridLayout, QLineEdit, QMessageBox, QWidget, QPushButton, QCheckBox,
-    QHBoxLayout, QGroupBox, QButtonGroup, QRadioButton, QTextEdit, QFileDialog)
+    QHBoxLayout, QGroupBox, QButtonGroup, QRadioButton, QTextEdit, QFileDialog, QDialog)
 
 
 from modules.base.gui.GuiStyle import GuiStyle
 
 
 ##-main
-class Popup(QMainWindow):
+class Popup(QDialog):
     '''Class which define a popup.'''
 
     def __init__(self, width=850, height=350, bt_align='center', parent=None):
@@ -38,11 +38,12 @@ class Popup(QMainWindow):
         self.style = GuiStyle().style_sheet
 
         #---Central widget
-        self.main_wid = QWidget()
-        self.setCentralWidget(self.main_wid)
+        #self.main_wid = QWidget()
+        #self.setCentralWidget(self.main_wid)
 
         self.main_lay = QGridLayout()
-        self.main_wid.setLayout(self.main_lay)
+        # self.main_wid.setLayout(self.main_lay)
+        self.setLayout(self.main_lay)
 
         #---txt
         #-font
@@ -64,8 +65,16 @@ class Popup(QMainWindow):
         self.main_lay.addWidget(self.bt, 1, 0, a)
 
 
-    def pop(self, title, msg, html=False):
-        '''Show the popup window.'''
+    def pop(self, title, msg, html=False, dialog=True):
+        '''
+        Show the popup window.
+
+        - title : The popup's title ;
+        - msg : the popup's text content ;
+        - html : a bool indicating if `msg` is in html format ;
+        - dialog : a bool indicating if use `self.exec_()` (with True), or
+        `self.show()` to launch the popup.
+        '''
 
         self.setWindowTitle(title)
 
@@ -75,7 +84,11 @@ class Popup(QMainWindow):
         else:
             self.txt.setPlainText(msg)
 
-        self.show()
+        if dialog:
+            self.exec_()
+
+        else:
+            self.show()
 
 
 ##-run
