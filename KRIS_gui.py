@@ -5,7 +5,7 @@
 
 KRIS_gui__auth = 'Lasercata'
 KRIS_gui__last_update = '27.04.2021'
-KRIS_gui__version = '2.3'
+KRIS_gui__version = '2.3.1'
 
 # Note : there may still be parts of code which are useless in this file
 # and maybe some imported modules too.
@@ -893,7 +893,7 @@ class KrisGui(QMainWindow):
         bt_repo = QPushButton('Open repo')
         bt_repo.clicked.connect(lambda: webbrowser.open_new_tab('https://github.com/lasercata/KRIS'))
 
-        p = Popup(bt_align='right', parent=self)
+        p = Popup(bt_align='right', style=self.style, parent=self)
         p.main_lay.addWidget(bt_repo, 1, 0, Qt.AlignLeft)
         p.pop(tr('Help') + ' — KRIS', help_, html=True, dialog=False)
 
@@ -915,7 +915,7 @@ class KrisGui(QMainWindow):
         bt_repo = QPushButton('Open repo')
         bt_repo.clicked.connect(lambda: webbrowser.open_new_tab('https://github.com/lasercata/KRIS'))
 
-        p = Popup(bt_align='right', parent=self)
+        p = Popup(bt_align='right', style=self.style, parent=self)
         p.main_lay.addWidget(bt_repo, 1, 0, Qt.AlignLeft)
         p.pop(tr('About') + ' — KRIS', about, html=True)
 
@@ -1341,6 +1341,8 @@ class GenKeyWin(QDialog): #QMainWindow):
         super().__init__(parent)
         self.setWindowTitle(tr('Generate RSA keys') + ' — KRIS')
 
+        self.style = style
+
         #---Central widget
         #self.main_wid = QWidget()
         #self.setCentralWidget(self.main_wid)
@@ -1609,7 +1611,7 @@ class GenKeyWin(QDialog): #QMainWindow):
     def _show_key(self, ciph, key):
         '''Show the key using Popup.'''
 
-        Popup(500, 100, parent=self).pop('{} key — KRIS'.format(ciph), str(key), dialog=False)
+        Popup(500, 100, style=self.style, parent=self).pop('{} key — KRIS'.format(ciph), str(key), dialog=False)
 
 
     def use(style, parent=None):
@@ -1715,6 +1717,8 @@ class InfoKeyWin(QDialog): #QMainWindow):
         super().__init__(parent)
         self.setWindowTitle('Infos on RSA keys — KRIS')
 
+        self.style = style
+
         #---Central widget
         # self.main_wid = QWidget()
         # self.setCentralWidget(self.main_wid)
@@ -1794,7 +1798,7 @@ class InfoKeyWin(QDialog): #QMainWindow):
 
             prnt += '\n\tPublic key : ' + str(pbk) + '.'
 
-        Popup(parent=self).pop('Info on {}'.format(k_name), prnt, dialog=False)
+        Popup(style=self.style, parent=self).pop('Info on {}'.format(k_name), prnt, dialog=False)
 
 
     def use(style, parent=None):
