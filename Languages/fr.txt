@@ -447,6 +447,7 @@ Sélectionne automatiquement le chiffre et la clé (si le message est formaté).
 &Clés
 &Montrer des informations à propos des clés ...
 &Générer ...
+&Importer ...
 &Exporter ...
 &Rennomer ...
 &Convertir ...
@@ -467,9 +468,9 @@ Voulez-vous enregistrer les modifications ou les abandonner ?
 La partie éditeur de texte a été modifiée.
 La partie sortie a été modifiée.
 Les parties éditeur de texte, sortie ont été modifiées.
-Nouveau - KRIS
+Nouveau — KRIS
 Éditeurs de texte nettoyés !
-Ouvrir - KRIS
+Ouvrir — KRIS
 Fichiers texte(*.txt);;Tous les fichiers(*)
 Le texte d'entrée
 Le texte de sortie
@@ -547,6 +548,7 @@ Aussi chiffrer
 La clé RSA est déjà chiffrée !
 La clés RSA n'est pas chiffrée !
 Exporter une clé RSA
+Importer un clé RSA
 Êtes-vous sûr de vouloir déchiffrer les clés RSA "{}" ? Tous ceux qui ont accès à cet ordinateur pourront les lire !
 Veuillez remplir le champ du mot de passe !
 Veuillez remplir les trois champs de mot de passe.

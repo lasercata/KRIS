@@ -447,6 +447,7 @@ Select automaticly the cipher and the key (if message formatted).
 &Keys
 &Show informations about keys ...
 &Generate ...
+&Import ...
 &Export ...
 &Rename ...
 &Convert ...
@@ -460,16 +461,16 @@ Re&load box
 &About
 {} words, {} chars.
 Saved
-Output unsaved
-Input unsaved
+Output Unsaved
+Input Unsaved
 Unsaved
 Do you want to save your changes or discard them ?
 The text editor part has been modified.
 The output part has been modified.
 The text editor, output parts have been modified.
-New - KRIS
+New — KRIS
 Text editors cleared !
-Open - KRIS
+Open — KRIS
 Text files(*.txt);;All files(*)
 Input text
 Output text
@@ -547,6 +548,7 @@ Also encrypt
 The RSA key is already encrypted !
 The RSA key is not encrypted !
 Export RSA key
+Import RSA key
 Do you really want to decrypt "{}" keys ? Anyone with access to this computer will be able to read them !
 Please fill the password field !
 Please fill the three passwords fields.
