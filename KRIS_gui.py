@@ -4,8 +4,8 @@
 '''Launch KRIS with PyQt5 graphical interface. It is a part of Cracker.'''
 
 KRIS_gui__auth = 'Lasercata'
-KRIS_gui__last_update = '27.04.2021'
-KRIS_gui__version = '2.3.1'
+KRIS_gui__last_update = '02.05.2021'
+KRIS_gui__version = '2.3.2'
 
 # Note : there may still be parts of code which are useless in this file
 # and maybe some imported modules too.
@@ -705,7 +705,7 @@ class KrisGui(QMainWindow):
                 ' parts have been modified.') + '\n' + tr('Do you want to save your changes or discard them ?')
 
 
-            answer = QMessageBox.question(self, title, msg, \
+            answer = QMessageBox.warning(self, title, msg, \
                 QMessageBox.Save | QMessageBox.Discard | QMessageBox.Cancel, QMessageBox.Save)
 
             if answer == QMessageBox.Cancel:
@@ -1588,7 +1588,7 @@ class GenKeyWin(QDialog): #QMainWindow):
         val = RSA.RsaKeys(name, 'gui').generate(size, pwd, md_stored=md_st)
 
         if val == -2: #The set of keys already exists
-            rep = QMessageBox.question(
+            rep = QMessageBox.warning(
                 None,
                 'File error !',
                 '<h2>' + tr('A set of keys named "{}" already exist !').format(name) + '</h2>\n<h2>' + tr('Overwite it !?') + '</h2>\n<h3>' + tr('This action can NOT be undone !!!') + '</h3>',
@@ -2223,7 +2223,7 @@ class DecKeyWin(QDialog): #QMainWindow):
             pwd_clear = self.pwd_ledit.text()
             pwd = hasher.Hasher('sha256').hash(pwd_clear)
 
-        sure = QMessageBox.question(None, tr('Are you sure ?'), '<h2>{}</h2>'.format(tr('Do you really want to decrypt "{}" keys ? Anyone with access to this computer will be able to read them !').format(k_name)), QMessageBox.Yes | QMessageBox.Cancel, QMessageBox.Cancel)
+        sure = QMessageBox.warning(None, tr('Are you sure ?'), '<h2>{}</h2>'.format(tr('Do you really want to decrypt "{}" keys ? Anyone with access to this computer will be able to read them !').format(k_name)), QMessageBox.Yes | QMessageBox.Cancel, QMessageBox.Cancel)
 
         if sure == QMessageBox.Cancel:
             return -3 #Cancel.
