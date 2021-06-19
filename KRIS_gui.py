@@ -2149,7 +2149,7 @@ class DecKeyWin(QDialog): #QMainWindow):
 
         #------ini
         super().__init__(parent)
-        self.setWindowTitle('Encrypt RSA keys — KRIS')
+        self.setWindowTitle('Decrypt RSA keys — KRIS')
 
         main_lay = QGridLayout()
         self.setLayout(main_lay)
@@ -2207,7 +2207,7 @@ class DecKeyWin(QDialog): #QMainWindow):
 
 
     def dec(self):
-        '''Collect the infos and encrypt RSA keys.'''
+        '''Collect the infos and decrypt RSA keys.'''
 
         k_name = self.keys_opt.currentText()
 
@@ -2245,7 +2245,7 @@ class DecKeyWin(QDialog): #QMainWindow):
         if out in (-1, -2, -3):
             return out
 
-        QMessageBox.about(None, 'Done !', '<h2>Your keys "{}" have been encrypted !</h2>'.format(k_name))
+        QMessageBox.about(None, 'Done !', '<h2>Your keys "{}" have been decrypted !</h2>'.format(k_name))
 
         self.close()
 
