@@ -4,8 +4,8 @@
 '''This program allow you to encrypt and decrypt with RSA cipher.'''
 
 RSA__auth = 'Lasercata, Elerias'
-RSA__last_update = '21.04.2021'
-RSA__version = '4.0_kris'
+RSA__last_update = '22.06.2021'
+RSA__version = '4.2_kris'
 
 
 ##-import
@@ -35,7 +35,8 @@ from datetime import datetime as dt
 from time import sleep
 
 from os import chdir, mkdir, getcwd, listdir, rename, remove
-from os.path import expanduser, isfile
+from os.path import expanduser, isfile, isdir
+from shutil import copy
 
 #if glb.interface == 'gui':
 from PyQt5.QtWidgets import QMessageBox
@@ -126,58 +127,45 @@ def date(verbose=False):
 
 
 #---------chdir
-def chd_rsa(path, first=False, interface=None):
+def chd_rsa(home=False):
     '''
-    Change current directory to [cracker]/RSA_keys/[path], where [cracker] is
-    the path where cracker is launched.
+    Change current directory to the RSA_keys directory.
 
-    If first is True, and if the folder "RSA_keys" don't exist, generate "auto_generated_512" keys.
+    If home is True, the path is `/home/$USER/.RSA_keys` (on Linux) ;
+    otherwise, path is `path/to/KRIS/Data/RSA_keys`.
 
-    If directory "RSA_keys" don't exist, it create it.
+    If directory `[.]RSA_keys` don't exist, it create it.
 
-    If [path] don't exist, return to last path and raise a FileNotFoundError exeption,
-    Return the old path else.
+    Return the old path.
     '''
 
     old_path = getcwd()
 
-    chd('.') #chdir to cracker's data
+    #------chdir to the parent folder of `[.]RSA_keys`
+    if home:
+        home_path = expanduser('~')
+        chdir(home_path)
+        rsa_dir_name = '.RSA_keys'
 
-    #------cd to 'RSA_keys'
-    try:
-        chdir('RSA_keys')
+    else:
+        chd('.')
+        rsa_dir_name = 'RSA_keys'
 
-    except FileNotFoundError:
-        mkdir('RSA_keys')
-        print('"RSA_keys" folder created at "{}" !'.format(getcwd()))
-        chdir('RSA_keys')
+    #------chdir to `RSA_keys`
+    if not isdir(rsa_dir_name):
+        mkdir(rsa_dir_name)
+        print('"{}" folder created at "{}" !'.format(rsa_dir_name, getcwd()))
 
-        if first:
-            msg1 = 'It seem that it is the first time you launch this application on this computer. New RSA 512 bits keys will be generated, but you should consider to generate yours (at least 2048 bits)'
-            msg2 = 'Keys path : {}/RSA_keys'.format(glb.KRIS_data_path)
+        if home:
+            for fn in listdir(glb.KRIS_data_path + '/RSA_keys'):
+                copy(glb.KRIS_data_path + '/RSA_keys/' + fn, home_path + '/.RSA_keys/' + fn)
 
-            if interface == None:
-                print(msg1)
-                print(msg2)
-
-            elif interface == 'console':
-                cl_out(c_output, '{}\n{}'.format(msg1, msg2))
-
-            else:
-                QMessageBox.about(None, 'Ciphers info ― KRIS', '<h3>{}</h3>\n<h4>{}</h4>'.format(msg1, msg2))
-
-
-            RsaKeys('auto_generated_512', interface).generate(512)
-
-
-    try:
-        chdir(path)
-
-    except FileNotFoundError as err:
-        chdir(old_path)
-        raise FileNotFoundError(err)
+    chdir(rsa_dir_name)
 
     return old_path
+
+
+# To create the .RSA_keys folder (pass from home == False to home == True) : `chdir(RSA.chd_rsa(True))`
 
 
 ##-functions
@@ -343,13 +331,15 @@ class RSA:
                 or "console", but {} of type {} was found !!!'.format(interface, type(interface)))
 
         self.interface = interface
+        self.keys_init = keys
 
         self.keys = {} #will contain the keys
 
         if type(keys) == str:
             try:
-                self.keys['e'] = RsaKeys(keys).read(0)
-                self.keys['d'] = RsaKeys(keys).read(1)
+                self.keys['e'] = RsaKeys(keys, interface=self.interface).get_key(0)
+                #self.keys['d'] = RsaKeys(keys, interface=self.interface).get_key(1)
+                self.keys['d'] = None
 
             except FileNotFoundError as err:
                 if interface == 'console':
@@ -467,15 +457,20 @@ class RSA:
         '''Return the decrypted text txt with the private key self.pv_key.'''
 
         if self.pv_key == None:
-            msg_err = 'Cannot decrypt with an empty key !!!'
+            try:
+                self.keys['d'] = RsaKeys(self.keys_init, interface=self.interface).get_key(1)
+                self.pv_key = self.keys['d']
 
-            if self.interface == 'console':
-                cl_out(c_error, msg_err)
+            except TypeError:
+                msg_err = 'Cannot decrypt with an empty key !!!'
 
-            elif self.interface == 'gui':
-                QMessageBox.critical(None, 'Cannot decrypt !!!', '<h2>{}</h2>'.format(msg_err))
+                if self.interface == 'console':
+                    cl_out(c_error, msg_err)
 
-            raise TypeError(msg_err)
+                elif self.interface == 'gui':
+                    QMessageBox.critical(None, 'Cannot decrypt !!!', '<h2>{}</h2>'.format(msg_err))
+
+                raise TypeError(msg_err)
 
 
         #------ini progress bar
@@ -535,15 +530,20 @@ class RSA:
         '''
 
         if self.pv_key == None:
-            msg_err = 'Cannot sign with an empty private key !!!'
+            try:
+                self.keys['d'] = RsaKeys(self.keys_init, interface=self.interface).get_key(1)
+                self.pv_key = self.keys['d']
 
-            if self.interface == 'console':
-                cl_out(c_error, msg_err)
+            except TypeError:
+                msg_err = 'Cannot sign with an empty private key !!!'
 
-            elif self.interface == 'gui':
-                QMessageBox.critical(None, 'Cannot sign !!!', '<h2>{}</h2>'.format(msg_err))
+                if self.interface == 'console':
+                    cl_out(c_error, msg_err)
 
-            raise TypeError(msg_err)
+                elif self.interface == 'gui':
+                    QMessageBox.critical(None, 'Cannot sign !!!', '<h2>{}</h2>'.format(msg_err))
+
+                raise TypeError(msg_err)
 
         return RSA([self.pv_key, self.pb_key], self.interface).encrypt(txt)
 
@@ -858,7 +858,7 @@ class RsaKeys:
             - md_stored : the way how the keys are stored, i.e. in decimal or hexadecimal.
                 Should be "hexa" or "dec". Default is "hexa".
 
-        If save is True, the program make two files, in chd_rsa('.'), named :
+        If save is True, the program make two files, in chd_rsa(glb.home), named :
             For the private key :
                 '[self.k_name].pvk-h' if md_stored is 'hexa' ;
                 '[self.k_name].pvk-d' if md_stored is 'dec' ;
@@ -889,7 +889,7 @@ class RsaKeys:
             if pwd != None:
                 fn += '.enc'
 
-            old_path = chd_rsa('.')
+            old_path = chd_rsa(glb.home)
 
             #---Check if file exists first to not lose your time
             if isfile(fn):
@@ -995,7 +995,7 @@ class RsaKeys:
             return -1
 
         #------Read file
-        old_path = chd_rsa('.')
+        old_path = chd_rsa(glb.home)
 
         with open(fn, 'r') as f:
             f_content = f.read()
@@ -1168,7 +1168,7 @@ class RsaKeys:
     #                 v[k] = format(int(v[k]), 'x') #convert numbers to hexadecimal
     #
     #
-    #     old_path = chd_rsa('.')
+    #     old_path = chd_rsa(glb.home)
     #
     #     fdn = tuple(v.keys()) #('e', 'n', 'date', 'date_export', 'n_strenth')
     #     row = (v)
@@ -1231,7 +1231,7 @@ class RsaKeys:
                 fn += '.enc'
 
             #---check if it not already exists
-            old_path = chd_rsa('.')
+            old_path = chd_rsa(glb.home)
 
             if isfile(fn):
                 chdir(old_path)
@@ -1296,7 +1296,7 @@ class RsaKeys:
                     if k not in ('date', 'date_export'):
                         v[k] = format(int(v[k]), 'x') #convert numbers to hexadecimal
 
-            old_path = chd_rsa('.')
+            old_path = chd_rsa(glb.home)
 
             if isfile(fn):
                 chdir(old_path)
@@ -1326,7 +1326,7 @@ class RsaKeys:
         fn, (type_, stg_md) = self.get_fn(also_ret_md=True)
 
         new_name = str(new_name)
-        old_path = chd_rsa('.')
+        old_path = chd_rsa(glb.home)
 
         ext = '.' + type_ + ('-h', '-d')[stg_md == 'dec']
 
@@ -1363,7 +1363,7 @@ class RsaKeys:
         It is the same order if 'pvk' or 'pbk', but without the other part.
         '''
 
-        old_path = chd_rsa('.')
+        old_path = chd_rsa(glb.home)
 
         if mode not in ('pvk', 'pbk', 'all'):
             raise ValueError('The mode should be in ("pvk", "pbk", "all"), but "{}" was found !!!'.format(mode))
@@ -1420,7 +1420,7 @@ class RsaKeys:
         if fn[-4:] == '.enc':
             raise KeyError(tr('The RSA key is already encrypted !'))
 
-        old_path = chd_rsa('.')
+        old_path = chd_rsa(glb.home)
 
         with open(fn, 'r') as f:
             f_content = f.read()
@@ -1450,7 +1450,7 @@ class RsaKeys:
         if fn[-4:] != '.enc':
             raise KeyError(tr('The RSA key is not encrypted !'))
 
-        old_path = chd_rsa('.')
+        old_path = chd_rsa(glb.home)
 
         with open(fn, 'r') as f:
             f_content = f.read()
@@ -1494,7 +1494,7 @@ class RsaKeys:
 
         Return :
             -1      if the RSA key is not encrypted ;
-            -2      if the RSA key file n=is not well formatted ;
+            -2      if the RSA key file is not well formatted ;
             -3      if the old_pwd is wrong ;
             None    otherwise.
         '''
@@ -1511,7 +1511,7 @@ class RsaKeys:
 
             return -1
 
-        old_path = chd_rsa('.')
+        old_path = chd_rsa(glb.home)
 
         with open(fn, 'r') as f:
             f_content = f.read()
@@ -1594,7 +1594,7 @@ def list_keys(mode='any'):
             lst_all.append(k[:-10])
             append_lst(k[:-4])
 
-    old_path = chd_rsa('.')
+    old_path = chd_rsa(glb.home)
     lst_k = listdir()
     chdir(old_path)
 
