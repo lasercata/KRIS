@@ -4,7 +4,7 @@
 '''Launch KRIS with PyQt5 graphical interface.'''
 
 KRIS_gui__auth = 'Lasercata'
-KRIS_gui__last_update = '22.06.2021'
+KRIS_gui__last_update = '22.10.2021'
 KRIS_gui__version = '2.3.2'
 
 # Note : there may still be parts of code which are useless in this file
@@ -1666,7 +1666,7 @@ class ExpKeyWin(QDialog): #QMainWindow):
         key = RSA.RsaKeys(k_name, interface='gui')
         fn_src0, (md, md_stored) = key.get_fn('pbk', also_ret_md=True)
 
-        fn_src = '{}/RSA_keys/{}'.format(glb.KRIS_data_path, fn_src0)
+        fn_src = (glb.KRIS_data_path + '/RSA_keys', expanduser('~/.RSA_keys'))[glb.home] + '/' + fn_src0
 
         if md_stored == 'hexa':
             f_ext = 'KRIS hex public keys(*.pbk-h);;All files(*)'
