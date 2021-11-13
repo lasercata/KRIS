@@ -4,8 +4,8 @@
 '''This program allow you to encrypt and decrypt with RSA cipher.'''
 
 RSA__auth = 'Lasercata, Elerias'
-RSA__last_update = '22.06.2021'
-RSA__version = '4.2_kris'
+RSA__last_update = '13.11.2021'
+RSA__version = '4.3_kris'
 
 
 ##-import
@@ -521,6 +521,36 @@ class RSA:
         # #todo: this don't work : the print works well (if you encrypt "é", and decrypt it it will print "é"), but ret is not "é"
 
         return ret.strip('\x00')
+
+
+    def encrypt_file(self, fn_in, fn_out):
+        '''
+        Encrypt the content of `fn_in` and write it in `fn_out`.
+        It does NOT check if `fn_out` already exists and will overwrite it.
+        '''
+
+        with open(fn_in, 'r') as f:
+            txt = f.read()
+
+        txt_c = self.encrypt(txt)
+
+        with open(fn_out, 'w') as f:
+            f.write(txt_c)
+
+
+    def decrypt_file(self, fn_in, fn_out):
+        '''
+        Decrypt the content of `fn_in` and write it in `fn_out`.
+        It does NOT check if `fn_out` already exists and will overwrite it.
+        '''
+
+        with open(fn_in, 'r') as f:
+            txt = f.read()
+
+        txt_d = self.decrypt(txt)
+
+        with open(fn_out, 'w') as f:
+            f.write(txt_d)
 
 
     def sign(self, txt):

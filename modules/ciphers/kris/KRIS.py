@@ -12,8 +12,8 @@ created by Ron Rivest, Adi Shamir, and Leonard Adleman, and implemented in pytho
 '''
 
 KRIS__auth = 'Lasercata'
-KRIS__last_update = '05.03.2021'
-KRIS__version = '1.2_kris'
+KRIS__last_update = '13.11.2021'
+KRIS__version = '1.3_kris'
 
 
 ##-import
@@ -24,6 +24,7 @@ from secrets import choice as schoice
 #from datetime import datetime as dt
 #from time import sleep
 
+import os
 from os import chdir, mkdir, getcwd, listdir, walk
 from os.path import expanduser
 from shutil import rmtree
@@ -207,6 +208,102 @@ class Kris:
             return msg.strip('\x00')
 
         return msg
+
+
+
+    #---------encrypt file
+    def encryptFile(self, fn_in, fn_out, AES_key_size=16):
+        '''
+        Encrypt the file `fn_in` with AES using a random key, which is then encrypted with RSA.
+        The encrypted AES key is added at the end of the file.
+
+        - fn_in : the name of the file to encrypt ;
+        - fn_out : the name of the output encrypted file ;
+        - AES_key_size : the size of the AES key to generate. Default is 16 characters.
+        '''
+
+        #------AES key
+        AES_key = AES_rnd_key_gen(AES_key_size, self.AES_mode)
+        AES_key_c = self.RSA_ciph.encrypt(AES_key)
+
+        #------encrypt text
+        AES_cipher = AES(self.AES_mode, AES_key, False, self.encod)
+        AES_cipher.encryptFile(fn_in, fn_out)
+
+        with open(fn_out, 'ab') as f:
+            f.write(('\n' + AES_key_c).encode())
+
+        return AES_key_c
+
+
+    #---------decrypt file
+    def decryptFile(self, fn_in, fn_out):
+        '''
+        Decrypt the file `fn_in` which was encrypted with self.encryptFile.
+
+        - fn_in : the name of the file to encrypt ;
+        - fn_out : the name of the output encrypted file.
+        '''
+
+        #------Read AES key from file and remove it.
+        with open(fn_in, 'r+b') as f: #https://stackoverflow.com/a/10289740
+            f.seek(0, os.SEEK_END)
+
+            pos = f.tell() - 1
+
+            while pos > 0 and f.read(1) != b'\n':
+                pos -= 1
+                f.seek(pos, os.SEEK_SET)
+
+            if pos > 0:
+                f.seek(pos, os.SEEK_SET)
+                AES_key_c = f.read()
+                f.seek(pos, os.SEEK_SET)
+                f.truncate()
+
+        #------AES key
+        try:
+            AES_key = self.RSA_ciph.decrypt((AES_key_c.decode()).replace('\n', ''))
+
+        except Exception as err:
+            if self.interface == None:
+                print(err)
+
+            elif self.interface == 'console':
+                cl_out(c_error, err)
+
+            else:
+                QMessageBox.critical(None, 'Error', '<h2>{}</h2>'.format(err))
+
+            with open(fn_in, 'ab') as f:
+                f.write(AES_key_c)
+
+            return -1
+
+        #------decrypt text
+        try:
+            AES_cipher = AES(self.AES_mode, AES_key, False, encoding=self.encod)
+
+        except ValueError as err:
+            msg = 'You did NOT selected the right RSA key !!!'
+
+            if self.interface == None:
+                print(msg)
+
+            elif self.interface == 'console':
+                cl_out(c_error, msg)
+
+            else:
+                QMessageBox.critical(None, 'Bad RSA key !!!', '<h2>{}</h2>'.format(msg))
+                pass
+
+            raise ValueError(msg)
+
+        AES_cipher.decryptFile(fn_in, fn_out)
+
+        #------Rewrite the key in the file, for future decryptions
+        with open(fn_in, 'ab') as f:
+            f.write(AES_key_c)
 
 
 class SignedKRIS:
