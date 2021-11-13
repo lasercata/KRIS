@@ -4,8 +4,8 @@
 '''Launch KRIS with PyQt5 graphical interface.'''
 
 KRIS_gui__auth = 'Lasercata'
-KRIS_gui__last_update = '22.10.2021'
-KRIS_gui__version = '2.3.2'
+KRIS_gui__last_update = '13.11.2021'
+KRIS_gui__version = '2.4' #2.3.2
 
 # Note : there may still be parts of code which are useless in this file
 # and maybe some imported modules too.
@@ -272,6 +272,14 @@ class KrisGui(QMainWindow):
 
         self.file_m.addSeparator()
 
+        #-File encryption
+        self.f_enc_ac = QAction(tr('&File encryption ...'), self) #Todo: tr
+        #self.f_enc_ac.setShortcut('Ctrl+O')
+        self.f_enc_ac.triggered.connect(lambda: FileEncWin.use(self.style, parent=self))
+        self.file_m.addAction(self.f_enc_ac)
+
+        self.file_m.addSeparator()
+
         #-Exit
         self.exit_ac = QAction(tr('&Quit'), self)
         self.exit_ac.setShortcut('Ctrl+Q')
@@ -494,7 +502,7 @@ class KrisGui(QMainWindow):
         self.ciph_toolbar.setMovable(False)
         self.addToolBar(Qt.TopToolBarArea, self.ciph_toolbar) #Qt.BottomToolBarArea
 
-        self.ciph_bar = CipherKeyWidget(self.style, self)
+        self.ciph_bar = CipherKeyWidget(style=self.style, parent=self)
         self.ciph_toolbar.addWidget(self.ciph_bar)
 
         #------connection
@@ -992,8 +1000,12 @@ class KrisGui(QMainWindow):
 class CipherKeyWidget(QGroupBox):
     '''Defining the bar with the key box, encrypt and decrypt buttons, cipher selection.'''
 
-    def __init__(self, style, parent=None):
-        '''Initiate widget.'''
+    def __init__(self, style, hide_sign=False, parent=None):
+        '''
+        Initiate widget.
+
+        - hide_sign : bool that indicate if adding hashes and RSA signature to the cipher selection box.
+        '''
 
         #------ini
         super().__init__(parent)
@@ -1061,8 +1073,12 @@ class CipherKeyWidget(QGroupBox):
         self.cipher_opt_ciphs.activated[str].connect(self.chk_ciph)
         self.cipher_opt_ciphs.addItem(tr('-- Select a cipher --'))
         for k in ciphers_list:
-            self.cipher_opt_ciphs.insertSeparator(500)
-            self.cipher_opt_ciphs.addItems(ciphers_list[k])
+            if (hide_sign and k != 'hash') or (not hide_sign):
+                self.cipher_opt_ciphs.insertSeparator(500)
+                self.cipher_opt_ciphs.addItems(ciphers_list[k])
+
+                if hide_sign and k == 'RSA':
+                    self.cipher_opt_ciphs.removeItem(len(ciphers_list['KRIS']) + len(ciphers_list['AES']) + 5)
         keys_lay.addWidget(self.cipher_opt_ciphs, 0, 7)#, alignment=Qt.AlignLeft)
 
         self.chk_ciph('')
@@ -1313,6 +1329,152 @@ class SettingsWin(QDialog): #QMainWindow):
 
         stg_win = SettingsWin(style, app_style, parent)
         stg_win.exec_()
+
+
+
+class FileEncWin(QDialog):
+    '''Dialog window that allow to encrypt files'''
+
+    def __init__(self, style, parent=None):
+        '''Initiate the window.'''
+
+        #------ini
+        super().__init__(parent)
+        self.setWindowTitle('File encryption — KRIS') #Todo: tr
+
+        self.style = style
+
+        #------Widgets
+        main_lay = QGridLayout()
+        self.setLayout(main_lay)
+
+        #---Key and cipher selection
+        self.ciph_bar = CipherKeyWidget(style=self.style, hide_sign=True, parent=self)
+        self.ciph_bar.cipher_bt_enc.hide()
+        self.ciph_bar.cipher_bt_dec.hide()
+        main_lay.addWidget(self.ciph_bar, 0, 0, 1, 3)
+
+        #---mode
+        mode_lay = QGridLayout()
+        mode_lay.setHorizontalSpacing(50)
+        main_lay.addLayout(mode_lay, 1, 1, Qt.AlignCenter)
+
+        main_lay.addWidget(QLabel('Mode :'), 1, 0)
+
+        self.enc_rb = QRadioButton('Encrypt')
+        self.enc_rb.setMinimumHeight(50)
+        self.enc_rb.setChecked(True)
+        #self.enc_rb.toggled.connect(self._chk)
+        mode_lay.addWidget(self.enc_rb, 0, 1)
+
+        self.dec_rb = QRadioButton('Decrypt')
+        #self.dec_rb.toggled.connect(self._chk)
+        mode_lay.addWidget(self.dec_rb, 0, 2)
+
+        #---Input file
+        main_lay.addWidget(QLabel('Input file :'), 2, 0) #Todo: tr
+
+        self.input_fn_ledt = QLineEdit()
+        self.input_fn_ledt.setMinimumSize(500, 35)
+        main_lay.addWidget(self.input_fn_ledt, 2, 1)
+
+        self.input_fn_bt = QPushButton('Browse')
+        self.input_fn_bt.clicked.connect(lambda: self._browse(0))
+        main_lay.addWidget(self.input_fn_bt, 2, 2)
+
+        #---Output file
+        main_lay.addWidget(QLabel('Output file :'), 3, 0) #Todo: tr
+
+        self.output_fn_ledt = QLineEdit()
+        self.output_fn_ledt.setMinimumSize(500, 35)
+        main_lay.addWidget(self.output_fn_ledt, 3, 1)
+
+        self.output_fn_bt = QPushButton('Browse')
+        self.output_fn_bt.clicked.connect(lambda: self._browse(1))
+        main_lay.addWidget(self.output_fn_bt, 3, 2)
+
+        main_lay.addWidget(QLabel(''), 4, 0)
+
+        #---Buttons
+        self.bt_cancel = QPushButton('&' + tr('Cancel'))
+        self.bt_cancel.setMaximumSize(55, 35)
+        self.bt_cancel.clicked.connect(self.close)
+        main_lay.addWidget(self.bt_cancel, 5, 1, Qt.AlignRight)
+
+        self.start_bt = QPushButton('&' + tr('Start')) #Todo: tr
+        self.start_bt.setMinimumSize(0, 25)
+        self.start_bt.setStyleSheet(style)
+        self.start_bt.setObjectName('main_obj')
+        self.start_bt.clicked.connect(self._start)
+        main_lay.addWidget(self.start_bt, 5, 2)
+
+
+        #------connection
+        self.use_ciph = UseCiphers(
+            None, #txt_in
+            None, #txt_out
+            self.ciph_bar.cipher_opt_keys,
+            self.ciph_bar.cipher_ledit_keys,
+            self.ciph_bar.cipher_nb_key,
+            self.ciph_bar.cipher_opt_ciphs,
+            None, #encod_box
+            self.input_fn_ledt,
+            self.output_fn_ledt
+        )
+
+
+    def _browse(self, which):
+        '''
+        Open a file dialog to choose a file and put the filename inside the line edit.
+
+        - which : indicate if it is for input (0) or output (1).
+        '''
+
+        if which == 0:
+            f_url = QFileDialog.getOpenFileName(self, tr('Input file') + ' — KRIS')[0] #Todo: tr
+
+            if f_url in ((), ''):
+                return -3 #Canceled
+
+            self.input_fn_ledt.setText(f_url)
+
+        else:
+            f_url = QFileDialog.getSaveFileName(self, tr('Output file') + ' — KRIS')[0] #Todo: tr
+            self.output_fn_ledt.setText(f_url)
+
+
+    def _start(self):
+        '''Read the widgets and encrypt or decrypt the file.'''
+
+        #------Verify files
+        fn_in = self.input_fn_ledt.text()
+        fn_out = self.output_fn_ledt.text()
+
+        if fn_in == '' or fn_out == '':
+            QMessageBox.warning(self, 'Empty files', '<h2>Please enter the input and output files</h2>')
+            return -3
+
+        if not isfile(fn_in):
+            QMessageBox.critical(self, 'Input file not found !', '<h2>The input file was not found !</h2>') #Todo: tr
+            return -3
+
+        if isfile(fn_out):
+            if QMessageBox.question(self, 'Output file already exists !', '<h2>The output file already exists !</h2>\n<h2>Do you want to overwrite it ?</h2>', QMessageBox.Cancel | QMessageBox.Yes, QMessageBox.Cancel) != QMessageBox.Yes:
+                return -3 #Todo: tr
+
+        #------Encrypt / Decrypt
+        if self.enc_rb.isChecked():
+            self.use_ciph.encrypt_file()
+
+        else:
+            self.use_ciph.decrypt_file()
+
+
+    def use(style, parent=None):
+        '''Function which launch this window.'''
+
+        f_enc_win = FileEncWin(style, parent)
+        f_enc_win.exec_()
 
 
 
@@ -2392,7 +2554,7 @@ class ChPwdKeyWin(QDialog): #QMainWindow):
 class UseCiphers:
     '''Class which allow to use the Cipher tab.'''
 
-    def __init__(self, txt_in, txt_out, key_opt, key_ledit, key_nb, cipher, encod):
+    def __init__(self, txt_in, txt_out, key_opt, key_ledit, key_nb, cipher, encod, fn_in=None, fn_out=None):
         '''Create the UseCiphers object.'''
 
         self.txt_in = txt_in
@@ -2402,6 +2564,8 @@ class UseCiphers:
         self.key_nb = key_nb
         self.cipher = cipher
         self.encod = encod
+        self.fn_in = fn_in #Used with file encryption
+        self.fn_out = fn_out #Same.
 
 
     def _verify(self, md):
@@ -2708,6 +2872,140 @@ class UseCiphers:
 
         self.txt_out.setPlainText(msg_d)
         win.out_toolbar.setVisible(True)
+
+
+    def encrypt_file(self):
+        '''Encrypt a file, using widgets infos.'''
+
+        #------check
+        if self._verify(0) == -3:
+            return -3 #Abort
+
+        #------ini
+        fn_in = self.fn_in.text()
+        fn_out = self.fn_out.text()
+
+        ciph = self.cipher.currentText()
+
+        key = self._get_key(0)
+
+        if key == -3:
+            return -3 #Abort
+
+
+        #------encrypt with the good cipher
+        if ciph in ciphers_list['KRIS']:
+            AES_md = (256, 192, 128)[ciphers_list['KRIS'].index(ciph)]
+
+            C = KRIS.Kris((key, None), AES_md, interface='gui')
+
+            try:
+                C.encryptFile(fn_in, fn_out)
+
+            except Exception as err:
+                QMessageBox.critical(None, '!!! Error !!!', f'<h2>{err}</h2>')
+                return -3
+
+
+        elif ciph == 'RSA':
+            C = RSA.RSA((key, None), interface='gui')
+
+            try:
+                C.encrypt_file(fn_in, fn_out)
+
+            except Exception as err:
+                QMessageBox.critical(None, '!!! Error !!!', f'<h2>{err}</h2>')
+                return -3
+
+
+        elif  ciph in ciphers_list['AES']:
+            AES_md = (256, 192, 128)[ciphers_list['AES'].index(ciph)]
+            md = 'str' #{'t' : 'str', 'b' : 'bytes'}[bytes_md]
+
+            try:
+                C = AES.AES(AES_md, key, False)
+
+            except ValueError as err:
+                QMessageBox.critical(None, '!!! Value error !!!', '<h2>{}</h2>'.format(err))
+                return -3
+
+            try:
+                C.encryptFile(fn_in, fn_out)
+
+            except Exception as err:
+                QMessageBox.critical(None, '!!! Error !!!', f'<h2>{err}</h2>')
+                return -3
+
+        f_in = fn_in.split('/')
+        f_out = fn_out.split('/')
+        filename_in = f_in[-1] if f_in[-1] != '' else f_in[-2]
+        filename_out = f_out[-1] if f_out[-1] != '' else f_out[-2]
+        QMessageBox.about(None, 'Done !', f'<h2>The file {filename_in} was encrypted in the file {filename_out}.</h2>')
+
+
+    def decrypt_file(self):
+        '''Decrypt a file, using widgets infos'''
+
+        #------check
+        if self._verify(1) == -3:
+            return -3 #Abort
+
+        #------ini
+        fn_in = self.fn_in.text()
+        fn_out = self.fn_out.text()
+
+        ciph = self.cipher.currentText()
+
+        key = self._get_key(1)
+
+        if key == -3:
+            return -3 #Abort
+
+
+        try:
+            #------decrypt using the good cipher
+            if ciph in ciphers_list['KRIS']:
+                AES_md = (256, 192, 128)[ciphers_list['KRIS'].index(ciph)]
+
+                C = KRIS.Kris((None, key), AES_md, interface='gui')
+
+                if C.decryptFile(fn_in, fn_out) == -1:
+                    raise Exception('The file does not seem to be well formatted for that software, or the used key is the wrong one.')
+
+
+
+            elif ciph == 'RSA':
+                C = RSA.RSA((None, key), interface='gui')
+
+                try:
+                    C.decrypt_file(fn_in, fn_out)
+
+                except Exception as err:
+                    QMessageBox.critical(None, '!!! Error !!!', f'<h2>{err}</h2>')
+                    return -3
+
+
+            elif  ciph in ciphers_list['AES']:
+                AES_md = (256, 192, 128)[ciphers_list['AES'].index(ciph)]
+
+                C = AES.AES(AES_md, key, False)
+
+                try:
+                    C.decryptFile(fn_in, fn_out)
+
+                except Exception as err:
+                    QMessageBox.critical(None, '!!! Error !!!', f'<h2>{err}</h2>')
+                    return -3
+
+        except Exception as err:
+            QMessageBox.critical(None, '!!! ' + tr('Decryption error') + ' !!!', '<h2>' + tr('An error occured during decryption. Maybe you tried to decrypt clear text, or the cipher text is not good formated.') + '</h2>\n<h4>' + tr('Error') + ' :</h4>{}'.format(err))
+            return -3 # Abort
+
+        f_in = fn_in.split('/')
+        f_out = fn_out.split('/')
+        filename_in = f_in[-1] if f_in[-1] != '' else f_in[-2]
+        filename_out = f_out[-1] if f_out[-1] != '' else f_out[-2]
+        QMessageBox.about(None, 'Done !', f'<h2>The file {filename_in} was decrypted in the file {filename_out}.</h2>')
 
 
 
