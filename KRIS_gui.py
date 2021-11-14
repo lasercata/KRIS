@@ -4,8 +4,8 @@
 '''Launch KRIS with PyQt5 graphical interface.'''
 
 KRIS_gui__auth = 'Lasercata'
-KRIS_gui__last_update = '13.11.2021'
-KRIS_gui__version = '2.4' #2.3.2
+KRIS_gui__last_update = '14.11.2021'
+KRIS_gui__version = '2.4.1' #2.3.2
 
 # Note : there may still be parts of code which are useless in this file
 # and maybe some imported modules too.
@@ -1340,7 +1340,7 @@ class FileEncWin(QDialog):
 
         #------ini
         super().__init__(parent)
-        self.setWindowTitle('File encryption — KRIS') #Todo: tr
+        self.setWindowTitle(tr('File encryption') + ' — KRIS')
 
         self.style = style
 
@@ -1364,32 +1364,31 @@ class FileEncWin(QDialog):
         self.enc_rb = QRadioButton('Encrypt')
         self.enc_rb.setMinimumHeight(50)
         self.enc_rb.setChecked(True)
-        #self.enc_rb.toggled.connect(self._chk)
+        self.enc_rb.toggled.connect(self._swap_f_url)
         mode_lay.addWidget(self.enc_rb, 0, 1)
 
         self.dec_rb = QRadioButton('Decrypt')
-        #self.dec_rb.toggled.connect(self._chk)
         mode_lay.addWidget(self.dec_rb, 0, 2)
 
         #---Input file
-        main_lay.addWidget(QLabel('Input file :'), 2, 0) #Todo: tr
+        main_lay.addWidget(QLabel(tr('Input file :')), 2, 0)
 
         self.input_fn_ledt = QLineEdit()
         self.input_fn_ledt.setMinimumSize(500, 35)
         main_lay.addWidget(self.input_fn_ledt, 2, 1)
 
-        self.input_fn_bt = QPushButton('Browse')
+        self.input_fn_bt = QPushButton(tr('Browse'))
         self.input_fn_bt.clicked.connect(lambda: self._browse(0))
         main_lay.addWidget(self.input_fn_bt, 2, 2)
 
         #---Output file
-        main_lay.addWidget(QLabel('Output file :'), 3, 0) #Todo: tr
+        main_lay.addWidget(QLabel(tr('Output file :')), 3, 0)
 
         self.output_fn_ledt = QLineEdit()
         self.output_fn_ledt.setMinimumSize(500, 35)
         main_lay.addWidget(self.output_fn_ledt, 3, 1)
 
-        self.output_fn_bt = QPushButton('Browse')
+        self.output_fn_bt = QPushButton(tr('Browse'))
         self.output_fn_bt.clicked.connect(lambda: self._browse(1))
         main_lay.addWidget(self.output_fn_bt, 3, 2)
 
@@ -1401,7 +1400,7 @@ class FileEncWin(QDialog):
         self.bt_cancel.clicked.connect(self.close)
         main_lay.addWidget(self.bt_cancel, 5, 1, Qt.AlignRight)
 
-        self.start_bt = QPushButton('&' + tr('Start')) #Todo: tr
+        self.start_bt = QPushButton('&' + tr('Encrypt'))
         self.start_bt.setMinimumSize(0, 25)
         self.start_bt.setStyleSheet(style)
         self.start_bt.setObjectName('main_obj')
@@ -1431,16 +1430,33 @@ class FileEncWin(QDialog):
         '''
 
         if which == 0:
-            f_url = QFileDialog.getOpenFileName(self, tr('Input file') + ' — KRIS')[0] #Todo: tr
+            f_url = QFileDialog.getOpenFileName(self, tr('Input file') + ' — KRIS')[0]
 
             if f_url in ((), ''):
                 return -3 #Canceled
 
             self.input_fn_ledt.setText(f_url)
 
+            if self.output_fn_ledt.text() == '':
+                self.output_fn_ledt.setText(f_url + '.enc')
+
         else:
-            f_url = QFileDialog.getSaveFileName(self, tr('Output file') + ' — KRIS')[0] #Todo: tr
+            f_url = QFileDialog.getSaveFileName(self, tr('Output file') + ' — KRIS')[0]
             self.output_fn_ledt.setText(f_url)
+
+
+    def _swap_f_url(self):
+        '''Activated when changing mode'''
+
+        temp = self.output_fn_ledt.text()
+        self.output_fn_ledt.setText(self.input_fn_ledt.text())
+        self.input_fn_ledt.setText(temp)
+
+        if self.enc_rb.isChecked():
+            self.start_bt.setText('&' + tr('Encrypt'))
+
+        else:
+            self.start_bt.setText('&' + tr('Decrypt'))
 
 
     def _start(self):
@@ -1451,7 +1467,7 @@ class FileEncWin(QDialog):
         fn_out = self.output_fn_ledt.text()
 
         if fn_in == '' or fn_out == '':
-            QMessageBox.warning(self, 'Empty files', '<h2>Please enter the input and output files</h2>')
+            QMessageBox.warning(self, 'Empty files', '<h2>Please enter the input and output files</h2>') #Todo: tr
             return -3
 
         if not isfile(fn_in):
