@@ -1,5 +1,5 @@
 # KRIS
-KRIS is a PyQt5 python3 software that allow you to encrypt messages with secure ciphers. It implements `RSA`, `AES` and `KRIS cipher`. `KRIS cipher` encrypt the message with AES (which is faster than RSA), and then encrypt the used AES key with RSA (as PGP do).
+KRIS is a PyQt5 python3 software that allow you to encrypt messages and files with secure ciphers. It implements `RSA`, `AES` and `KRIS cipher`. `KRIS cipher` encrypt the message with AES (which is faster than RSA), and then encrypt the used AES key with RSA (as PGP do).
 
 The name come from the esperanto for cryptosystem, "kriptosistemo" ("KRIptoSistemo").
 
