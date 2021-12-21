@@ -4,8 +4,8 @@
 '''Launch KRIS with PyQt5 graphical interface.'''
 
 KRIS_gui__auth = 'Lasercata'
-KRIS_gui__last_update = '14.11.2021'
-KRIS_gui__version = '2.4.1' #2.3.2
+KRIS_gui__last_update = '21.12.2021'
+KRIS_gui__version = '2.4.2' #2.4.1
 
 # Note : there may still be parts of code which are useless in this file
 # and maybe some imported modules too.
@@ -1438,7 +1438,17 @@ class FileEncWin(QDialog):
             self.input_fn_ledt.setText(f_url)
 
             if self.output_fn_ledt.text() == '':
-                self.output_fn_ledt.setText(f_url + '.enc')
+                if self.enc_rb.isChecked():
+                    new_f_url = f_url + '.enc'
+
+                else:
+                    if f_url[-4:] == '.enc':
+                        new_f_url = f_url[:-4]
+
+                    else:
+                        new_f_url = f_url + '.dec'
+
+                self.output_fn_ledt.setText(new_f_url)
 
         else:
             f_url = QFileDialog.getSaveFileName(self, tr('Output file') + ' — KRIS')[0]
