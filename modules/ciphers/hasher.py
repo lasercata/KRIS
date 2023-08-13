@@ -36,7 +36,7 @@ def hasher(txt, h):
 
 
 class Hasher:
-    '''Class which define hasher.'''
+    '''Class implementing operations with hash funcions'''
 
     def __init__(self, h, loop=512):
         '''
@@ -62,7 +62,7 @@ class Hasher:
             txt = txt.encode()
 
         elif type(txt) != bytes:
-            raise ValueError('The text "txt" must be a string !!!')
+            raise ValueError('The argument "txt" must be a (bytes) string !!!')
 
 
         if self.h != 'SecHash':
@@ -90,13 +90,11 @@ def SecHash(txt, loop=512):
     Hash 'txt' with the following schem :
         sha512(sha256(sha512(sha256(sha512(txt*3 + str(loop))))))
 
-    Do this 'loop' times.
+    and it does this 'loop' times.
     '''
 
     if type(loop) != int:
         raise ValueError('The arg "loop" should be an intenger !!!')
-
-    txt = txt*3 + str(loop)
 
     h512 = Hasher('sha512').hash
     h256 = Hasher('sha256').hash
@@ -106,7 +104,7 @@ def SecHash(txt, loop=512):
             h512(
                 h256(
                     h512(
-                        txt
+                        txt*3 + str(loop)
                     )
                 )
             )

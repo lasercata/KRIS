@@ -4,8 +4,8 @@
 '''Launch KRIS with PyQt5 graphical interface.'''
 
 KRIS_gui__auth = 'Lasercata'
-KRIS_gui__last_update = '21.12.2021'
-KRIS_gui__version = '2.4.2' #2.4.1
+KRIS_gui__last_update = '2023.08.10'
+KRIS_gui__version = '2.4.3' #before the 2023.08.10 : 2.4.2
 
 # Note : there may still be parts of code which are useless in this file
 # and maybe some imported modules too.
@@ -18,7 +18,7 @@ KRIS_gui__version = '2.4.2' #2.4.1
 from modules.base import glb
 
 from PyQt5.QtCore import QSize, Qt
-from PyQt5.QtGui import QIcon, QPixmap, QCloseEvent, QPalette, QColor, QFont
+from PyQt5.QtGui import QIcon, QPixmap, QCloseEvent, QPalette, QColor, QFont #TODO: ensure that all the modules are needed.
 from PyQt5.QtWidgets import (QApplication, QMainWindow, QComboBox, QStyleFactory,
     QLabel, QGridLayout, QLineEdit, QMessageBox, QWidget, QPushButton, QCheckBox,
     QHBoxLayout, QVBoxLayout, QGroupBox, QTabWidget, QTableWidget, QFileDialog,
@@ -37,11 +37,11 @@ import webbrowser #Open web page (in About)
 
 #---------KRIS modules
 try:
-
     from Languages.lang import translate as tr
     from Languages.lang import langs_lst, lang
 
     from modules.base.base_functions import *
+    from modules.base.text_functions import *
     from modules.base.progress_bars import *
     # from modules.base.AskPwd import AskPwd
 
@@ -49,8 +49,8 @@ try:
     from modules.base.gui.GuiStyle import GuiStyle
     from modules.base.gui.Popup import Popup
 
-    from modules.ciphers.hashes import hasher
-    from modules.ciphers.kris import AES, RSA, KRIS
+    from modules.ciphers import hasher
+    from modules.ciphers import AES, RSA, RSA_old, KRIS
     from modules.base.FormatMsg import FormatMsg
 
     from modules.base.mini_pwd_testor import get_sth
@@ -83,12 +83,12 @@ try:
 
 except FileNotFoundError:
     cl_out(c_error, tr('The file "version.txt" was not found. A version will be set but can be wrong.'))
-    kris_version = '2.0.0 ?'
+    kris_version = '3.0.0 ?'
 
 else:
     if len(kris_version) > 16:
         cl_out(c_error, tr('The file "version.txt" contain more than 16 characters, so it certainly doesn\'t contain the actual version. A version will be set but can be wrong.'))
-        kris_version = '2.0.0 ?'
+        kris_version = '3.0.0 ?'
 
 
 #---------passwords
@@ -152,8 +152,8 @@ crypta_alf_list = {
     'alf_az': alf_az,
     'alf_25': alf_25,
     'alf_az09': alf_az09,
-    'alf_25AZ': alf_25AZ,
     'alf_AZ': alf_AZ,
+    'alf_25AZ': alf_25AZ,
     'alf_AZ09': alf_AZ09
 }
 
@@ -2432,9 +2432,9 @@ class DecKeyWin(QDialog): #QMainWindow):
         rn_win.exec_()
 
 
-#---------Encrypt RSA keys
+#---------Change RSA keys password
 class ChPwdKeyWin(QDialog): #QMainWindow):
-    '''Class which define a window which allow to encrypt RSA keys.'''
+    '''Class which define a window which allow to change RSA keys password.'''
 
     def __init__(self, style, parent=None):
         '''Initiate the ChPwdKeyWin window.'''
@@ -2641,14 +2641,17 @@ class UseCiphers:
         if md not in (0, 1):
             raise ValueError('"md" not in (0, 1) !!!')
 
+        mode = ('pbk', 'pvk')[md]
+
         ciph = self.cipher.currentText()
 
         if ciph in (*ciphers_list['KRIS'], *ciphers_list['RSA']):
             try:
-                key = RSA.RsaKeys(self.key_opt.currentText(), interface='gui').get_key(md)
+                # key = RSA.RsaKeyFile(self.key_opt.currentText(), interface='gui').get_key(md)
+                key = RSA.RsaKeyFile(self.key_opt.currentText(), interface='gui').read(mode) #TODO: check if the error are risen the same as the above function
 
             except Exception as err:
-                if str(err) == "Can't read the private key of a pbk set of keys !!!":
+                if str(err) == "Can't read the private key of a pbk set of keys !!!": #TODO: this may not work.
                     msg_err = '<h2>' + tr('Impossible to do this, private keys not found.') + '</h2>'
 
                 else:
@@ -2694,23 +2697,25 @@ class UseCiphers:
             return -3 #Abort
 
 
-        #------encrypt with the good cipher
+        #------encrypt with the right cipher
         if ciph in ciphers_list['KRIS']:
             AES_md = (256, 192, 128)[ciphers_list['KRIS'].index(ciph)]
 
-            C = KRIS.Kris((key, None), AES_md, encod, interface='gui')
+            C = KRIS.Kris((key, None), AES_md, encod, interface='gui') #TODO: change this
             msg_c = C.encrypt(txt)
 
             msg_c = '{} {}'.format(msg_c[0], msg_c[1])
 
 
         elif ciph == 'RSA':
-            C = RSA.RSA((key, None), interface='gui')
+            # C = RSA.RSA((key, None), interface='gui')
+            C = RSA.RSA(key, padding='oaep', interface='gui')
             msg_c = C.encrypt(txt)
 
 
         elif ciph == 'RSA signature':
-            C = RSA.RsaSign((None, key), interface='gui')
+            # C = RSA.RsaSign((None, key), interface='gui')
+            C = RSA.RsaSign(key, padding='oaep', interface='gui')
 
             if formatted_out:
                 msg_c = C.str_sign(txt)
@@ -2749,7 +2754,7 @@ class UseCiphers:
                 msg_c = hasher.SecHash(txt, key)
 
             except RecursionError:
-                QMessageBox.critical(None, '!!! Too big loop !!!', '<h2>The number of loops is too big !!!</h2>')
+                QMessageBox.critical(None, '!!! Too large loop !!!', '<h2>The number of loops is too large !!!</h2>')
                 return -3
 
 
@@ -2806,7 +2811,7 @@ class UseCiphers:
             else:
                 h = None
 
-            if auto:
+            if auto: #TODO: check somewhere around here if the cipher is RSA or KRIS and the KRIS version is older than the 3.0.0.
                 self.cipher.setCurrentText(d['Cipher'])
                 win.ciph_bar.chk_ciph(d['Cipher'])
 
@@ -2842,11 +2847,11 @@ class UseCiphers:
 
 
         try:
-            #------decrypt using the good cipher
+            #------decrypt using the right cipher
             if ciph in ciphers_list['KRIS']:
                 AES_md = (256, 192, 128)[ciphers_list['KRIS'].index(ciph)]
 
-                C = KRIS.Kris((None, key), AES_md, encod, bytes_md, interface='gui')
+                C = KRIS.Kris((None, key), AES_md, encod, bytes_md, interface='gui') #TODO: adapt this line
 
                 try:
                     if bytes_md_d == 't':
@@ -2859,16 +2864,19 @@ class UseCiphers:
 
 
             elif ciph == 'RSA':
-                C = RSA.RSA((None, key), interface='gui')
+                # C = RSA.RSA((None, key), interface='gui')
+                C = RSA.RSA(key, interface='gui')
                 msg_d = C.decrypt(txt)
 
 
             elif ciph == 'RSA signature':
                 if h == None:
-                    C = RSA.RsaSign((key, None), interface='gui')
+                    # C = RSA.RsaSign((key, None), interface='gui')
+                    C = RSA.RsaSign(key, interface='gui')
 
                 else:
-                    C = RSA.RsaSign((key, None), h, interface='gui')
+                    # C = RSA.RsaSign((key, None), h, interface='gui')
+                    C = RSA.RsaSign(key, h, interface='gui')
 
                 if formatted_out:
                     b = C.str_check(txt)
@@ -2919,7 +2927,7 @@ class UseCiphers:
             return -3 #Abort
 
 
-        #------encrypt with the good cipher
+        #------encrypt with the right cipher
         if ciph in ciphers_list['KRIS']:
             AES_md = (256, 192, 128)[ciphers_list['KRIS'].index(ciph)]
 
