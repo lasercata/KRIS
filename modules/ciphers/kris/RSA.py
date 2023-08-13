@@ -4,8 +4,8 @@
 '''This program allow you to encrypt and decrypt with RSA cipher.'''
 
 RSA__auth = 'Lasercata, Elerias'
-RSA__last_update = '13.11.2021'
-RSA__version = '4.3_kris'
+RSA__last_update = '2023.08.06'
+RSA__version = '5.0_kris'
 
 
 ##-import
@@ -25,7 +25,7 @@ from modules.ciphers.kris.AES import AES
 
 #---------packages
 import math
-from random import randint
+from random import randint, randbytes
 from secrets import randbits
 
 from ast import literal_eval #Safer than eval
@@ -46,7 +46,7 @@ import csv
 
 
 #------from b_cvrt
-def sp_grp(n, grp, sep=' ', rev_lst=True):
+def sp_grp(n, grp, sep=' ', rev_lst=True): #TODO: move this in base (or some similar file)
     '''Base of space. Return n with spaced groups of grp.
     .n : the number / string to space ;
     .grp : the group size ;
@@ -89,16 +89,16 @@ try:
 
 except FileNotFoundError:
     tr('The file "version.txt" was not found. A version will be set but can be wrong.')
-    kris_version = '2.0.0 ?'
+    kris_version = '3.0.0 ?'
 
 else:
     if len(kris_version) > 16:
         tr('The file "version.txt" contain more than 16 characters, so it certainly doesn\'t contain the actual version. A version will be set but can be wrong.')
-        kris_version = '2.0.0 ?'
+        kris_version = '3.0.0 ?'
 
 ##-test / base functions
 #---------date
-def date(verbose=False):
+def date(verbose=False): #TODO: move this in base.
     '''Return the date in the form of
     dd/mm/yyyy, [hh]h[min]:ss,[milliseconds]
     ex : 17/03/2020, 23h15:32,859410
@@ -176,7 +176,7 @@ def key_size(n):
 
 
 #---------restore_encoding
-def rest_encod(txt):
+def rest_encod(txt): #TODO: will this be still useful ?
     '''This funtion try to reset the caracters after decrypting.'''
 
     alf_norm = ('☺', '☻', '♥', '♦', '♣', '♠', '•', '◘', '○', '◙', '♂', '♀', '♪', '♫', '☼', '►',
@@ -233,482 +233,16 @@ def rm_lst(lst, lst_to_rm):
     return ret
 
 
-#---------MsgForm
-class MsgForm:
-    '''Manages the message form.'''
 
-    def __init__(self, txt):
-        '''Initiate some values.
-        txt : text to manage.
-        '''
-
-        self.txt = txt
-
-
-    #------chr to ascii
-    def encode(self, grp_size):
-        '''Return a list of int in string of txt in ascii.
-
-        grp_size : size of the numbers group (length of n - 1).
-        '''
-
-        if type(self.txt) != bytes:
-            txt = self.txt.encode()
-
-        else:
-            txt = self.txt
-
-        #l_txt = list(txt)
-
-        l_txt = []
-        for k in self.txt:
-            l_txt.append(ord(k))
-
-        #---put a 0 before nb if nb < 100
-        l_txt_a2 = []
-        for k in l_txt:
-            l_txt_a2.append(format(k, '04'))
-
-        #---set group of grp_size
-        txt_a = ''
-        for k in l_txt_a2:
-            txt_a += k
-
-        txt_sp = sp_grp(txt_a, grp_size, rev_lst=False).split(' ')
-
-        while len(txt_sp[-1]) < grp_size:
-            txt_sp[-1] = '0' + txt_sp[-1]
-
-        return txt_sp
-
-
-    #------ascii to chr
-    def decode(self):
-        '''Return the text from a list of numbers in strings.'''
-
-        #---add '0's to correctly space
-
-        while len(self.txt[-1]) % 4 != 0:
-            self.txt[-1] = '0' + self.txt[-1]
-
-        #---set text to a string
-        txt = ''
-        for k in self.txt: #list
-            txt += str(k)
-
-        #---set group of four
-        txt3 = sp_grp(txt, 4, rev_lst=False).split(' ')
-
-        if txt3[-1] in ('0', '00', '000', '0000', '\x00'):
-            del txt3[-1]
-
-        #---set text
-        ret = ''
-        for k in txt3:
-            ret += chr(int(k))
-
-        return ret
-
-
-
-##-RSA
-class RSA:
-    '''Class which allow to use the RSA cipher.'''
-
-    def __init__(self, keys, interface=None):
-        '''Initiate the RSA object.
-
-        .keys : the keys. Should be of the form ((e, n), (d, n)) i.e. (pb_key, pv_key), or 'name' ;
-        .interface : the interface using this function. Should be None,
-         'gui', or 'console'. Used to choose the progress bar.
-
-        If 'keys' is a string, use RsaKeys to read the keys.
-        If a key is unknown, set it to None [i.g. : ((e, n), None)]. Both can't be None.
-        '''
-
-        if interface not in (None, 'gui', 'console'):
-            raise ValueError('The argument "interface" should be None, "gui", \
-                or "console", but {} of type {} was found !!!'.format(interface, type(interface)))
-
-        self.interface = interface
-        self.keys_init = keys
-
-        self.keys = {} #will contain the keys
-
-        if type(keys) == str:
-            try:
-                self.keys['e'] = RsaKeys(keys, interface=self.interface).get_key(0)
-                #self.keys['d'] = RsaKeys(keys, interface=self.interface).get_key(1)
-                self.keys['d'] = None
-
-            except FileNotFoundError as err:
-                if interface == 'console':
-                    cl_out(c_error, err)
-
-                elif interface == 'gui':
-                    QMessageBox.critical(None, 'Keys not found !!!', '<h2>{}</h2>'.format(err))
-
-                raise FileNotFoundError(err)
-
-            except TypeError: #pbk keys
-                self.keys['d'] = None
-
-
-        elif type(keys) in (tuple, list, set):
-            #-check the length
-            for j, k in enumerate(keys):
-                if k != None:
-                    if len(k) != 2:
-                        raise ValueError('The argument "keys" should have two lists of length 2, but "{}", with a length of {} was found !!!'.format(k, len(k)))
-
-                if j > 1:
-                    raise ValueError('The argument "keys" should have a length of 2, but "{}", with a length of {} was found !!!'.format(keys, len(keys)))
-
-            if keys[0] == keys[1] == None:
-                raise ValueError("Both keys can't be None !!!")
-
-            self.keys['e'] = keys[0]
-            self.keys['d'] = keys[1]
-
-
-        else:
-            raise TypeError('The argument "keys" should be a string or a list, but "{}" of type "{}" was found !!!'.format(keys, type(keys)))
-
-
-        self.pb_key = self.keys['e']
-        self.pv_key = self.keys['d']
-
-
-    #---------repr
-    def __repr__(self):
-        '''represent the RSA object'''
-
-        return "RSA(pb_key='{}', pv_key='{}', interface='{}')".format(
-            self.pb_key,
-            self.pv_key,
-            self.interface
-        )
-
-
-    def type_(self):
-        '''Return the keys type, either "all", "pvk" or "pbk".'''
-
-        if self.pv_key == None:
-            return 'pbk'
-
-        elif self.pb_key == None:
-            return 'pvk'
-
-        else:
-            return 'all'
-
-
-
-    #---------encrypt
-    def encrypt(self, txt):
-        '''Return the encrypted text txt with the public key self.pb_key.'''
-
-        if self.pb_key == None:
-            msg_err = 'Cannot encrypt with an empty key !!!'
-
-            if self.interface == 'console':
-                cl_out(c_error, msg_err)
-
-            elif self.interface == 'gui':
-                QMessageBox.critical(None, 'Cannot encrypt !!!', '<h2>{}</h2>'.format(msg_err))
-
-            raise TypeError(msg_err)
-
-
-        #------ini progress bar
-        if self.interface == 'gui':
-            pb = GuiProgressBar(title='Encrypting ... | RSA ― KRIS', verbose=True)
-
-        elif self.interface == 'console':
-            pb = ConsoleProgressBar()
-
-        #------ini
-        e, n = self.pb_key
-
-        grp_size = len(str(n)) - 1
-        encoded_txt = MsgForm(txt).encode(grp_size)
-
-        #------crypt
-        l_txt_crypted = []
-        for j, k in enumerate(encoded_txt):
-            i = int(k)
-
-            l_txt_crypted.append(pow(i, e, n)) #todo: try the math.pow speed !
-
-            if self.interface in ('gui', 'console'):
-                pb.set(j, len(encoded_txt))
-
-        ret = ''
-        for k in l_txt_crypted:
-            ret += str(k) + ' '
-
-        ret = ret[:-1] #remove last space.
-
-        return ret
-
-
-    #---------decrypt
-    def decrypt(self, txt):
-        '''Return the decrypted text txt with the private key self.pv_key.'''
-
-        if self.pv_key == None:
-            try:
-                self.keys['d'] = RsaKeys(self.keys_init, interface=self.interface).get_key(1)
-                self.pv_key = self.keys['d']
-
-            except TypeError:
-                msg_err = 'Cannot decrypt with an empty key !!!'
-
-                if self.interface == 'console':
-                    cl_out(c_error, msg_err)
-
-                elif self.interface == 'gui':
-                    QMessageBox.critical(None, 'Cannot decrypt !!!', '<h2>{}</h2>'.format(msg_err))
-
-                raise TypeError(msg_err)
-
-
-        #------ini progress bar
-        if self.interface == 'gui':
-            pb = GuiProgressBar(title='Decrypting ... | RSA ― KRIS', verbose=True)
-
-        elif self.interface == 'console':
-            pb = ConsoleProgressBar()
-
-        #------ini
-        d, n = self.pv_key
-        grp_size = len(str(n)) - 1
-
-        if type(txt) == str:
-            l_txt = txt.split(' ')
-
-        else:
-            l_txt = txt.split(b' ')
-
-        #------decrypt
-        l_txt_decrypted = []
-
-        for j, k in enumerate(l_txt):
-            i = int(k)
-            l_txt_decrypted.append(pow(i, d, n)) #todo: use math.pow ?
-
-            #---progress bar
-            if self.interface in ('gui', 'console'):
-                pb.set(j, len(l_txt)) # len(l_txt) - 1
-
-
-        for k in range(len(l_txt_decrypted)): #add 0. ex : 111 -> 0111
-            l_txt_decrypted[k] = str(l_txt_decrypted[k])
-
-            while len(l_txt_decrypted[k]) < grp_size: #% 4 != 0:
-                l_txt_decrypted[k] = '0' + l_txt_decrypted[k]
-
-        decoded_txt = MsgForm(l_txt_decrypted).decode()
-
-        ret = ''
-        for k in decoded_txt:
-            ret += str(k)
-
-        #print(ret)
-        #ret = rest_encod(ret)
-        #print(rest_encod(ret))
-        #print(ret)
-        # #todo: this don't work : the print works well (if you encrypt "é", and decrypt it it will print "é"), but ret is not "é"
-
-        return ret.strip('\x00')
-
-
-    def encrypt_file(self, fn_in, fn_out):
-        '''
-        Encrypt the content of `fn_in` and write it in `fn_out`.
-        It does NOT check if `fn_out` already exists and will overwrite it.
-        '''
-
-        with open(fn_in, 'r') as f:
-            txt = f.read()
-
-        txt_c = self.encrypt(txt)
-
-        with open(fn_out, 'w') as f:
-            f.write(txt_c)
-
-
-    def decrypt_file(self, fn_in, fn_out):
-        '''
-        Decrypt the content of `fn_in` and write it in `fn_out`.
-        It does NOT check if `fn_out` already exists and will overwrite it.
-        '''
-
-        with open(fn_in, 'r') as f:
-            txt = f.read()
-
-        txt_d = self.decrypt(txt)
-
-        with open(fn_out, 'w') as f:
-            f.write(txt_d)
-
-
-    def sign(self, txt):
-        '''
-        Sign the message 'txt'.
-        It encrypt 'txt' using the private key.
-        '''
-
-        if self.pv_key == None:
-            try:
-                self.keys['d'] = RsaKeys(self.keys_init, interface=self.interface).get_key(1)
-                self.pv_key = self.keys['d']
-
-            except TypeError:
-                msg_err = 'Cannot sign with an empty private key !!!'
-
-                if self.interface == 'console':
-                    cl_out(c_error, msg_err)
-
-                elif self.interface == 'gui':
-                    QMessageBox.critical(None, 'Cannot sign !!!', '<h2>{}</h2>'.format(msg_err))
-
-                raise TypeError(msg_err)
-
-        return RSA([self.pv_key, self.pb_key], self.interface).encrypt(txt)
-
-
-    def unsign(self, txt):
-        '''
-        Unsign the message 'txt'.
-        It decrypt 'txt' using the public key.
-        '''
-
-        if self.pb_key == None:
-            msg_err = 'Cannot unsign with an empty key !!!'
-
-            if self.interface == 'console':
-                cl_out(c_error, msg_err)
-
-            elif self.interface == 'gui':
-                QMessageBox.critical(None, 'Cannot unsign !!!', '<h2>{}</h2>'.format(msg_err))
-
-            raise TypeError(msg_err)
-
-        return RSA([self.pv_key, self.pb_key], self.interface).decrypt(txt)
-
-
-class RsaSign:
-    '''Class which allow to sign messages' hashes.'''
-
-    def __init__(self, keys, h='sha256', interface=None):
-        '''
-        Initiate RsaSign.
-
-        - keys : cf RSA's doc (the class just before) ;
-        - h : the hash to use.
-        '''
-
-        if interface not in (None, 'gui', 'console'):
-            raise ValueError('The argument "interface" should be None, "gui", or "console", but {} of type {} was found !!!'.format(interface, type(interface)))
-
-        self.interface = interface
-
-        self.RSA = RSA(keys, interface)
-        self.h = h
-        self.Hasher = Hasher(h)
-
-
-    def sign(self, txt):
-        '''Sign 'txt'.'''
-
-        txt_h = self.Hasher.hash(txt)
-
-        return self.RSA.sign(txt_h)
-
-
-    def check(self, msg, sign):
-        '''
-        Check if the message's sign correspond to the message.
-
-        - msg : the message which was signed ;
-        - sign : the message's sign.
-
-        Return :
-            True if correspond ;
-            False otherwise.
-        '''
-
-        msg_h = self.Hasher.hash(msg)
-        unsign = self.RSA.unsign(sign)
-
-        return msg_h == unsign
-
-
-    def str_sign(self, msg):
-        '''
-        Sign 'txt' and return it, with the message, in a string of this form (the commented lines are set with FormatedMsg, in KRIS_gui.py) :
-
-            #------BEGIN KRIS SIGNED MESSAGE------
-            #Version: KRIS_v2.0.0
-            #Cipher: RSA signature
-            #Hash: sha256
-            #Key_name: test
-            #---
-            #
-            This is the signed message.
-
-            ------BEGIN KRIS SIGNATURE------
-            943807048734946125391551838892825323881224874134114102624258821
-            777497503175465732577498770633243452810041947630081594914335102
-            030685948454325645230350182968575318427660604935974297921249620
-            145627119142786967888460883779427870903491284297486553549313557
-            036484594229863184367664486859688319969288882500317784306881247
-            986697247977081407162090788619940533970560140434587970906714139
-            290858878587907236987805719455479320536481924920579051146037063
-            173431947005158307628367242387336720592701482187812886188311982
-            087888289689323511419214457508164027138556866752536079927267033
-            1287543493615931451357930596408267945537776650957
-            ------END KRIS SIGNATURE------
-            #------END KRIS SIGNED MESSAGE------
-        '''
-
-        sign = self.sign(msg)
-
-        txt = '{}\n\n------BEGIN KRIS SIGNATURE------\n{}\n------END KRIS SIGNATURE------'.format(msg, NewLine(64).set(sign))
-
-
-        return txt #FormatMsg(txt, nl=False).set(self.d)
-
-
-    def str_check(self, txt):
-        '''Same as self.check, but for a message formatted by self.str_sign.'''
-
-        begin = txt.find('\n\n------BEGIN KRIS SIGNATURE------\n')
-        end = txt.find('\n------END KRIS SIGNATURE------')
-
-        if -1 in (begin, end):
-            raise ValueError('The text is not well formatted !!!')
-
-        msg = txt[:begin]
-        sign = txt[begin + 35:end].replace('\n', '')
-
-        return self.check(msg, sign)
-
-
-    #todo: there is a bug when checking in gui with a 512 RSA key : it does not match, but it should (try sign and check a test message, i.g. 'test').
-
-
-
-##-RsaKeys
-class RsaKeys:
+##-RsaKey
+class RsaKeys_old: #TODO: remove this.
     '''Class which allow to generate RSA keys, and to manipulate them (saving in files, ...)'''
 
     def __init__(self, keys_name, interface=None):
         '''
         Initiate the RsaKeys object.
 
-        - keys_name : the set of keys' name (without the extention).
+        - keys_name : the set of keys' name (without the extension).
         '''
 
         if interface not in (None, 'gui', 'console'):
@@ -728,7 +262,7 @@ class RsaKeys:
 
 
     #---------get prime number p and q
-    def _get_p_q(self, size, verbose=False):
+    def _get_p_q(self, size, verbose=False): #TODO: remove this (after copying the progress bars)
         '''Function finding p and q of size `size // 2`.'''
 
         if verbose:
@@ -785,7 +319,7 @@ class RsaKeys:
 
 
     #---------calc n, phi, e, d with p and q
-    def _calc_nb(self, p, q, verbose=False):
+    def _calc_nb(self, p, q, verbose=False): #TODO: remove this (after copying the progress bars)
         '''
         Return n, phi, e, d.
         p and q are prime numbers.
@@ -873,7 +407,7 @@ class RsaKeys:
 
 
     #---------generate keys
-    def generate(self, size, pwd=None, save=True, overwrite=False, md_stored='hexa'):
+    def generate(self, size, pwd=None, save=True, overwrite=False, md_stored='hexa'): #TODO: remove this after taking useful parts to make the method `RsaKey.save`.
         '''
         Function which generate RSA keys.
 
@@ -1577,6 +1111,1730 @@ class RsaKeys:
             f.write(f_enc)
 
         chdir(old_path)
+
+
+class RsaKey:
+    '''Class representing an RSA key.'''
+
+    def __init__(self, e=None, d=None, n=None, phi=None, p=None, q=None, date_=None, interface=None):
+        '''
+        - e         : public exponent ;
+        - d         : private exponent ;
+        - n         : modulus ;
+        - p, q      : primes that verify pq = n ;
+        - phi       = (p - 1)(q - 1) ;
+        - date_     : the date of the key generation ;
+        - interface : in (None, 'gui', 'console'). Used to choose the progress bars and other stuff.
+        '''
+
+        if interface not in (None, 'gui', 'console'):
+            raise ValueError('The argument "interface" should be None, "gui", \
+                or "console", but {} of type {} was found !!!'.format(interface, type(interface)))
+
+        self.interface = interface
+
+        self.e = e
+        self.d = d
+        self.n = n
+        self.phi = phi
+        self.p = p
+        self.q = q
+
+        self.date = date_
+
+        self.is_private = self.d != None
+
+        if self.is_private:
+            if self.q < self.q:
+                self.p = q
+                self.q = p
+
+        self.pb = (e, n)
+        if self.is_private:
+            self.pv = (d, n)
+
+        if n == None:
+            self.size = None
+
+        else:
+            self.size = round(math.log2(n))
+
+    
+    def __repr__(self):
+        if self.is_private:
+            return f'RsaKey private key :\n\tsize : {self.size}\n\te : {self.e}\n\td : {self.d}\n\tn : {self.n}\n\tphi : {self.phi}\n\tp : {self.p}\n\tq : {self.q}'
+        
+        else:
+            return f'RsaKey public key :\n\tsize : {self.size}\n\te : {self.e}\n\tn : {self.n}'
+    
+    
+    def __eq__(self, other):
+        '''Return True if the key are of the same type (public / private) and have the same values.'''
+        
+        ret = self.is_private == other.is_private
+
+        if not ret:
+            return False
+        
+        if self.is_private:
+            ret = ret and (
+                self.e == other.e and
+                self.d == other.d and
+                self.n == other.n and
+                self.phi == other.phi
+            )
+            
+            ret = ret and ((self.p == other.p and self.q == other.q) or (self.q == other.p and self.p == other.q))
+        
+        else:
+            ret = ret and (
+                self.e == other.e and
+                self.n == other.d
+            )
+        
+        return ret
+    
+    
+    def public(self):
+        '''Return the public key associated to self in an other RsaKey object.'''
+        
+        k = RsaKey(e=self.e, n=self.n)
+        k.size = self.size
+        return k
+    
+
+    def _gen_nb(self, size=2048, wiener=False):
+        '''
+        Generates p, q, and set attributes p, q, phi, n, size.
+        
+        - size   : the bit size of n ;
+        - wiener : If True, generates p, q prime such that q < p < 2q.
+        '''
+
+        #------ini progress bar
+        if self.interface == 'gui':
+            pb = GuiProgressBar(title='Generating ... ― KRIS', undetermined=True)
+
+        elif self.interface == 'console':
+            pb = ConsoleProgressBar()
+
+        #------Generate numbers
+        self.p, self.q = 1, 1
+
+        while not isSurelyPrime(self.q):
+            self.q = randbits(size // 2)
+
+            if self.interface in ('gui', 'console'):
+                pb.load()
+        
+        while not (isSurelyPrime(self.p) and ((wiener and self.q < self.p < 2 * self.q) or (not wiener))):
+            self.p = randbits(size // 2)
+
+            if self.interface in ('gui', 'console'):
+                pb.load()
+
+        self.phi = (self.p - 1) * (self.q - 1)
+        self.n = self.p * self.q
+
+        self.size = size
+
+
+    def new(self, size=2048, keep_e=True): #TODO: add progress bars from the old RsaKeys class !
+        '''
+        Generate RSA keys of size `size` bits.
+        If self.e != None, it keeps it (and ensures that gcd(phi, e) = 1).
+
+        - size : the key size, in bits ;
+        - keep_e : a bool indicating if keeping the old e (if not None), or generate a new one.
+        '''
+
+        #TODO: ensure that the keys are not in the conditions for wiener's attack. Maybe do this in self._gen_nb ?
+
+        self._gen_nb(size)
+
+        if not keep_e:
+            e = None
+
+        while self.e != None and math.gcd(self.e, self.phi) != 1:
+            self._gen_nb(size)
+
+        if self.e == None:
+            self.e = 0
+            while math.gcd(self.e, self.phi) != 1:
+                self.e = randint(max(self.p, self.q), self.phi)
+        
+        elif math.gcd(self.e, self.phi) != 1: #Not possible !
+            raise ValueError('RsaKey: new: error: gcd(self.e, self.phi) != 1')
+        
+        self.d = mult_inverse(self.e, self.phi)
+
+        self.is_private = True
+
+        self.pb = (self.e, self.n)
+        self.pv = (self.d, self.n)
+
+        self.size = size
+
+        self.date = date()
+    
+    
+    def new_wiener(self, size=2048):
+        '''
+        Generate RSA keys of size `size` bits.
+        This operation does NOT keep e, even if e != None.
+        These key are generated so that the Wiener's attack is possible on them.
+        
+        - size : the key size, in bits.
+        '''
+        
+        self._gen_nb(size, wiener=True)
+        
+        self.d = 0
+        while math.gcd(self.d, self.phi) != 1: #TODO: shouldn't it be e instead of d ?
+            self.d = randint(1, math.floor(isqrt(isqrt(self.n))/3))
+        
+        self.e = mult_inverse(self.d, self.phi)
+        
+        self.is_private = True
+
+        self.pb = (self.e, self.n)
+        self.pv = (self.d, self.n)
+
+        self.size = size
+
+        self.date = date()
+
+
+    def new_wiener_large(self, size=2048, only_large=True):
+        '''
+        Same as `self.new_wiener`, but `d` can be very large.
+
+        - size       : the RSA key size ;
+        - only_large : if False, d can be small, or large, and otherwise, d is large.
+        '''
+
+        self._gen_nb(size, wiener=True)
+
+        self.d = 0
+        while math.gcd(self.d, self.phi) != 1:
+            if only_large:
+                #ceil(sqrt(6)) = 3
+                self.d = randint(int(self.phi - iroot(self.n, 4) // 3), self.phi)
+
+            else:
+                self.d = randint(1, self.phi)
+                if iroot(self.n, 4) / 3 < self.d or self.d < self.phi - iroot(self.n, 4) / math.sqrt(6): #TODO: Does this works ?
+                    self.d = 0 #go to the next iteration
+
+        self.e = mult_inverse(self.d, self.phi)
+        self.is_private = True
+        self.pb = (self.e, self.n)
+        self.pv = (self.d, self.n)
+
+        self.size = size
+
+        self.date = date()
+
+
+    def save(self, k_name, pwd=None, overwrite=False, md_stored='hexa'):
+        '''
+        Save the key to a file
+
+        Arguments :
+            - k_name : the name to give for the keys ;
+
+            - pwd : The AES key used to encrypt the RSA key. If None, key will be saved in clear ;
+            - overwrite : in (True, False). If the dir keys_names already exist, if True, overwrite it,
+            return an error msg else ;
+            - md_stored : the way how the keys are stored, i.e. in decimal or hexadecimal.
+                Should be "hexa" or "dec". Default is "hexa".
+
+        The program make two files, in chd_rsa(glb.home), named :
+            For the private key :
+                '[self.k_name].pvk-h' if md_stored is 'hexa' ;
+                '[self.k_name].pvk-d' if md_stored is 'dec' ;
+                '[self.k_name].pvk-d.enc' or '[self.k_name].pvk-h.enc' if pwd != None.
+
+            For the public key :
+                '[self.k_name].pbk-h' if md_stored is 'hexa' ;
+                '[self.k_name].pbk-d' else.
+
+        Return :
+            -2 if the set of keys already exist and overwrite is False ;
+            None otherwise
+        '''
+
+
+        if overwrite not in (True, False) or md_stored not in ('hexa', 'dec'):
+            raise ValueError('Some arguments are not correct !')
+
+        if md_stored == 'dec':
+            fn = str(self.k_name) + '.pvk-d'
+            fn_pbk = str(self.k_name) + '.pbk-d'
+
+        else:
+            fn = str(self.k_name) + '.pvk-h'
+            fn_pbk = str(self.k_name) + '.pbk-h'
+
+        if pwd != None:
+            fn += '.enc'
+
+        old_path = chd_rsa(glb.home)
+
+        #---Check if file exists first to not lose your time
+        if isfile(fn):
+            if not overwrite:
+                chdir(old_path)
+                return -2
+
+            else:
+                remove(fn)
+
+        #------Private key
+        v = {
+            'p' : self.p,
+            'q' : self.q,
+            'n' : self.n,
+            'phi' : (self.p - 1) * (self.q - 1),
+            'e' : pbk[0], #TODO: continue here !!!
+            'd' : pvk[0],
+            'date': self.date,
+            'n_strenth': self.size
+        }
+
+        if md_stored == 'hexa':
+            for k in v:
+                if k != 'date':
+                    v[k] = format(v[k], 'x') #convert numbers to hexadecimal
+
+        data = str(v)
+
+        if pwd != None:
+            data = AES(256, pwd, hexa=True).encryptText(data, mode_c='hexa')
+
+        #---make file
+        with open(fn, 'w') as f:
+            f.write(data)
+
+
+        #------Public key
+        v_pbk = {
+            'e': v['e'],
+            'n': v['n'],
+            'date' : v['date'],
+            'n_strenth' : v['n_strenth']
+        }
+
+        #---make file
+        with open(fn_pbk, 'w') as f:
+            f.write(str(v_pbk))
+
+        chdir(old_path)
+
+
+class RsaKeyFile: #TODO: Check that it works well.
+    '''Class representing an RSA key file, and implementing manipulations on them.'''
+
+    def __init__(self, keys_name, interface=None):
+        '''
+        Initiate the RsaKeys object.
+
+        - keys_name : the set of keys' name (without the extension).
+        '''
+
+        if interface not in (None, 'gui', 'console'):
+            raise ValueError('The argument "interface" should be None, "gui", \
+                or "console", but {} of type {} was found !!!'.format(interface, type(interface)))
+
+
+        self.k_name = keys_name
+        self.interface = interface
+
+
+    def __repr__(self):
+        '''Represent the object.'''
+
+        return "RsaKeys('{}', interface='{}')".format(self.k_name, self.interface)
+
+
+    def read(self, mode='all', also_ret_pwd=False): #TODO: return an RsaKey instead ?
+        '''
+        Try to read the content of the file `[self.k_name] + ext`.
+
+        - mode : the self.get_fn mode. in ('pvk', 'pbk', 'all'). Default is 'all' ;
+        - also_ret_pwd : a bool indicating if also return the password. If True, return the password at the end of the return tuple.
+
+        Return :
+            key         where `key` is an RsaKey object representing the RSA key ;
+            key, pwd    if `also_ret_pwd` is True ;
+            -1          if not found ;
+            -2          if file not well formatted ;
+            -3          if password is wrong or if canceled.
+        '''
+
+        #------other
+        def err_not_well_formated():
+            msg = tr('The file is not well formatted !')
+
+            if self.interface == 'gui':
+                QMessageBox.critical(None, '!!! File error !!!', '<h2>{}</h2>'.format(msg))
+            else:
+                print('KRIS: RsaKeys: read: ' + msg)
+
+            return -2
+
+        #------Get filename
+        try:
+            fn, md = self.get_fn(mode, also_ret_md=True)
+
+        except FileNotFoundError:
+            msg = tr('File not found !')
+
+            if self.interface == 'gui':
+                QMessageBox.critical(None, '!!! Not found !!!', '<h2>{}</h2>'.format(msg))
+            else:
+                print('KRIS: RsaKeys: read: ' + msg)
+
+            return -1
+
+        #------Read file
+        old_path = chd_rsa(glb.home)
+
+        with open(fn, 'r') as f:
+            f_content = f.read()
+
+        chdir(old_path)
+
+        #------Decrypt content, if encrypted
+        if fn[-4:] == '.enc':
+            #---Get password
+            if self.interface == 'gui':
+                pwd = AskPwd.use() #TODO: why no Hasher here ?
+
+            elif self.interface == 'console':
+                pwd_clear = getpass(tr('RSA key password :'))
+                pwd = Hasher('sha256').hash(pwd_clear)
+
+            else:
+                pwd_clear = input('RSA key password :')
+                pwd = Hasher('sha256').hash(pwd_clear)
+
+            if pwd == None:
+                return -3 # Canceled by user
+
+            #---Decrypt
+            try:
+                f_content_dec = AES(256, pwd, hexa=True).decryptText(f_content, mode_c='hexa')
+
+            except UnicodeDecodeError:
+                msg = tr('This is not the good password !')
+
+                if self.interface == 'gui':
+                    QMessageBox.critical(None, '!!! Wrong password !!!', '<h2>{}</h2>'.format(msg))
+                else:
+                    print('KRIS: RsaKeys: read: ' + msg)
+
+                return -3
+
+            except ValueError:
+                return err_not_well_formated()
+
+            else:
+                f_content = f_content_dec
+
+        else:
+            pwd = None
+
+        try:
+            infos = literal_eval(f_content)
+
+        except SyntaxError:
+            return err_not_well_formated()
+
+        #------Read and return infos
+        if md[0] == 'pbk':
+            try:
+                date_, n_strth = infos['date'], infos['n_strenth']
+                e, n = infos['e'], infos['n']
+
+            except KeyError:
+                return err_not_well_formated()
+
+            if md[1] == 'hexa': #convert in decimal
+                n_strth = str(int(n_strth, 16))
+                e, n = str(int(e, 16)), str(int(n, 16))
+
+            key = RsaKey(e=e, n=n, date_=date_, interface=self.interface)
+
+            if also_ret_pwd:
+                return key, pwd
+
+            return key
+
+
+        else:
+            try:
+                date_, n_strth = infos['date'], infos['n_strenth']
+                p, q, n, phi, e, d = infos['p'], infos['q'], infos['n'], infos['phi'], infos['e'], infos['d']
+
+            except KeyError:
+                return err_not_well_formated()
+
+            if md[1] == 'hexa': #convert in decimal
+                n_strth = str(int(n_strth, 16))
+                p, q, n, phi, e, d = str(int(p, 16)), str(int(q, 16)), \
+                    str(int(n, 16)), str(int(phi, 16)), str(int(e, 16)), str(int(d, 16))
+
+            pvk = str(d) + ',' + str(n)
+            pbk = str(e) + ',' + str(n)
+
+            key = RsaKey(e=e, d=d, n=n, phi=phi, p=p, q=q, date_=date_, interface=self.interface)
+
+            if also_ret_pwd:
+                return key, pwd
+
+            return key
+
+
+    def get_key(self, mode): #TODO: return a RsaKey object ? or just like this ?
+        '''
+        Return the key to use with RSA.
+        Read the keys from the key file created by this program.
+
+        self.k_name : the name given when creating keys ;
+        mode : 0 - encrypt (pbk), 1 - decrypt (pvk), used to choose between public and private keys.
+        '''
+
+        if mode not in (0, 1):
+            raise ValueError('"mode" should be 0 or 1 (int), but "' + str(mode) + '" was found !!!')
+
+        md = ('all', 'pbk')[mode == 0]
+        key = self.read(md)
+
+        if key in (-1, -2, -3):
+            return key
+
+        if key.is_private:
+            ed, n = key.d, key.n
+
+        else:
+            if mode == 1:
+                raise TypeError("Can't read the private key of a pbk set of keys !!!")
+
+            ed, n = key.e, key.n
+
+        return ed, n
+
+
+    #------convert_keys
+    def convert(self):
+        '''
+        Function which convert RSA keys.
+        If the keys are stored in decimal, it write them in hexadecimal ;
+        it write them in decimal else.
+
+        It remove keys in the old storage mode.
+
+        If the keys were not found, return -1 ;
+        if the keys already exists, return -2 ;
+        return None else.
+        '''
+
+        key, pwd = self.read(also_ret_pwd=True)
+
+        if key in (-1, -2, -3):
+            return -1
+
+        old_fn, (type_, stg_md) = self.get_fn(also_ret_md=True)
+
+        if type_ == 'pvk': #pvk
+            v = {
+                'p' : key.p,
+                'q' : key.q,
+                'n' : key.n,
+                'phi' : key.phi,
+                'e' : key.e,
+                'd' : key.d,
+                'date' : key.date,
+                'n_strenth' : key.size
+            }
+
+            if stg_md == 'hexa': #keys are in hexa, set it in dec
+                fn = str(self.k_name) + '.pvk-d'
+                fn_pbk = str(self.k_name) + '.pbk-d'
+
+            else:
+                fn = str(self.k_name) + '.pvk-h'
+                fn_pbk = str(self.k_name) + '.pbk-h'
+
+                for k in v:
+                    if k != 'date':
+                        v[k] = format(int(v[k]), 'x') #convert numbers to hexadecimal
+
+            pbk = v['e'], v['n']
+            pvk = v['d'], v['n']
+
+            if pwd != None:
+                fn += '.enc'
+
+            #---check if it not already exists
+            old_path = chd_rsa(glb.home)
+
+            if isfile(fn):
+                chdir(old_path)
+                return -2
+
+            #---make file
+            data = str(v)
+
+            if pwd != None:
+                data = AES(256, pwd, hexa=True).encryptText(data, mode_c='hexa')
+
+            with open(fn, 'w') as f:
+                f.write(data)
+
+            #-Public key
+            v_pbk = {
+                'e': v['e'],
+                'n': v['n'],
+                'date' : v['date'],
+                'n_strenth' : v['n_strenth']
+            }
+
+            #---make file
+            with open(fn_pbk, 'w') as f:
+                f.write(str(v_pbk))
+
+
+            old_md = ('d', 'h')[stg_md == 'hexa']
+
+            try:
+                if pwd == None:
+                    remove(self.k_name + '.pvk-' + old_md)
+                else:
+                    remove(self.k_name + '.pvk-' + old_md + '.enc')
+            except FileNotFoundError:
+                pass
+
+            try:
+                remove(self.k_name + '.pbk-' + old_md)
+            except FileNotFoundError:
+                pass
+
+            chdir(old_path)
+
+        else: #pbk
+            v = {
+                'e' : key.e,
+                'n' : key.n,
+                'date' : key.date,
+                'n_strenth' : key.size
+            }
+            pbk = v['e'], v['n']
+
+            #---write
+            if stg_md == 'hexa': #keys are in hexa, set it in dec
+                fn = str(self.k_name) + '.pbk-d'
+
+            else:
+                fn = str(self.k_name) + '.pbk-h'
+
+                for k in v:
+                    if k not in ('date', 'date_export'):
+                        v[k] = format(int(v[k]), 'x') #convert numbers to hexadecimal
+
+            old_path = chd_rsa(glb.home)
+
+            if isfile(fn):
+                chdir(old_path)
+                return -2
+
+            with open(fn, 'w') as f:
+                f.write(str(v))
+
+            old_md = ('d', 'h')[stg_md == 'hexa']
+            remove(fn[:-1] + old_md)
+
+            chdir(old_path)
+
+
+    #------rename
+    def rename(self, new_name):
+        '''
+        Function which can rename a set of keys
+
+        self.k_name : the set of keys' name ;
+        new_name : the new set of keys' name.
+
+        Return -1 if the file was not found, None otherwise.
+        '''
+
+        fn, (type_, stg_md) = self.get_fn(also_ret_md=True)
+
+        new_name = str(new_name)
+        old_path = chd_rsa(glb.home)
+
+        ext = '.' + type_ + ('-h', '-d')[stg_md == 'dec']
+
+        if type_ == 'pvk':
+            ext_pbk = '.pbk-' + ('h', 'd')[stg_md == 'dec']
+
+        if fn[-4:] == '.enc':
+            ext += '.enc'
+
+        rename(str(self.k_name) + ext, new_name + ext)
+
+        if type_ == 'pvk':
+            rename(str(self.k_name) + ext_pbk, new_name + ext_pbk)
+
+        chdir(old_path)
+
+
+    def get_fn(self, mode='all', also_ret_md=False):
+        '''
+        Return the filename of the key (with the extention)
+
+        - self.k_name : the RSA key's name ;
+        - mode : in ('pvk', 'pbk', 'all'). If 'pvk': only watch for private keys, if 'pbk': only watch for public keys ('*.pbk-*'), if 'all': watch for both ;
+        - also_ret_md a bool indicating if also returning the mode, of the form (['pvk' | 'pbk'], ['dec' | 'hexa'])
+
+        Resolution order (to find the good key extention) if mode == 'all' :
+            pvk-h ;
+            pvk-d ;
+            pvk-h.enc ;
+            pvk-d.enc ;
+            pbk-h ;
+            pbk-d.
+
+        It is the same order if 'pvk' or 'pbk', but without the other part.
+        '''
+
+        old_path = chd_rsa(glb.home)
+
+        if mode not in ('pvk', 'pbk', 'all'):
+            raise ValueError('The mode should be in ("pvk", "pbk", "all"), but "{}" was found !!!'.format(mode))
+
+        if isfile(self.k_name + '.pvk-h') and mode in ('all', 'pvk'):
+            fn = self.k_name + '.pvk-h'
+            md = ('pvk', 'hexa')
+
+        elif isfile(self.k_name + '.pvk-d') and mode in ('all', 'pvk'):
+            fn = self.k_name + '.pvk-d'
+            md = ('pvk', 'dec')
+
+        elif isfile(self.k_name + '.pvk-h.enc') and mode in ('all', 'pvk'):
+            fn = self.k_name + '.pvk-h.enc'
+            md = ('pvk', 'hexa')
+
+        elif isfile(self.k_name + '.pvk-d.enc') and mode in ('all', 'pvk'):
+            fn = self.k_name + '.pvk-d.enc'
+            md = ('pvk', 'dec')
+
+
+        elif isfile(self.k_name + '.pbk-h') and mode in ('all', 'pbk'):
+            fn = self.k_name + '.pbk-h'
+            md = ('pbk', 'hexa')
+
+        elif isfile(self.k_name + '.pbk-d') and mode in ('all', 'pbk'):
+            fn = self.k_name + '.pbk-d'
+            md = ('pbk', 'dec')
+
+        else:
+            chdir(old_path)
+            raise FileNotFoundError('The key "{}" does not seem to exists in {} mode !!!'.format(self.k_name, mode))
+
+        chdir(old_path)
+
+        if also_ret_md:
+            return fn, md
+
+        return fn
+
+
+    #------Encrypt key
+    def encrypt(self, pwd):
+        '''
+        Encrypt 'self.k_name' with AES-256-CBC using the password
+        `pwd` (Hasher('sha256').hash(clear_pwd)), make a file
+        'self.k_name' + ext + '.enc' and remove clear one.
+
+        - pwd : the AES password. Should be passed through sha256 before.
+        '''
+
+        fn = self.get_fn('pvk')
+
+        if fn[-4:] == '.enc':
+            raise KeyError(tr('The RSA key is already encrypted !'))
+
+        old_path = chd_rsa(glb.home)
+
+        with open(fn, 'r') as f:
+            f_content = f.read()
+
+        f_enc = AES(256, pwd, hexa=True).encryptText(f_content, mode_c='hexa')
+
+        with open(fn + '.enc', 'w') as f:
+            f.write(f_enc)
+
+        remove(fn)
+
+        chdir(old_path)
+
+
+    #------Decrypt key
+    def decrypt(self, pwd):
+        '''
+        Decrypt 'self.k_name' with AES-256-CBC using the password
+        `pwd` (Hasher('sha256').hash(clear_pwd)), make a file
+        'self.k_name' + ext and remove encrypted one.
+
+        - pwd : the AES password.
+        '''
+
+        fn = self.get_fn('pvk')
+
+        if fn[-4:] != '.enc':
+            raise KeyError(tr('The RSA key is not encrypted !'))
+
+        old_path = chd_rsa(glb.home)
+
+        with open(fn, 'r') as f:
+            f_content = f.read()
+
+        try:
+            f_dec = AES(256, pwd, hexa=True).decryptText(f_content, mode_c='hexa')
+
+        except UnicodeDecodeError:
+            msg = tr('This is not the good password !')
+
+            if self.interface == 'gui':
+                QMessageBox.critical(None, '!!! Wrong password !!!', '<h2>{}</h2>'.format(msg))
+            else:
+                print('KRIS: RsaKeys: decrypt: ' + msg)
+
+            chdir(old_path)
+            return -3
+
+        except ValueError:
+            msg = tr('The file is not well formatted !')
+
+            if self.interface == 'gui':
+                QMessageBox.critical(None, '!!! File error !!!', '<h2>{}</h2>'.format(msg))
+            else:
+                print('KRIS: RsaKeys: decrypt: ' + msg)
+
+            chdir(old_path)
+            return -2
+
+        with open(fn[:-4], 'w') as f:
+            f.write(f_dec)
+
+        remove(fn)
+
+        chdir(old_path)
+
+
+    def change_pwd(self, old_pwd, new_pwd):
+        '''
+        Change the RSA key password for `self.k_name`.
+
+        - old_pwd : the old AES password ;
+        - new_pwd : the new AES password.
+
+        Return :
+            -1      if the RSA key is not encrypted ;
+            -2      if the RSA key file is not well formatted ;
+            -3      if the old_pwd is wrong ;
+            None    otherwise.
+        '''
+
+        fn = self.get_fn('pvk')
+
+        if fn[-4:] != '.enc':
+            msg = tr('The RSA key is not encrypted !')
+
+            if self.interface == 'gui':
+                QMessageBox.critical(None, '!!! Not encrypted !!!', '<h2>{}</h2>'.format(msg))
+            else:
+                print('KRIS: RsaKeys: change_pwd: ' + msg)
+
+            return -1
+
+        old_path = chd_rsa(glb.home)
+
+        with open(fn, 'r') as f:
+            f_content = f.read()
+
+        try:
+            f_dec = AES(256, old_pwd, hexa=True).decryptText(f_content, mode_c='hexa')
+
+        except UnicodeDecodeError:
+            msg = tr('This is not the good password !')
+
+            if self.interface == 'gui':
+                QMessageBox.critical(None, '!!! Wrong password !!!', '<h2>{}</h2>'.format(msg))
+            else:
+                print('KRIS: RsaKeys: change_pwd: ' + msg)
+
+            chdir(old_path)
+            return -3
+
+        except ValueError:
+            msg = tr('The file is not well formatted !')
+
+            if self.interface == 'gui':
+                QMessageBox.critical(None, '!!! File error !!!', '<h2>{}</h2>'.format(msg))
+            else:
+                print('KRIS: RsaKeys: change_pwd: ' + msg)
+
+            chdir(old_path)
+            return -2
+
+        f_enc = AES(256, new_pwd, hexa=True).encryptText(f_dec, mode_c='hexa')
+
+        with open(fn, 'w') as f:
+            f.write(f_enc)
+
+        chdir(old_path)
+
+
+
+##-Encoding
+#---------MsgForm
+class MsgForm: #TODO: this will be kept for the old RSA version. Maybe move it in an other file.
+    '''Manages the message form.'''
+
+    def __init__(self, txt):
+        '''Initiate some values.
+        txt : text to manage.
+        '''
+
+        self.txt = txt
+
+
+    #------chr to ascii
+    def encode(self, grp_size):
+        '''Return a list of int in string of txt in ascii.
+
+        grp_size : size of the numbers group (length of n - 1).
+        '''
+
+        if type(self.txt) != bytes:
+            txt = self.txt.encode()
+
+        else:
+            txt = self.txt
+
+        #l_txt = list(txt)
+
+        l_txt = []
+        for k in self.txt:
+            l_txt.append(ord(k))
+
+        #---put a 0 before nb if nb < 100
+        l_txt_a2 = []
+        for k in l_txt:
+            l_txt_a2.append(format(k, '04'))
+
+        #---set group of grp_size
+        txt_a = ''
+        for k in l_txt_a2:
+            txt_a += k
+
+        txt_sp = sp_grp(txt_a, grp_size, rev_lst=False).split(' ')
+
+        while len(txt_sp[-1]) < grp_size:
+            txt_sp[-1] = '0' + txt_sp[-1]
+
+        return txt_sp
+
+
+    #------ascii to chr
+    def decode(self):
+        '''Return the text from a list of numbers in strings.'''
+
+        #---add '0's to correctly space
+
+        while len(self.txt[-1]) % 4 != 0:
+            self.txt[-1] = '0' + self.txt[-1]
+
+        #---set text to a string
+        txt = ''
+        for k in self.txt: #list
+            txt += str(k)
+
+        #---set group of four
+        txt3 = sp_grp(txt, 4, rev_lst=False).split(' ')
+
+        if txt3[-1] in ('0', '00', '000', '0000', '\x00'):
+            del txt3[-1]
+
+        #---set text
+        ret = ''
+        for k in txt3:
+            ret += chr(int(k))
+
+        return ret
+
+
+##-Padding
+class OAEP:
+    '''Class implementing OAEP padding'''
+
+    def __init__(self, block_size, k0=None, k1=0):
+        '''
+        Initiate OAEP class.
+        
+        - block_size   :    the bit size of each block ;
+        - k0           :    integer (number of bits in the random part). If None, it is set to block_size // 8 ;
+        - k1           :    integer such that len(block) + k0 + k1 = block_size. Default is 0.
+        '''
+
+        self.block_size = block_size #n
+
+        if k0 == None:
+            k0 = block_size // 8
+
+        self.k0 = k0
+        self.k1 = k1
+    
+    
+    def _encode_block(self, block):
+        '''
+        Encode a block.
+        
+        - block : an n - k0 - k1 long bytes string.
+        '''
+
+        #---Add k1 \0 to block
+        block += (b'\0')*self.k1
+        
+        #---Generate r, a k0 bits random string
+        r = randbytes(self.k0)
+
+        X = xor(block, mgf1(r, self.block_size - self.k0))
+
+        Y = xor(r, mgf1(X, self.k0))
+
+        return X + Y
+    
+
+    def encode(self, txt):
+        '''
+        Encode txt
+        
+        Entry :
+            - txt : the string text to encode.
+        
+        Output :
+            bytes list
+        '''
+
+        if type(txt) != bytes:
+            txt = txt.encode()
+        
+        #---Cut message in blocks of size n - k0 - k1
+        blocks = []
+        l = self.block_size - self.k0 - self.k1
+
+        blocks = split(txt, l, pad_=b'\0')
+
+        #---Encode blocks
+        enc = []
+        for k in blocks:
+            enc.append(self._encode_block(k))
+        
+        return enc
+    
+
+    def _decode_block(self, block):
+        '''Decode a block encoded with self._encode_block.'''
+
+        X = block[:self.block_size - self.k0]
+        Y = block[-self.k0:]
+
+        r = xor(Y, mgf1(X, self.k0))
+
+        txt = xor(X, mgf1(r, self.block_size - self.k0))
+
+        while txt[-1] == 0: #Remove padding
+            txt = txt[:-1]
+
+        return txt
+
+
+    def decode(self, enc):
+        '''
+        Decode a text encoded with self.encode.
+        
+        - enc : a list of bytes encoded blocks.
+        '''
+
+        txt = b''
+
+        for k in enc:
+            txt += self._decode_block(k)
+        
+        return txt
+
+
+
+##-RSA
+class RSA_old: #TODO: maybe move this class in an other file ? Will need to adapt it to the new modifications ...
+    '''Class which allow to use the RSA cipher.'''
+
+    def __init__(self, keys, interface=None): #TODO: for `key`, use only an KsaKey object (from tipe). Make a function `to_RsaKey` that does what is done here.
+        '''Initiate the RSA object.
+
+        .keys : the keys. Should be of the form ((e, n), (d, n)) i.e. (pb_key, pv_key), or 'name' ;
+        .interface : the interface using this function. Should be None,
+         'gui', or 'console'. Used to choose the progress bar.
+
+        If 'keys' is a string, use RsaKeys to read the keys.
+        If a key is unknown, set it to None [i.g. : ((e, n), None)]. Both can't be None.
+        '''
+
+        if interface not in (None, 'gui', 'console'):
+            raise ValueError('The argument "interface" should be None, "gui", \
+                or "console", but {} of type {} was found !!!'.format(interface, type(interface)))
+
+        self.interface = interface
+        self.keys_init = keys
+
+        self.keys = {} #will contain the keys
+
+        if type(keys) == str:
+            try:
+                self.keys['e'] = RsaKeys(keys, interface=self.interface).get_key(0)
+                #self.keys['d'] = RsaKeys(keys, interface=self.interface).get_key(1)
+                self.keys['d'] = None
+
+            except FileNotFoundError as err:
+                if interface == 'console':
+                    cl_out(c_error, err)
+
+                elif interface == 'gui':
+                    QMessageBox.critical(None, 'Keys not found !!!', '<h2>{}</h2>'.format(err))
+
+                raise FileNotFoundError(err)
+
+            except TypeError: #pbk keys
+                self.keys['d'] = None
+
+
+        elif type(keys) in (tuple, list, set):
+            #-check the length
+            for j, k in enumerate(keys):
+                if k != None:
+                    if len(k) != 2:
+                        raise ValueError('The argument "keys" should have two lists of length 2, but "{}", with a length of {} was found !!!'.format(k, len(k)))
+
+                if j > 1:
+                    raise ValueError('The argument "keys" should have a length of 2, but "{}", with a length of {} was found !!!'.format(keys, len(keys)))
+
+            if keys[0] == keys[1] == None:
+                raise ValueError("Both keys can't be None !!!")
+
+            self.keys['e'] = keys[0]
+            self.keys['d'] = keys[1]
+
+
+        else:
+            raise TypeError('The argument "keys" should be a string or a list, but "{}" of type "{}" was found !!!'.format(keys, type(keys)))
+
+
+        self.pb_key = self.keys['e']
+        self.pv_key = self.keys['d']
+
+
+    #---------repr
+    def __repr__(self):
+        '''represent the RSA object'''
+
+        return "RSA(pb_key='{}', pv_key='{}', interface='{}')".format(
+            self.pb_key,
+            self.pv_key,
+            self.interface
+        )
+
+
+    def type_(self):
+        '''Return the keys type, either "all", "pvk" or "pbk".'''
+
+        if self.pv_key == None:
+            return 'pbk'
+
+        elif self.pb_key == None:
+            return 'pvk'
+
+        else:
+            return 'all'
+
+
+
+    #---------encrypt
+    def encrypt(self, txt):
+        '''Return the encrypted text txt with the public key self.pb_key.'''
+
+        if self.pb_key == None:
+            msg_err = 'Cannot encrypt with an empty key !!!'
+
+            if self.interface == 'console':
+                cl_out(c_error, msg_err)
+
+            elif self.interface == 'gui':
+                QMessageBox.critical(None, 'Cannot encrypt !!!', '<h2>{}</h2>'.format(msg_err))
+
+            raise TypeError(msg_err)
+
+
+        #------ini progress bar
+        if self.interface == 'gui':
+            pb = GuiProgressBar(title='Encrypting ... | RSA ― KRIS', verbose=True)
+
+        elif self.interface == 'console':
+            pb = ConsoleProgressBar()
+
+        #------ini
+        e, n = self.pb_key
+
+        grp_size = len(str(n)) - 1
+        encoded_txt = MsgForm(txt).encode(grp_size)
+
+        #------crypt
+        l_txt_crypted = []
+        for j, k in enumerate(encoded_txt):
+            i = int(k)
+
+            l_txt_crypted.append(pow(i, e, n)) #todo: try the math.pow speed !
+
+            if self.interface in ('gui', 'console'):
+                pb.set(j, len(encoded_txt))
+
+        ret = ''
+        for k in l_txt_crypted:
+            ret += str(k) + ' '
+
+        ret = ret[:-1] #remove last space.
+
+        return ret
+
+
+    #---------decrypt
+    def decrypt(self, txt):
+        '''Return the decrypted text txt with the private key self.pv_key.'''
+
+        if self.pv_key == None:
+            try:
+                self.keys['d'] = RsaKeys(self.keys_init, interface=self.interface).get_key(1)
+                self.pv_key = self.keys['d']
+
+            except TypeError:
+                msg_err = 'Cannot decrypt with an empty key !!!'
+
+                if self.interface == 'console':
+                    cl_out(c_error, msg_err)
+
+                elif self.interface == 'gui':
+                    QMessageBox.critical(None, 'Cannot decrypt !!!', '<h2>{}</h2>'.format(msg_err))
+
+                raise TypeError(msg_err)
+
+
+        #------ini progress bar
+        if self.interface == 'gui':
+            pb = GuiProgressBar(title='Decrypting ... | RSA ― KRIS', verbose=True)
+
+        elif self.interface == 'console':
+            pb = ConsoleProgressBar()
+
+        #------ini
+        d, n = self.pv_key
+        grp_size = len(str(n)) - 1
+
+        if type(txt) == str:
+            l_txt = txt.split(' ')
+
+        else:
+            l_txt = txt.split(b' ')
+
+        #------decrypt
+        l_txt_decrypted = []
+
+        for j, k in enumerate(l_txt):
+            i = int(k)
+            l_txt_decrypted.append(pow(i, d, n)) #todo: use math.pow ?
+
+            #---progress bar
+            if self.interface in ('gui', 'console'):
+                pb.set(j, len(l_txt)) # len(l_txt) - 1
+
+
+        for k in range(len(l_txt_decrypted)): #add 0. ex : 111 -> 0111
+            l_txt_decrypted[k] = str(l_txt_decrypted[k])
+
+            while len(l_txt_decrypted[k]) < grp_size: #% 4 != 0:
+                l_txt_decrypted[k] = '0' + l_txt_decrypted[k]
+
+        decoded_txt = MsgForm(l_txt_decrypted).decode()
+
+        ret = ''
+        for k in decoded_txt:
+            ret += str(k)
+
+        #print(ret)
+        #ret = rest_encod(ret)
+        #print(rest_encod(ret))
+        #print(ret)
+        # #todo: this don't work : the print works well (if you encrypt "é", and decrypt it it will print "é"), but ret is not "é"
+
+        return ret.strip('\x00')
+
+
+    def encrypt_file(self, fn_in, fn_out):
+        '''
+        Encrypt the content of `fn_in` and write it in `fn_out`.
+        It does NOT check if `fn_out` already exists and will overwrite it.
+        '''
+
+        with open(fn_in, 'r') as f:
+            txt = f.read()
+
+        txt_c = self.encrypt(txt)
+
+        with open(fn_out, 'w') as f:
+            f.write(txt_c)
+
+
+    def decrypt_file(self, fn_in, fn_out):
+        '''
+        Decrypt the content of `fn_in` and write it in `fn_out`.
+        It does NOT check if `fn_out` already exists and will overwrite it.
+        '''
+
+        with open(fn_in, 'r') as f:
+            txt = f.read()
+
+        txt_d = self.decrypt(txt)
+
+        with open(fn_out, 'w') as f:
+            f.write(txt_d)
+
+
+    def sign(self, txt):
+        '''
+        Sign the message 'txt'.
+        It encrypt 'txt' using the private key.
+        '''
+
+        if self.pv_key == None:
+            try:
+                self.keys['d'] = RsaKeys(self.keys_init, interface=self.interface).get_key(1)
+                self.pv_key = self.keys['d']
+
+            except TypeError:
+                msg_err = 'Cannot sign with an empty private key !!!'
+
+                if self.interface == 'console':
+                    cl_out(c_error, msg_err)
+
+                elif self.interface == 'gui':
+                    QMessageBox.critical(None, 'Cannot sign !!!', '<h2>{}</h2>'.format(msg_err))
+
+                raise TypeError(msg_err)
+
+        return RSA([self.pv_key, self.pb_key], self.interface).encrypt(txt)
+
+
+    def unsign(self, txt):
+        '''
+        Unsign the message 'txt'.
+        It decrypt 'txt' using the public key.
+        '''
+
+        if self.pb_key == None:
+            msg_err = 'Cannot unsign with an empty key !!!'
+
+            if self.interface == 'console':
+                cl_out(c_error, msg_err)
+
+            elif self.interface == 'gui':
+                QMessageBox.critical(None, 'Cannot unsign !!!', '<h2>{}</h2>'.format(msg_err))
+
+            raise TypeError(msg_err)
+
+        return RSA([self.pv_key, self.pb_key], self.interface).decrypt(txt)
+
+
+class RSA:
+    '''RSA cipher'''
+
+    def __init__(self, key, padding, block_size=None):
+        '''
+        - key        : a RsaKey object ;
+        - padding    : the padding to use. Possible values are :
+            'int' : msg is an int, return an int ;
+            'raw' : msg is a string, simply cut it in blocks ;
+            'oaep' : OAEP padding ;
+        - block_size : the size of encryption blocks. If None, it is set to `key.size // 8 - 1`.
+        '''
+
+        self.pb = key.pb
+        if key.is_private:
+            self.pv = key.pv
+        
+        self.is_private = key.is_private
+
+        if padding.lower() not in ('int', 'raw', 'oaep'):
+            raise ValueError('RSA: padding not recognized.')
+        
+        self.pad = padding.lower()
+
+        if block_size == None:
+            self.block_size = key.size // 8 - 1
+
+        else:
+            self.block_size = block_size
+    
+
+    def encrypt(self, msg):
+        '''
+        Encrypt `msg` using the key given in init.
+        Redirect toward the right method (using the good padding).
+        
+        - msg     : The string to encrypt.
+        '''
+
+        if self.pad == 'int':
+            return self._encrypt_int(msg)
+        
+        elif self.pad == 'raw':
+            return self._encrypt_raw(msg)
+        
+        else:
+            return self._encrypt_oaep(msg)
+    
+    
+    def decrypt(self, msg):
+        '''
+        Decrypt `msg` using the key given in init, if it is a private one. Otherwise raise a TypeError.
+        Redirect toward the right method (using the good padding).
+        '''
+
+        if not self.is_private:
+            raise TypeError('Can not decrypt using a public key.')
+
+        if self.pad == 'int':
+            return self._decrypt_int(msg)
+        
+        elif self.pad == 'raw':
+            return self._decrypt_raw(msg)
+        
+        else:
+            return self._decrypt_oaep(msg)
+    
+
+    def _encrypt_int(self, msg):
+        '''
+        RSA encryption in its simplest form.
+        
+        - msg : an integer to encrypt.
+        '''
+
+        e, n = self.pb
+
+        return pow(msg, e, n)
+    
+
+    def _decrypt_int(self, msg):
+        '''
+        RSA decryption in its simplest form.
+        Decrypt `msg` using the key given in init if possible, using the 'int' padding.
+        
+        - msg : an integer.
+        '''
+        
+        d, n = self.pv
+
+        return pow(msg, d, n)
+    
+
+    def _encrypt_raw(self, msg):
+        '''
+        Encrypt `msg` using the key given in init, using the 'raw' padding.
+        
+        - msg : The string to encrypt
+        '''
+
+        e, n = self.pb
+
+        #---Encode msg
+        if type(msg) != bytes:
+            msg = msg.encode()
+
+        #---Cut message in blocks
+        m_lst = split(msg, self.block_size)
+        
+        #---Encrypt message
+        enc_lst = []
+        for k in m_lst:
+            enc_lst.append(pow(bytes_to_int(k), e, n))
+
+        return b' '.join([base64.b64encode(int_to_bytes(k)) for k in enc_lst])
+    
+
+    def _decrypt_raw(self, msg):
+        '''Decrypt `msg` using the key given in init if possible, using the 'raw' padding'''
+        
+        d, n = self.pv
+
+        enc_lst = [base64.b64decode(k) for k in msg.split(b' ')]
+
+        c_lst = []
+        for k in enc_lst:
+            c_lst.append(pow(bytes_to_int(k), d, n))
+        
+        txt = b''
+        for k in c_lst:
+            txt += int_to_bytes(k)
+
+        return txt.decode()
+
+    
+    def _encrypt_oaep(self, msg):
+        '''Encrypt `msg` using the key given in init, using the 'oaep' padding.'''
+
+        e, n = self.pb
+
+        if type(msg) != bytes:
+            msg = msg.encode()
+
+        #---Padding
+        E = OAEP(self.block_size)
+        m_lst = E.encode(msg)
+        
+        #---Encrypt message
+        enc_lst = []
+        for k in m_lst:
+            enc_lst.append(pow(bytes_to_int(k), e, n))
+        
+        return b' '.join([base64.b64encode(int_to_bytes(k)) for k in enc_lst])
+
+    
+    def _decrypt_oaep(self, msg):
+        '''Decrypt `msg` using the key given in init if possible, using the 'oaep' padding.'''
+
+        d, n = self.pv
+
+        #---Decrypt
+        enc_lst = [base64.b64decode(k) for k in msg.split(b' ')]
+        c_lst = []
+
+        for k in enc_lst:
+            c_lst.append(pow(bytes_to_int(k), d, n))
+        
+        #---Decode
+        encoded_lst = []
+        for k in c_lst:
+            encoded_lst.append(pad(int_to_bytes(k), self.block_size, b'\0'))
+        
+        E = OAEP(self.block_size)
+
+        return E.decode(encoded_lst)
+
+
+    def encrypt_file(self, fn_in, fn_out):
+        '''
+        Encrypt the content of `fn_in` and write it in `fn_out`.
+        It does NOT check if `fn_out` already exists and will overwrite it.
+        '''
+
+        with open(fn_in, 'r') as f:
+            txt = f.read()
+
+        txt_c = self.encrypt(txt)
+
+        with open(fn_out, 'w') as f:
+            f.write(txt_c)
+
+
+    def decrypt_file(self, fn_in, fn_out):
+        '''
+        Decrypt the content of `fn_in` and write it in `fn_out`.
+        It does NOT check if `fn_out` already exists and will overwrite it.
+        '''
+
+        with open(fn_in, 'r') as f:
+            txt = f.read()
+
+        txt_d = self.decrypt(txt)
+
+        with open(fn_out, 'w') as f:
+            f.write(txt_d)
+
+
+    def sign(self, txt):
+        '''
+        Sign the message 'txt'.
+        It encrypt 'txt' using the private key.
+        '''
+
+        if not self.is_private:
+            raise TypeError('Can not sign using a public key.')
+
+        # if self.pv_key == None:
+        #     try:
+        #         self.keys['d'] = RsaKeys(self.keys_init, interface=self.interface).get_key(1)
+        #         self.pv_key = self.keys['d']
+        #
+        #     except TypeError:
+        #         msg_err = 'Cannot sign with an empty private key !!!'
+        #
+        #         if self.interface == 'console':
+        #             cl_out(c_error, msg_err)
+        #
+        #         elif self.interface == 'gui':
+        #             QMessageBox.critical(None, 'Cannot sign !!!', '<h2>{}</h2>'.format(msg_err))
+        #
+        #         raise TypeError(msg_err)
+        #
+        # return RSA([self.pv_key, self.pb_key], self.interface).encrypt(txt)
+
+        e, n = self.pb
+        d, n = self.pv
+        sign_key = RsaKey(e=d, d=e, n=n)
+
+        C = RSA(sign_key, self.pad, self.block_size)
+
+        return C.encrypt(txt)
+
+
+    def unsign(self, txt):
+        '''
+        Unsign the message 'txt'.
+        It decrypt 'txt' using the public key.
+        '''
+
+        # if self.pb_key == None:
+        #     msg_err = 'Cannot unsign with an empty key !!!'
+        #
+        #     if self.interface == 'console':
+        #         cl_out(c_error, msg_err)
+        #
+        #     elif self.interface == 'gui':
+        #         QMessageBox.critical(None, 'Cannot unsign !!!', '<h2>{}</h2>'.format(msg_err))
+        #
+        #     raise TypeError(msg_err)
+        #
+        # return RSA([self.pv_key, self.pb_key], self.interface).decrypt(txt)
+
+        e, n = self.pb
+        sign_key = RsaKey(e=None, d=e, n=n)
+
+        C = RSA(sign_key, self.pad, self.block_size)
+
+        return C.decrypt(txt)
+
+
+class RsaSign: #TODO: update this class according to the new RSA class.
+    '''Class which allow to sign messages' hashes.'''
+
+    def __init__(self, keys, h='sha256', interface=None):
+        '''
+        Initiate RsaSign.
+
+        - keys : cf RSA's doc (the class just before) ;
+        - h : the hash to use.
+        '''
+
+        if interface not in (None, 'gui', 'console'):
+            raise ValueError('The argument "interface" should be None, "gui", or "console", but {} of type {} was found !!!'.format(interface, type(interface)))
+
+        self.interface = interface
+
+        self.RSA = RSA(keys, interface)
+        self.h = h
+        self.Hasher = Hasher(h)
+
+
+    def sign(self, txt):
+        '''Sign 'txt'.'''
+
+        txt_h = self.Hasher.hash(txt)
+
+        return self.RSA.sign(txt_h)
+
+
+    def check(self, msg, sign):
+        '''
+        Check if the message's sign correspond to the message.
+
+        - msg : the message which was signed ;
+        - sign : the message's sign.
+
+        Return :
+            True if correspond ;
+            False otherwise.
+        '''
+
+        msg_h = self.Hasher.hash(msg)
+        unsign = self.RSA.unsign(sign)
+
+        return msg_h == unsign
+
+
+    def str_sign(self, msg):
+        '''
+        Sign 'txt' and return it, with the message, in a string of this form (the commented lines are set with FormatedMsg, in KRIS_gui.py) :
+
+            #------BEGIN KRIS SIGNED MESSAGE------
+            #Version: KRIS_v2.0.0
+            #Cipher: RSA signature
+            #Hash: sha256
+            #Key_name: test
+            #---
+            #
+            This is the signed message.
+
+            ------BEGIN KRIS SIGNATURE------
+            943807048734946125391551838892825323881224874134114102624258821
+            777497503175465732577498770633243452810041947630081594914335102
+            030685948454325645230350182968575318427660604935974297921249620
+            145627119142786967888460883779427870903491284297486553549313557
+            036484594229863184367664486859688319969288882500317784306881247
+            986697247977081407162090788619940533970560140434587970906714139
+            290858878587907236987805719455479320536481924920579051146037063
+            173431947005158307628367242387336720592701482187812886188311982
+            087888289689323511419214457508164027138556866752536079927267033
+            1287543493615931451357930596408267945537776650957
+            ------END KRIS SIGNATURE------
+            #------END KRIS SIGNED MESSAGE------
+        '''
+
+        sign = self.sign(msg)
+
+        txt = '{}\n\n------BEGIN KRIS SIGNATURE------\n{}\n------END KRIS SIGNATURE------'.format(msg, NewLine(64).set(sign))
+
+
+        return txt #FormatMsg(txt, nl=False).set(self.d)
+
+
+    def str_check(self, txt):
+        '''Same as self.check, but for a message formatted by self.str_sign.'''
+
+        begin = txt.find('\n\n------BEGIN KRIS SIGNATURE------\n')
+        end = txt.find('\n------END KRIS SIGNATURE------')
+
+        if -1 in (begin, end):
+            raise ValueError('The text is not well formatted !!!')
+
+        msg = txt[:begin]
+        sign = txt[begin + 35:end].replace('\n', '')
+
+        return self.check(msg, sign)
+
+
+    #todo: there is a bug when checking in gui with a 512 RSA key : it does not match, but it should (try sign and check a test message, i.g. 'test').
 
 
 

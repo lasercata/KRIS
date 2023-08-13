@@ -3,7 +3,7 @@
 '''Module incuding hasher fonctions'''
 
 hasher__auth = 'Lasercata'
-hasher__last_update = '05.03.2021'
+hasher__last_update = '06.08.2023'
 hasher__version = '4.0_kris'
 
 ##-import
@@ -42,7 +42,7 @@ class Hasher:
         '''
         Initiate the Hasher object.
 
-        - h : the hash to use ;
+        - h : the string of the hash to use ;
         - loop : only used if h is 'SecHash'. Cf to the doc of 'SecHash' function.
         '''
 

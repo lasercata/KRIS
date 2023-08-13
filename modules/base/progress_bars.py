@@ -42,7 +42,7 @@ class ConsoleProgressBar:
     def set(self, i, n):
         '''Show a console progress bar.
 
-        i : the actual number ;
+        i : the current number ;
         n : the total number.
         '''
 
@@ -72,10 +72,10 @@ class ConsoleProgressBar:
 
 
 ##-GUI
-class GuiProgressBar(QWidget):
+class GuiProgressBar(QWidget): #TODO: inherit from QDialog instead ?
     '''Class creating a progess bar popup.'''
 
-    def __init__(self, title='Processing ... ― Cracker', undetermined=False, verbose=True, mn=0, parent=None):
+    def __init__(self, title='Processing ... ― Kris', undetermined=False, verbose=True, mn=0, parent=None):
         '''Create the GuiProgressBar window.
 
         - undetermined : Should be True or False. Set it to True if the time duration is undetermined ;

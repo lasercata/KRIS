@@ -149,8 +149,8 @@ alf_25 = alf_az.replace('j', '')
 alf_25AZ = alf_AZ.replace('J', '')
 
 crypta_alf_list = {
-    'alf_25': alf_25,
     'alf_az': alf_az,
+    'alf_25': alf_25,
     'alf_az09': alf_az09,
     'alf_25AZ': alf_25AZ,
     'alf_AZ': alf_AZ,
@@ -1851,7 +1851,7 @@ class ExpKeyWin(QDialog): #QMainWindow):
             QMessageBox.critical(None, '!!! No selected key !!!', '<h2>Please select a key !!!</h2>')
             return -3
 
-        key = RSA.RsaKeys(k_name, interface='gui')
+        key = RSA.RsaKeys(k_name, interface='gui') #TODO: wil need to change this ...
         fn_src0, (md, md_stored) = key.get_fn('pbk', also_ret_md=True)
 
         fn_src = (glb.KRIS_data_path + '/RSA_keys', expanduser('~/.RSA_keys'))[glb.home] + '/' + fn_src0
@@ -2596,11 +2596,11 @@ class UseCiphers:
 
     def _verify(self, md):
         '''
-        Verify if the infos are good, warn the user else.
+        Check if the infos are right, warn the user otherwise.
         md : 0 - encrypt : 1 - decrypt.
 
         Return :
-            -3 if  not good ;
+            -3 if not good ;
             0 otherwise.
         '''
 
