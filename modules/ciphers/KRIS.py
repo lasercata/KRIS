@@ -4,16 +4,16 @@
 '''
 KRIS allow you to encrypt and decypt data using the PGP scheme.
 
-It uses the AES (Advanced Encryption Standard) cipher to crypt messages,
-created by Daemen and Rijmen and implemented in python by Elerias ;
+It uses the AES (Advanced Encryption Standard) cipher to encrypt messages,
+created by Daemen and Rijmen and implemented in C by Elerias ;
 
-and the RSA chipher to crypt the randomly generated key with AES,
+and the RSA chipher to encrypt the randomly generated key for AES,
 created by Ron Rivest, Adi Shamir, and Leonard Adleman, and implemented in python by Lasercata and Elerias.
 '''
 
 KRIS__auth = 'Lasercata'
-KRIS__last_update = '13.11.2021'
-KRIS__version = '1.3_kris'
+KRIS__last_update = '2023.08.13'
+KRIS__version = '2.0'
 
 
 ##-import
@@ -36,9 +36,9 @@ import platform
 from PyQt5.QtWidgets import QMessageBox
 
 #---------KRIS' modules
-from modules.ciphers.kris.RSA import *
-from modules.ciphers.kris.AES import *
-from modules.ciphers.hashes.hasher import *
+from modules.ciphers.RSA import *
+from modules.ciphers.AES import *
+from modules.ciphers.hasher import *
 
 #from modules.base.console.color import cl_out, c_error
 
@@ -68,11 +68,11 @@ alf = lat_1
 
 
 ##-functions
-def AES_rnd_key_gen(n, mode=256): #todo: improve this
+def AES_rnd_key_gen(n, mode=256): #TODO: improve this
     '''
     Return a randomly generated key for AES.
 
-    - n : the length of the key ;
+    - n    : the length of the key ;
     - mode : the AES mode, 128, 192 or 256.
     '''
 
@@ -82,7 +82,7 @@ def AES_rnd_key_gen(n, mode=256): #todo: improve this
     if n > mode // 8:
         raise ValueError('Key is too big for an AES ' + str(mode) + ' cipher')
 
-    key = ''.join([schoice(alf) for k in range(n)])
+    key = ''.join([schoice(alf) for k in range(n)]) #TODO: use a more secure random generator. Also, consider bytes strings (but may not be handy)
 
     return key
 
@@ -91,18 +91,24 @@ def AES_rnd_key_gen(n, mode=256): #todo: improve this
 class Kris:
     '''Class defining the way how to encrypt and decrypt'''
 
-    def __init__(self, key, AES_mode=256, encod='utf-8', mode='t', interface=None):
+    def __init__(self, RSA_ciph, AES_mode=256, encod='utf-8', mode='t', interface=None):
         '''Initiate the Kris object.
 
-        .key : The RSA key. Cf the the doc of the RSA class (modules/ciphers/kris/RSA.py) ;
-        .AES_mode : the AES's mode. Should be 128, 192 or 256. Default is 256 ;
-        .encod : the encoding. Default is utf-8 ;
-        .mode : the bytes mode of the decrypted text (input). Should be "b" or "t". Default is "t" ;
-        .interface : the interface using this function. Should be None,
-         'gui', or 'console'. Used to choose the progress bar.
+        - RSA_ciph  : the RSA cipher. Should be the instance of a RSA class with
+           at least the methods `encrypt` and `decrypt`. The key is given when
+           instantiating the class ;
+        - AES_mode  : the AES's mode. Should be 128, 192 or 256. Default is 256 ;
+        - encod     : the encoding. Default is utf-8 ;
+        - mode      : the bytes mode of the decrypted text (input). Should be "b" or "t". Default is "t" ;
+        - interface : the interface using this function. Should be None,
+           'gui', or 'console'. Used to choose the progress bar.
         '''
 
-        self.RSA_ciph = RSA(key, interface) #Create the RSA cipher or raise error if key or interface is wrong.
+        if interface not in (None, 'gui', 'console'):
+            raise ValueError('The argument "interface" should be None, "gui", \
+                or "console", but {} of type {} was found !!!'.format(interface, type(interface)))
+
+        self.interface = interface
 
         if AES_mode not in (256, 192, 128):
             raise ValueError('The argument "AES_mode" should be 128, 192, \
@@ -112,8 +118,7 @@ class Kris:
             raise ValueError('The argument "mode" should be "t" or "b", but \
                 "{}" was found !!!'.format(mode))
 
-
-        self.key = key #for __repr__
+        self.RSA_ciph = RSA_ciph
         self.mode = mode
 
         self.AES_mode = AES_mode
@@ -125,8 +130,8 @@ class Kris:
     def __repr__(self):
         '''Represent the Kris object.'''
 
-        return "Kris(key='{}', AES_mode='{}', encod='{}', mode='{}', interface='{}')".format(
-            self.key,
+        return "Kris(RSA_ciph='{}', AES_mode='{}', encod='{}', mode='{}', interface='{}')".format(
+            self.RSA_ciph
             self.AES_mode,
             self.encod,
             self.mode,
@@ -134,14 +139,13 @@ class Kris:
         )
 
 
-
     #---------encrypt
     def encrypt(self, msg, AES_key_size=16):
         '''
-        Return the randomly generated AES key crypted with RSA, followed by the message, crypted with the AES key :
+        Return the randomly generated AES key encrypted with RSA, followed by the message, encrypted with the AES key :
             return (AES_key_c, msg_c)
 
-        - msg : the message to encrypt ;
+        - msg          : the message to encrypt ;
         - AES_key_size : the size of the AES key to generate. Default is 16 characters.
         '''
 
@@ -162,7 +166,7 @@ class Kris:
         '''
         Return the decrypted message.
 
-        - msg_c : the encrypted message. Should be a tuple or list of the form (AES_key_c, msg_c) ;
+        - msg_c      : the encrypted message. Should be a tuple or list of the form (AES_key_c, msg_c) ;
         - rm_padding : Should be a boolean. If True, remove the padding inserted at the end of the message ('\x00').
         '''
 
@@ -174,10 +178,9 @@ class Kris:
             raise ValueError('The argument "msg_c" should be a list, tuple or \
                 a set, but a "{}" was found !!!'.format(type(msg_c)))
 
-        else:
-            if len(msg_c) != 2:
-                raise ValueError('The argument "msg_c" should have a length of \
-                    2, but a length of "{}" was found !!!'.format(len(msg_c)))
+        if len(msg_c) != 2:
+            raise ValueError('The argument "msg_c" should have a length of \
+                2, but a length of "{}" was found !!!'.format(len(msg_c)))
 
 
         #------AES key
@@ -208,7 +211,6 @@ class Kris:
             return msg.strip('\x00')
 
         return msg
-
 
 
     #---------encrypt file
@@ -304,6 +306,7 @@ class Kris:
         #------Rewrite the key in the file, for future decryptions
         with open(fn_in, 'ab') as f:
             f.write(AES_key_c)
+
 
 
 class SignedKRIS:

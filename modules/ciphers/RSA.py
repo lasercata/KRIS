@@ -210,6 +210,8 @@ class RsaKey:
         else:
             self.size = round(math.log2(n))
 
+        self.k_name = None #Used when saving the key to a file and when reading from a file
+
     
     def __repr__(self):
         if self.is_private:
@@ -389,10 +391,10 @@ class RsaKey:
 
     def save(self, k_name, pwd=None, overwrite=False, md_stored='hexa'):
         '''
-        Save the key to a file
+        Save the key to a file.
 
         Arguments :
-            - k_name : the name to give for the keys ;
+            - k_name : the name to give for the keys. This value will overwrite self.k_name ;
 
             - pwd : The AES key used to encrypt the RSA key. If None, key will be saved in clear ;
             - overwrite : in (True, False). If the dir keys_names already exist, if True, overwrite it,
@@ -483,6 +485,9 @@ class RsaKey:
 
         chdir(old_path)
 
+        self.k_name = k_name
+
+
 
 class RsaKeyFile: #TODO: Check that it works well.
     '''Class representing an RSA key file, and implementing manipulations on them.'''
@@ -506,7 +511,7 @@ class RsaKeyFile: #TODO: Check that it works well.
     def __repr__(self):
         '''Represent the object.'''
 
-        return "RsaKeys('{}', interface='{}')".format(self.k_name, self.interface)
+        return "RsaKeyFile('{}', interface='{}')".format(self.k_name, self.interface) #Printing self.k_name and not the full filename with the extension as the key can be saved in multiple formats at the same time.
 
 
     def read(self, mode='all', also_ret_pwd=False):
@@ -560,7 +565,7 @@ class RsaKeyFile: #TODO: Check that it works well.
         #------Decrypt content, if encrypted
         if fn[-4:] == '.enc':
             #---Get password
-            if self.interface == 'gui':
+            if self.interface == 'gui': #TODO: make a function in base that does this !
                 pwd = AskPwd.use() #TODO: why no Hasher here ?
 
             elif self.interface == 'console':
@@ -617,6 +622,7 @@ class RsaKeyFile: #TODO: Check that it works well.
                 e, n = str(int(e, 16)), str(int(n, 16))
 
             key = RsaKey(e=e, n=n, date_=date_, interface=self.interface)
+            key.k_name = self.k_name
 
             if also_ret_pwd:
                 return key, pwd
@@ -1209,6 +1215,19 @@ class RSA:
 
         else:
             self.block_size = block_size
+
+        self.k_name = key.k_name
+        self.key = key
+
+
+    def __repr__(self):
+        '''Represent the object.'''
+
+        if self.k_name != None:
+            return f"RSA(key='{self.k_name}', padding='{self.pad}', block_size='{self.block_size}', interface='{self.interface}')"
+
+        else:
+            return f"RSA(padding='{self.pad}', block_size='{self.block_size}', interface='{self.interface}')\n\nKey : {self.key}" #TODO: test this !
     
 
     def encrypt(self, msg):

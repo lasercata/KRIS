@@ -2701,7 +2701,9 @@ class UseCiphers:
         if ciph in ciphers_list['KRIS']:
             AES_md = (256, 192, 128)[ciphers_list['KRIS'].index(ciph)]
 
-            C = KRIS.Kris((key, None), AES_md, encod, interface='gui') #TODO: change this
+            RSA_ciph = RSA.RSA(key, padding='oaep', interface='gui')
+            C = KRIS.Kris(RSA_ciph, AES_md, encod, interface='gui')
+
             msg_c = C.encrypt(txt)
 
             msg_c = '{} {}'.format(msg_c[0], msg_c[1])
@@ -2811,7 +2813,9 @@ class UseCiphers:
             else:
                 h = None
 
-            if auto: #TODO: check somewhere around here if the cipher is RSA or KRIS and the KRIS version is older than the 3.0.0.
+            #TODO: check somewhere around here if the cipher is RSA or KRIS and the KRIS version is older than the 3.0.0.
+            #TODO: maybe don't use auto if a cipher or a key is selected ?
+            if auto:
                 self.cipher.setCurrentText(d['Cipher'])
                 win.ciph_bar.chk_ciph(d['Cipher'])
 
@@ -2851,7 +2855,9 @@ class UseCiphers:
             if ciph in ciphers_list['KRIS']:
                 AES_md = (256, 192, 128)[ciphers_list['KRIS'].index(ciph)]
 
-                C = KRIS.Kris((None, key), AES_md, encod, bytes_md, interface='gui') #TODO: adapt this line
+                # C = KRIS.Kris((None, key), AES_md, encod, bytes_md, interface='gui') #TODO: adapt this line
+                RSA_ciph = RSA.RSA(key, padding='oaep', interface='gui')
+                C = KRIS.Kris(RSA_ciph, AES_md, encod, bytes_md, interface='gui')
 
                 try:
                     if bytes_md_d == 't':
@@ -2865,14 +2871,14 @@ class UseCiphers:
 
             elif ciph == 'RSA':
                 # C = RSA.RSA((None, key), interface='gui')
-                C = RSA.RSA(key, interface='gui')
+                C = RSA.RSA(key, padding='oaep', interface='gui')
                 msg_d = C.decrypt(txt)
 
 
             elif ciph == 'RSA signature':
                 if h == None:
                     # C = RSA.RsaSign((key, None), interface='gui')
-                    C = RSA.RsaSign(key, interface='gui')
+                    C = RSA.RsaSign(key, padding='oaep', interface='gui')
 
                 else:
                     # C = RSA.RsaSign((key, None), h, interface='gui')
@@ -2931,7 +2937,9 @@ class UseCiphers:
         if ciph in ciphers_list['KRIS']:
             AES_md = (256, 192, 128)[ciphers_list['KRIS'].index(ciph)]
 
-            C = KRIS.Kris((key, None), AES_md, interface='gui')
+            # C = KRIS.Kris((key, None), AES_md, interface='gui')
+            RSA_ciph = RSA.RSA(key, padding='oaep', interface='gui')
+            C = KRIS.Kris(RSA_ciph, AES_md, interface='gui')
 
             try:
                 C.encryptFile(fn_in, fn_out)
@@ -2942,7 +2950,8 @@ class UseCiphers:
 
 
         elif ciph == 'RSA':
-            C = RSA.RSA((key, None), interface='gui')
+            # C = RSA.RSA((key, None), interface='gui')
+            C = RSA.RSA(key, padding='oaep', interface='gui')
 
             try:
                 C.encrypt_file(fn_in, fn_out)
@@ -2997,11 +3006,13 @@ class UseCiphers:
 
 
         try:
-            #------decrypt using the good cipher
+            #------decrypt using the right cipher
             if ciph in ciphers_list['KRIS']:
                 AES_md = (256, 192, 128)[ciphers_list['KRIS'].index(ciph)]
 
-                C = KRIS.Kris((None, key), AES_md, interface='gui')
+                # C = KRIS.Kris((None, key), AES_md, interface='gui')
+                RSA_ciph = RSA.RSA(key, padding='oaep', interface='gui')
+                C = KRIS.Kris(RSA_ciph, AES_md, interface='gui')
 
                 if C.decryptFile(fn_in, fn_out) == -1:
                     raise Exception('The file does not seem to be well formatted for that software, or the used key is the wrong one.')
@@ -3009,7 +3020,8 @@ class UseCiphers:
 
 
             elif ciph == 'RSA':
-                C = RSA.RSA((None, key), interface='gui')
+                # C = RSA.RSA((None, key), interface='gui')
+                C = RSA.RSA(key, padding='oaep', interface='gui')
 
                 try:
                     C.decrypt_file(fn_in, fn_out)
