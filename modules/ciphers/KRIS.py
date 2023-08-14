@@ -312,17 +312,18 @@ class Kris:
 class SignedKRIS:
     '''Defining the SignedKRIS cipher.'''
 
-    def __init__(self, reciver_key, sender_key, AES_mode=256, encod='utf-8', mode='t', hash_='sha256', interface=None):
+    def __init__(self, reciver_RSA, sender_RSA, AES_mode=256, encod='utf-8', mode='t', hash_='sha256', interface=None):
         '''
         Initiate the SignedKRIS cipher.
 
-        - reciver_key : the public/private key which encrypts/decrypts the message ;
-        - sender_key : the private/public key which signs/checks the message's hash.
-        For others args, cf to Kris and RsaSign.
+        - reciver_RSA : the RSA cipher used to encrypt / decrypt the message ;
+        - sender_RSA  : the RSA cipher used to sign / check the message integrity.
+
+        For more details, and for the others arguments, cf to the Kris and RsaSign documentation.
         '''
 
-        self.Kris = Kris(reciver_key, AES_mode, encod, mode, interface)
-        self.RsaSign = RsaSign(sender_key, hash_, interface=interface)
+        self.Kris = Kris(reciver_RSA, AES_mode, encod, mode, interface)
+        self.RsaSign = RsaSign(sender_RSA, hash_, interface=interface)
 
 
     def encrypt(self, txt, AES_key_size=16):
@@ -334,8 +335,8 @@ class SignedKRIS:
 
             Where :
                 - AES_key_c : is the RSA encrypted AES key ;
-                - msg_c : is the message encrypted with the AES key ;
-                - msg_s : is the RSA signature of the clear message.
+                - msg_c     : is the message encrypted with the AES key ;
+                - msg_s     : is the RSA signature of the clear message.
         '''
 
         AES_key_c, msg_c = self.Kris.encrypt(txt, AES_key_size)

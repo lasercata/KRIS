@@ -2717,7 +2717,8 @@ class UseCiphers:
 
         elif ciph == 'RSA signature':
             # C = RSA.RsaSign((None, key), interface='gui')
-            C = RSA.RsaSign(key, padding='oaep', interface='gui')
+            RSA_ciph = RSA.RSA(key, padding='oaep', interface='gui')
+            C = RSA.RsaSign(RSA_ciph)
 
             if formatted_out:
                 msg_c = C.str_sign(txt)
@@ -2878,11 +2879,13 @@ class UseCiphers:
             elif ciph == 'RSA signature':
                 if h == None:
                     # C = RSA.RsaSign((key, None), interface='gui')
-                    C = RSA.RsaSign(key, padding='oaep', interface='gui')
+                    RSA_ciph = RSA.RSA(key, padding='oaep', interface='gui')
+                    C = RSA.RsaSign(RSA_ciph)
 
                 else:
                     # C = RSA.RsaSign((key, None), h, interface='gui')
-                    C = RSA.RsaSign(key, h, interface='gui')
+                    RSA_ciph = RSA.RSA(key, padding='oaep', interface='gui')
+                    C = RSA.RsaSign(RSA_ciph, h)
 
                 if formatted_out:
                     b = C.str_check(txt)
@@ -2891,11 +2894,11 @@ class UseCiphers:
                     b = C.check(*txt.split(' '))
 
                 if b:
-                    msg_d = tr('The signature match to the message.')
+                    msg_d = tr('The signature match the message.')
                     QMessageBox.about(None, tr('Signature result'), '<h2>' + msg_d + '</h2>')
 
                 else:
-                    msg_d = tr('The signature does not match to the message !') + '\n' + tr('You may not have selected the right RSA key, or the message was modified before you received it !!!')
+                    msg_d = tr('The signature does not match the message !') + '\n' + tr('You may not have selected the right RSA key, or the message was modified before you received it !!!')
                     QMessageBox.about(None, tr('Signature result'), '<h2>' + tr('The signature does not match to the message !') + '</h2>\n<h3>' + tr('You may not have selected the right RSA key, or the message was modified before you received it !!!') + '</h3>')
 
 

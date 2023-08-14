@@ -23,7 +23,7 @@ ciphers_list = {
 
 
 ##-main
-class FormatMsg:
+class FormatMsg: #TODO: the message should be an argument of set and unset, not of __init__ !
     '''Format output from KRIS ciphers.'''
 
     def __init__(self, msg, nl=True, md='msg'):
@@ -31,8 +31,8 @@ class FormatMsg:
         Initiate FormatMsg.
 
         - msg : the message text ;
-        - nl : a bool indicating if use NewLine (False used with RSA signature) ;
-        - md : in ('msg', 'sign'). Indicate the BEGIN and END text.
+        - nl  : a bool indicating if use NewLine (False used with RSA signature) ;
+        - md  : in ('msg', 'sign'). Indicate the BEGIN and END text.
         '''
 
         if md not in ('msg', 'sign'):

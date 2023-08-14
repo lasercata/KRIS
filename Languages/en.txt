@@ -506,8 +506,8 @@ There is nothing to decrypt.
 No text
 Impossible to do this, private keys not found.
 Signature result
-The signature match to the message.
-The signature does not match to the message !
+The signature match the message.
+The signature does not match the message !
 You may not have selected the right RSA key, or the message was modified before you received it !!!
 Decryption error
 An error occured during decryption. Maybe you tried to decrypt clear text, or the cipher text is not good formated.
@@ -553,3 +553,8 @@ Do you really want to decrypt "{}" keys ? Anyone with access to this computer wi
 Please fill the password field !
 Please fill the three passwords fields.
 Color &Scheme
+Input file :
+Browse
+Output file :
+Encrypt
+Decrypt

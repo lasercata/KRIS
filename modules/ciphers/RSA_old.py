@@ -4,8 +4,8 @@
 '''This is the old implementation of RSA (without the OAEP padding, before the version v3.0.0 of KRIS.'''
 
 RSA__auth = 'Lasercata, Elerias'
-RSA__last_update = '13.11.2021'
-RSA__version = '4.3_kris' #but adapted to the new RsaKey class.
+RSA__last_update = '2023.08.14' #'13.11.2021'
+RSA__version = '4.3_kris' #but adapted to the new RsaKey class (from v3.0.0 of Kris).
 
 
 ##-import
@@ -14,7 +14,7 @@ from modules.ciphers.RSA import *
 
 ##-Base
 #------from b_cvrt
-def sp_grp(n, grp, sep=' ', rev_lst=True): #TODO: move this in base (or some similar file)
+def sp_grp(n, grp, sep=' ', rev_lst=True):
     '''Base of space. Return n with spaced groups of grp.
     .n : the number / string to space ;
     .grp : the group size ;
@@ -170,7 +170,7 @@ class MsgForm:
 class RSA_old:
     '''Class which allow to use the RSA cipher.'''
 
-    def __init__(self, key, interface=None): #TODO: for `key`, use only an KsaKey object (from tipe). Make a function `to_RsaKey` that does what is done here.
+    def __init__(self, key, interface=None):
         '''Initiate the RSA object.
 
         - key       : the RsaKey key ;

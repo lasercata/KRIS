@@ -394,13 +394,13 @@ class RsaKey:
         Save the key to a file.
 
         Arguments :
-            - k_name : the name to give for the keys. This value will overwrite self.k_name ;
-
-            - pwd : The AES key used to encrypt the RSA key. If None, key will be saved in clear ;
+            - k_name    : the name to give for the keys. This value will overwrite self.k_name ;
+            - pwd       : The AES key used to encrypt the RSA key. If using user input, hash it before
+                           using it here. If None, key will be saved in clear ;
             - overwrite : in (True, False). If the dir keys_names already exist, if True, overwrite it,
-            return an error msg else ;
+                           return an error msg else ;
             - md_stored : the way how the keys are stored, i.e. in decimal or hexadecimal.
-                Should be "hexa" or "dec". Default is "hexa".
+                           Should be "hexa" or "dec". Default is "hexa".
 
         The program make two files, in chd_rsa(glb.home), named :
             For the private key :
@@ -450,8 +450,8 @@ class RsaKey:
             'q' : self.q,
             'n' : self.n,
             'phi' : (self.p - 1) * (self.q - 1),
-            'e' : pbk[0], #TODO: continue here !!!
-            'd' : pvk[0],
+            'e' : self.e,
+            'd' : self.d,
             'date': self.date,
             'n_strenth': self.size
         }
@@ -1493,24 +1493,20 @@ class RSA:
         return S.decrypt(txt)
 
 
-class RsaSign:
+class RsaSign: #TODO: add file signature and check.
     '''Class which allow to sign messages' hashes.'''
 
-    def __init__(self, keys, padding='oaep', h='sha256', interface=None):
+    def __init__(self, RSA_ciph, h='sha256'):
         '''
         Initiate RsaSign.
 
-        - keys    : The RSA keys (a RsaKey object) ;
-        - padding : The RSA padding to use. Cf the RSA class for more details ;
-        - h       : the hash to use (a string).
+        - RSA_ciph : the RSA cipher. Should be the instance of a RSA class with at
+                      least the methods `sign` and `unsign`. The key is given
+                      when instantiating the class ;
+        - h        : the hash to use (a string).
         '''
 
-        if interface not in (None, 'gui', 'console'):
-            raise ValueError('The argument "interface" should be None, "gui", or "console", but {} of type {} was found !!!'.format(interface, type(interface)))
-
-        self.interface = interface
-
-        self.RSA = RSA(keys, padding)
+        self.RSA = RSA_ciph
         self.h = h
         self.Hasher = Hasher(h)
 
