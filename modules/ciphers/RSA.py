@@ -292,7 +292,7 @@ class RsaKey:
         self.size = size
 
 
-    def new(self, size=2048, keep_e=True): #TODO: add progress bars from the old RsaKeys class !
+    def new(self, size=2048, keep_e=True): #TODO: add progress bars from the old RsaKeys class ?
         '''
         Generate RSA keys of size `size` bits.
         If self.e != None, it keeps it (and ensures that gcd(phi, e) = 1).
@@ -326,7 +326,8 @@ class RsaKey:
         self.pb = (self.e, self.n)
         self.pv = (self.d, self.n)
 
-        self.size = size
+        # self.size = size
+        self.size = round(math.log2(self.n))
 
         self.date = date()
     
@@ -684,18 +685,18 @@ class RsaKeyFile: #TODO: Check that it works well.
         return ed, n
 
 
-    #------convert_keys
     def convert(self):
         '''
         Function which convert RSA keys.
         If the keys are stored in decimal, it write them in hexadecimal ;
-        it write them in decimal else.
+        it write them in decimal otherwise.
 
         It remove keys in the old storage mode.
 
-        If the keys were not found, return -1 ;
-        if the keys already exists, return -2 ;
-        return None else.
+        Return :
+            -1      if the key is not found ;
+            -2      if the key already exists in the other mode ;
+            None    otherwise.
         '''
 
         key, pwd = self.read(also_ret_pwd=True)
@@ -816,18 +817,27 @@ class RsaKeyFile: #TODO: Check that it works well.
             chdir(old_path)
 
 
-    #------rename
-    def rename(self, new_name):
+    def rename(self, new_name, overwrite=False):
         '''
         Function which can rename a set of keys
 
-        self.k_name : the set of keys' name ;
-        new_name : the new set of keys' name.
+        - self.k_name : the set of keys' name ;
+        - new_name    : the new set of keys' name ;
+        - overwrite   : a boolean indicating if overwriting the destination.
 
-        Return -1 if the file was not found, None otherwise.
+        Return :
+            -1      if the file was not found ;
+            -2      if the 'new_name' set of keys already exist and overwrite is False ;
+            None    otherwise.
         '''
 
-        fn, (type_, stg_md) = self.get_fn(also_ret_md=True)
+        try:
+            fn, (type_, stg_md) = self.get_fn(also_ret_md=True)
+
+        except FileNotFoundError as err:
+            #TODO: print error message here (or not ?)
+
+            return -1
 
         new_name = str(new_name)
         old_path = chd_rsa(glb.home)
@@ -840,6 +850,16 @@ class RsaKeyFile: #TODO: Check that it works well.
         if fn[-4:] == '.enc':
             ext += '.enc'
 
+        #---Check if there is already a `new_name` file
+        if isfile(new_name + ext):
+            if not overwrite:
+                chdir(old_path)
+                return -2
+
+            else:
+                remove(new_name + ext)
+
+
         rename(str(self.k_name) + ext, new_name + ext)
 
         if type_ == 'pvk':
@@ -850,7 +870,7 @@ class RsaKeyFile: #TODO: Check that it works well.
 
     def get_fn(self, mode='all', also_ret_md=False):
         '''
-        Return the filename of the key (with the extention)
+        Return the filename of the key (with the extention), along with the modes (if `also_ret_md` is True)
 
         - self.k_name : the RSA key's name ;
         - mode : in ('pvk', 'pbk', 'all'). If 'pvk': only watch for private keys, if 'pbk': only watch for public keys ('*.pbk-*'), if 'all': watch for both ;
@@ -865,6 +885,11 @@ class RsaKeyFile: #TODO: Check that it works well.
             pbk-d.
 
         It is the same order if 'pvk' or 'pbk', but without the other part.
+
+        Return :
+            fn                     if `also_ret_md` is False ;
+            fn, (md, md_stored)    otherwise, where md is in ('pvk', 'pbk'), and md_stored is in ('dec', 'hexa') ;
+            FileNotFoundError      if the file is not  found.
         '''
 
         old_path = chd_rsa(glb.home)
@@ -909,7 +934,6 @@ class RsaKeyFile: #TODO: Check that it works well.
         return fn
 
 
-    #------Encrypt key
     def encrypt(self, pwd):
         '''
         Encrypt 'self.k_name' with AES-256-CBC using the password
@@ -939,7 +963,6 @@ class RsaKeyFile: #TODO: Check that it works well.
         chdir(old_path)
 
 
-    #------Decrypt key
     def decrypt(self, pwd):
         '''
         Decrypt 'self.k_name' with AES-256-CBC using the password

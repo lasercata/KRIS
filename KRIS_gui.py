@@ -1736,11 +1736,41 @@ class GenKeyWin(QDialog): #QMainWindow):
 
         global win
 
+        size = self.slider_sz.value()
+        md_st = ('dec', 'hexa')[self.chbt_h.isChecked()]
+
+        #---Check that there is a name
         name = self.ledt.text()
         if name == '':
             QMessageBox.critical(None, '!!! No name !!!', '<h2>' + tr('Please enter a name for the RSA keys !') + '</h2>')
             return -3 #Abort
 
+        #---Check if file already exists
+        fn = str(name) + ('.pvk-d', '.pvk-h')[md_st != 'dec']
+        if pwd != None:
+            fn += '.enc'
+
+        old_path = chd_rsa(glb.home)
+
+        overwrite = False
+        if isfile(fn):
+            rep = QMessageBox.question(
+                None,
+                'File error !',
+                '<h2>' + tr('A set of keys named "{}" already exist !').format(name) + '</h2>\n<h2>' + tr('Overwite it !?') + '</h2>\n<h3>' + tr('This action can NOT be undone !!!') + '</h3>',
+                QMessageBox.Yes | QMessageBox.No,
+                QMessageBox.No
+            )
+
+            if rep == QMessageBox.Yes:
+                overwrite = True
+
+            else:
+                return -2
+
+        chdir(old_path)
+
+        #---Check other inputs
         if self.chbt_rsa_enc.isChecked():
             if self.pwd1_ledit.text() != self.pwd2_ledit.text():
                 QMessageBox.critical(self, '!!! Wrong passwords !!!', '<h2>' + tr('The passwords does not correspond !') + '</h2>')
@@ -1757,29 +1787,15 @@ class GenKeyWin(QDialog): #QMainWindow):
         else:
             pwd = None
 
-        size = self.slider_sz.value()
-        md_st = ('dec', 'hexa')[self.chbt_h.isChecked()]
-
-        val = RSA.RsaKeys(name, 'gui').generate(size, pwd, md_stored=md_st)
-
-        if val == -2: #The set of keys already exists
-            rep = QMessageBox.question(
-                None,
-                'File error !',
-                '<h2>' + tr('A set of keys named "{}" already exist !').format(name) + '</h2>\n<h2>' + tr('Overwite it !?') + '</h2>\n<h3>' + tr('This action can NOT be undone !!!') + '</h3>',
-                QMessageBox.Yes | QMessageBox.No,
-                QMessageBox.No
-            )
-
-            if rep == QMessageBox.Yes:
-                val = RSA.RsaKeys(name, 'gui').generate(size, pwd, md_stored=md_st, overwrite=True)
-
-            else:
-                return -2
+        #---Generate the key
+        # val = RSA.RsaKeys(name, 'gui').generate(size, pwd, md_stored=md_st)
+        key = RSA.RsaKey(interface='gui')
+        key.new(size=size)
+        key.save(name, pwd, overwrite=overwrite, md_storded=md_st)
 
         win.ciph_bar.reload_keys()
 
-        QMessageBox.about(self, 'Done !', '<h2>' + tr('Your brand new RSA keys "{}" are ready !').format(name) + '</h2>\n<h3>' + tr('`n` size : {} bits').format(val[2]) + '</h3>')
+        QMessageBox.about(self, 'Done !', '<h2>' + tr('Your brand new RSA keys "{}" are ready !').format(name) + '</h2>\n<h3>' + tr('`n` size : {} bits').format(key.size) + '</h3>')
 
 
 
@@ -1851,7 +1867,7 @@ class ExpKeyWin(QDialog): #QMainWindow):
             QMessageBox.critical(None, '!!! No selected key !!!', '<h2>Please select a key !!!</h2>')
             return -3
 
-        key = RSA.RsaKeys(k_name, interface='gui') #TODO: wil need to change this ...
+        key = RSA.RsaKeyFile(k_name, interface='gui')
         fn_src0, (md, md_stored) = key.get_fn('pbk', also_ret_md=True)
 
         fn_src = (glb.KRIS_data_path + '/RSA_keys', expanduser('~/.RSA_keys'))[glb.home] + '/' + fn_src0
@@ -1938,40 +1954,37 @@ class InfoKeyWin(QDialog): #QMainWindow):
             QMessageBox.critical(None, '!!! No selected key !!!', '<h2>Please select a key !!!</h2>')
             return -3
 
-        keys = RSA.RsaKeys(k_name, 'gui')
+        keys = RSA.RsaKeyFile(k_name, 'gui')
 
         md_stg = keys.get_fn(also_ret_md=True)[1][1]
 
         if md_stg == -1:
             return -1 #File not found
 
-        keys_read = keys.read()
-        if keys_read in (-1, -2, -3):
-            return keys_read
+        key = keys.read()
+        if key in (-1, -2, -3):
+            return key
 
-        lst_keys, lst_values, lst_infos = keys_read
+        # lst_keys, lst_values, lst_infos = key
 
-        if len(lst_keys) == 2: #Full keys
-            (pbk, pvk), (p, q, n, phi, e, d), (n_strth, date_) = lst_keys, lst_values, lst_infos
+        # if len(lst_keys) == 2: #Full keys
+        if key.is_private: #Full keys
+            prnt = f'The keys were created the {key.date}'
+            prnt += f'\nModulus size : {key.size} bits ;\n'
 
-            prnt = 'The keys were created the ' + date_
-            prnt += '\nThe n\'s strenth : ' + n_strth + ' bytes ;\n'
+            prnt += f'\n\nValues :\n\tp : {key.p} ;\n\tq : {key.q} ;\n\tn : {key.n}'
+            prnt += f' ;\n\tphi : {key.phi} ;\n\te : {key.e} ;\n\td : {key.d} ;\n'
 
-            prnt += '\n\nValues :\n\tp : ' + str(p) + ' ;\n\tq : ' + str(q) + ' ;\n\tn : ' + str(n)
-            prnt += ' ;\n\tphi : ' + str(phi) + ' ;\n\te : ' + str(e) + ' ;\n\td : ' + str(d) + ' ;\n'
-
-            prnt += '\n\tPublic key : ' + str(pbk) + ' ;'
-            prnt += '\n\tPrivate key : ' + str(pvk) + '.'
+            prnt += f'\n\tPublic key : {key.pb} ;'
+            prnt += f'\n\tPrivate key : {key.pv}.'
 
         else: #Public keys
-            (pbk,), (n, e), (n_strth, date_) = lst_keys, lst_values, lst_infos
+            prnt = f'The keys were created the {key.date}'
+            prnt += f'\nModulus size : {key.size} bits ;\n'
 
-            prnt = 'The keys were created the ' + date_
-            prnt += '\nThe n\'s strenth : ' + n_strth + ' bytes ;\n'
+            prnt += f'\n\nValues :\n\tn : {key.n} ;\n\te : {key.e} ;\n'
 
-            prnt += '\n\nValues :\n\tn : ' + str(n) + ' ;\n\te : ' + str(e) + ' ;\n'
-
-            prnt += '\n\tPublic key : ' + str(pbk) + '.'
+            prnt += f'\n\tPublic key : {key.pb}.'
 
         Popup(style=self.style, parent=self).pop('Info on {}'.format(k_name), prnt, dialog=False)
 
@@ -2055,13 +2068,30 @@ class RenKeyWin(QDialog): #QMainWindow):
             QMessageBox.critical(None, '!!! No name !!!', '<h2>Please enter a new name !</h2>')
             return -3
 
+        #TODO: check if overwrite !
 
-        keys = RSA.RsaKeys(k_name, 'gui')
+
+        keys = RSA.RsaKeyFile(k_name, 'gui')
         out = keys.rename(new_name)
 
         if out == -1:
             QMessageBox.critical(None, '!!! Keys not found !!!', '<h2>The set of keys was NOT found !!!</h2>')
             return -1
+
+        elif out == -2:
+            rep = QMessageBox.question(
+                None,
+                'File error !',
+                '<h2>' + tr('A set of keys named "{}" already exist !').format(name) + '</h2>\n<h2>' + tr('Overwite it !?') + '</h2>\n<h3>' + tr('This action can NOT be undone !!!') + '</h3>',
+                QMessageBox.Yes | QMessageBox.No,
+                QMessageBox.No
+            )
+
+            if rep == QMessageBox.Yes:
+                out = keys.rename(new_name, overwrite=True)
+
+            else:
+                return -2
 
         QMessageBox.about(self, 'Done !', '<h2>Your keys "{}" have been renamed "{}" !</h2>'.format(k_name, new_name))
 
@@ -2163,7 +2193,7 @@ class CvrtKeyWin(QDialog): #QMainWindow):
             QMessageBox.critical(None, '!!! No selected key !!!', '<h2>Please select a key !!!</h2>')
             return -3
 
-        out = RSA.RsaKeys(k_name, 'gui').convert()
+        out = RSA.RsaKeyFile(k_name, 'gui').convert()
 
         if out == -1:
             QMessageBox.critical(None, '!!! Keys not found !!!', '<h2>The keys were NOT found !!!</h2>')
@@ -2290,7 +2320,7 @@ class EncKeyWin(QDialog): #QMainWindow):
             pwd = hasher.Hasher('sha256').hash(pwd_clear)
 
 
-        keys = RSA.RsaKeys(k_name, 'gui')
+        keys = RSA.RsaKeyFile(k_name, interface='gui')
 
         try:
             keys.encrypt(pwd)
@@ -2315,9 +2345,9 @@ class EncKeyWin(QDialog): #QMainWindow):
         rn_win.exec_()
 
 
-#---------Encrypt RSA keys
+#---------Decrypt RSA keys
 class DecKeyWin(QDialog): #QMainWindow):
-    '''Class which define a window which allow to encrypt RSA keys.'''
+    '''Class which define a window which allow to decrypt RSA keys.'''
 
     def __init__(self, style, parent=None):
         '''Initiate the DecKeyWin window.'''
@@ -2404,7 +2434,7 @@ class DecKeyWin(QDialog): #QMainWindow):
             return -3 #Cancel.
 
 
-        keys = RSA.RsaKeys(k_name, 'gui')
+        keys = RSA.RsaKeyFile(k_name, interface='gui')
 
         try:
             out = keys.decrypt(pwd)
@@ -2550,7 +2580,7 @@ class ChPwdKeyWin(QDialog): #QMainWindow):
         new_pwd = hasher.Hasher('sha256').hash(self.pwd1_ledit.text())
 
 
-        keys = RSA.RsaKeys(k_name, 'gui')
+        keys = RSA.RsaKeyFile(k_name, interface='gui')
 
         try:
             out = keys.change_pwd(old_pwd, new_pwd)
