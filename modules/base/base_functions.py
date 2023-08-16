@@ -347,17 +347,29 @@ def read_chunks(fn, chunk_size):
 
 #---------Get the number of lines of a file
 def get_line_count(fn):
+    '''From https://stackoverflow.com/a/68385697'''
     '''
     Return the number of lines of the file `fn`.
 
     Inspired from
+    https://stackoverflow.com/a/68385697
+
+    A lot faster than the one here :
     https://stackoverflow.com/a/1019572
     '''
 
-    with open("myfile.txt", "rbU") as f:
-        num_lines = sum(1 for _ in f)
+    def _make_gen(reader):
+        while True:
+            b = reader(2 ** 16)
+            if not b:
+                break
 
-    return num_lines
+            yield b
+
+    with open(fn, 'rb') as f:
+        count = sum(buf.count(b'\n') for buf in _make_gen(f.raw.read))
+
+    return count
 
 
 ##-Xor
