@@ -43,7 +43,6 @@ try:
     from modules.base.base_functions import *
     from modules.base.text_functions import *
     from modules.base.progress_bars import *
-    # from modules.base.AskPwd import AskPwd
 
     from modules.base.gui.lock_gui import Lock
     from modules.base.gui.GuiStyle import GuiStyle
@@ -168,7 +167,7 @@ class KrisGui(QMainWindow):
 
         #------ini
         super().__init__(parent)
-        self.setWindowTitle('KRIS v' + kris_version)
+        self.setWindowTitle(glb.prog_name + 'v' + kris_version)
         self.setWindowIcon(QIcon('Style/KRIS_logo_by_surang.ico'))
 
         #self.style = style_test
@@ -467,7 +466,7 @@ class KrisGui(QMainWindow):
         self.settings_m.addSeparator()
 
         #-Configure KRIS
-        self.config_ac = QAction(tr('&Configure KRIS ...'), self)
+        self.config_ac = QAction(tr(f'&Configure {glb.prog_name} ...'), self)
         self.config_ac.setShortcut('Ctrl+R')
         self.config_ac.triggered.connect(lambda: SettingsWin.use(self.style, self.app_style, parent=self))
         self.settings_m.addAction(self.config_ac)
@@ -568,7 +567,7 @@ class KrisGui(QMainWindow):
     def _clear_out(self):
         '''Clear the output text viewer'''
 
-        if self._msg_box_save('out', tr('Clear') + ' ' + tr('Output text') + ' - KRIS'):
+        if self._msg_box_save('out', tr('Clear') + ' ' + tr('Output text') + ' - ' + glb.prog_name):
             self.txt_out.setPlainText('')
             self.statusbar.showMessage(tr('Output cleared !'), 3000)
 
@@ -679,7 +678,7 @@ class KrisGui(QMainWindow):
         self._set_save_lb_txt()
 
 
-    def _msg_box_save(self, part='all', title='Quit KRIS'):
+    def _msg_box_save(self, part='all', title='Quit ' + glb.prog_name):
         '''
         Check if there are things unsaved (text), and show a QMessageBox question.
         Return a bool indicating if continue (True) or not (False).
@@ -737,7 +736,7 @@ class KrisGui(QMainWindow):
     def new(self):
         '''Clear the two text editors (input and output).'''
 
-        if self._msg_box_save(title=tr('New — KRIS')):
+        if self._msg_box_save(title=tr('New — ' + glb.prog_name)):
             self.txt_in.setPlainText('')
             self.txt_out.setPlainText('')
 
@@ -756,11 +755,11 @@ class KrisGui(QMainWindow):
             None otherwise.
         '''
 
-        if not self._msg_box_save(part='in', title=tr('Open — KRIS')):
+        if not self._msg_box_save(part='in', title=tr('Open — ' + glb.prog_name)):
             return -3
 
         if filename == False:
-            fn = QFileDialog.getOpenFileName(self, tr('Open file') + ' — KRIS')[0]#, getcwd())[0]
+            fn = QFileDialog.getOpenFileName(self, tr('Open file') + ' — ' + glb.prog_name)[0]#, getcwd())[0]
 
             if fn in ((), ''):
                 return -3 #Canceled
@@ -826,7 +825,7 @@ class KrisGui(QMainWindow):
             txt = self.txt_in.toPlainText()
 
             if self.fn_in == None or as_:
-                fn = QFileDialog.getSaveFileName(self, tr('Save') + ' ' + tr('Input text') + ' — KRIS', getcwd(), tr('Text files(*.txt);;All files(*)'))[0]
+                fn = QFileDialog.getSaveFileName(self, tr('Save') + ' ' + tr('Input text') + ' — ' + glb.prog_name, getcwd(), tr('Text files(*.txt);;All files(*)'))[0]
                 self.fn_in = fn
 
             else:
@@ -836,7 +835,7 @@ class KrisGui(QMainWindow):
             txt = self.txt_out.toPlainText()
 
             if self.fn_out == None or as_:
-                fn = QFileDialog.getSaveFileName(self, tr('Save') + ' ' + tr('Output text') + ' - KRIS', getcwd(), tr('Text files(*.txt);;All files(*)'))[0]
+                fn = QFileDialog.getSaveFileName(self, tr('Save') + ' ' + tr('Output text') + ' - ' + glb.prog_name, getcwd(), tr('Text files(*.txt);;All files(*)'))[0]
                 self.fn_out = fn
 
             else:
@@ -864,12 +863,12 @@ class KrisGui(QMainWindow):
     def show_help(self):
         '''Show help using Popup.'''
 
-        help_ = '<center><h1>KRIS_v{} — {}</h1></center>\n'.format(kris_version, tr('Help'))
+        help_ = '<center><h1>{}_v{} — {}</h1></center>\n'.format(glb.prog_name, kris_version, tr('Help'))
 
-        help_ += tr('KRIS is a simple software that allow to encrypt some text. The UI is in three main parts : the text editor (at center), the cipher toolbar (top), and the output (bottom).')
+        help_ += tr(f'{glb.prog_name} is a simple software that allow to encrypt some text. The UI is in three main parts : the text editor (at center), the cipher toolbar (top), and the output (bottom).')
 
         help_ += '<h2>{}</h2>'.format(tr('Ciphers'))
-        help_ += '<p>{}</p>'.format(tr('In KRIS, there are three types of cryptographic function : the symetric ciphers, the asymetric ciphers, and the hash functions.'))
+        help_ += '<p>{}</p>'.format(tr(f'In {glb.prog_name}, there are three types of cryptographic function : the symetric ciphers, the asymetric ciphers, and the hash functions.'))
 
         help_ += '<p>{}</p>'.format(tr('The symetric ciphers (AES-256, AES-192, AES-256) use the same key to encrypt and decrypt. They are faster than the asymetric ciphers (RSA).'))
         help_ += '<p>{}</p>'.format(tr('The asymetric ciphers uses key pairs : one public and available key to encrypt, and one private and safely kept key to decrypt. With these ciphers, anyone can send an encrypted message to a person, and only that person can decrypt it. It is not needed to share a secret (the key) with the recipent. Since RSA is a lot slower than AES, KRIS cipher is a mix of both : it generate a random AES key, encrypt the message with this key, and encrypt the AES key with RSA.'))
@@ -906,15 +905,15 @@ class KrisGui(QMainWindow):
 
         p = Popup(bt_align='right', style=self.style, parent=self)
         p.main_lay.addWidget(bt_repo, 1, 0, Qt.AlignLeft)
-        p.pop(tr('Help') + ' — KRIS', help_, html=True, dialog=False)
+        p.pop(tr('Help') + ' — ' + glb.prog_name, help_, html=True, dialog=False)
 
 
     def show_about(self):
         '''Show the about popup.'''
 
-        about = '<center><h1>KRIS_v{}</h1></center>\n'.format(kris_version)
+        about = '<center><h1>{}_v{}</h1></center>\n'.format(glb.prog_name, kris_version)
 
-        about += tr('KRIS is an open source software that implements secure ciphers in a GUI. It allow to encrypt, decrypt, sign, and hash text.')
+        about += tr(f'{glb.prog_name} is an open source software that implements secure ciphers in a GUI. It allow to encrypt, decrypt, sign, and hash text.')
 
         about += '<h2>{}</h2>'.format(tr('Authors'))
         about += '<p>Lasercata (https://github.com/lasercata)</p>'
@@ -930,7 +929,7 @@ class KrisGui(QMainWindow):
 
         p = Popup(bt_align='right', style=self.style, parent=self)
         p.main_lay.addWidget(bt_repo, 1, 0, Qt.AlignLeft)
-        p.pop(tr('About') + ' — KRIS', about, html=True)
+        p.pop(tr('About') + ' — ' + glb.prog_name, about, html=True)
 
 
 
@@ -939,7 +938,7 @@ class KrisGui(QMainWindow):
 
         f_ext = 'KRIS public keys(*.pbk-*);;KRIS hex public keys(*.pbk-h);;KRIS decimal public keys(.pbk-d);;All files(*)'
 
-        fn_src = QFileDialog.getOpenFileName(self, tr('Import RSA key') + ' — KRIS', '', f_ext)[0]
+        fn_src = QFileDialog.getOpenFileName(self, tr('Import RSA key') + ' — ' + glb.prog_name, '', f_ext)[0]
 
         if fn_src in ((), ''):
             return -3 #Canceled
@@ -1156,7 +1155,7 @@ class SettingsWin(QDialog): #QMainWindow):
 
         #------Ini
         super().__init__(parent)
-        self.setWindowTitle('KRIS v' + kris_version + ' | ' + tr('Settings'))
+        self.setWindowTitle(f'{glb.prog_name} v' + kris_version + ' | ' + tr('Settings'))
         self.setWindowIcon(QIcon('Style/KRIS_logo_by_surang.ico'))
 
         self.style = style
@@ -1232,7 +1231,7 @@ class SettingsWin(QDialog): #QMainWindow):
             #---close
             rep = QMessageBox.question(
                 None, tr('Done !'),
-                '<h2>' + tr('The new lang will apply the next time you launch KRIS.') + '</h2>\n<h2>' + tr('Quit now ?') + '</h2>',
+                '<h2>' + tr(f'The new lang will apply the next time you launch {glb.prog_name}.') + '</h2>\n<h2>' + tr('Quit now ?') + '</h2>',
                 QMessageBox.No | QMessageBox.Yes,
                 QMessageBox.Yes
             )
@@ -1340,7 +1339,7 @@ class FileEncWin(QDialog):
 
         #------ini
         super().__init__(parent)
-        self.setWindowTitle(tr('File encryption') + ' — KRIS')
+        self.setWindowTitle(tr('File encryption') + ' — ' + glb.prog_name)
 
         self.style = style
 
@@ -1430,7 +1429,7 @@ class FileEncWin(QDialog):
         '''
 
         if which == 0:
-            f_url = QFileDialog.getOpenFileName(self, tr('Input file') + ' — KRIS')[0]
+            f_url = QFileDialog.getOpenFileName(self, tr('Input file') + ' — ' + glb.prog_name)[0]
 
             if f_url in ((), ''):
                 return -3 #Canceled
@@ -1451,7 +1450,7 @@ class FileEncWin(QDialog):
                 self.output_fn_ledt.setText(new_f_url)
 
         else:
-            f_url = QFileDialog.getSaveFileName(self, tr('Output file') + ' — KRIS')[0]
+            f_url = QFileDialog.getSaveFileName(self, tr('Output file') + ' — ' + glb.prog_name)[0]
             self.output_fn_ledt.setText(f_url)
 
 
@@ -1514,7 +1513,7 @@ class GenKeyWin(QDialog): #QMainWindow):
 
         #------ini
         super().__init__(parent)
-        self.setWindowTitle(tr('Generate RSA keys') + ' — KRIS')
+        self.setWindowTitle(tr('Generate RSA keys') + ' — ' + glb.prog_name)
 
         self.style = style
 
@@ -1686,7 +1685,7 @@ class GenKeyWin(QDialog): #QMainWindow):
                 w.setDisabled(True)
 
         else:
-            self.setWindowTitle('Generate {} keys — KRIS'.format(ciph))
+            self.setWindowTitle('Generate {} keys — {}'.format(ciph, glb.prog_name))
 
             for w in self.w_lst:
                 w.setDisabled(False)
@@ -1802,7 +1801,7 @@ class GenKeyWin(QDialog): #QMainWindow):
     def _show_key(self, ciph, key):
         '''Show the key using Popup.'''
 
-        Popup(500, 100, style=self.style, parent=self).pop('{} key — KRIS'.format(ciph), str(key), dialog=False)
+        Popup(500, 100, style=self.style, parent=self).pop('{} key — {}'.format(ciph, glb.prog_name), str(key), dialog=False)
 
 
     def use(style, parent=None):
@@ -1822,7 +1821,7 @@ class ExpKeyWin(QDialog): #QMainWindow):
 
         #------ini
         super().__init__(parent)
-        self.setWindowTitle('Export RSA keys — KRIS')
+        self.setWindowTitle('Export RSA keys — ' + glb.prog_name)
 
         #---Central widget
         # self.main_wid = QWidget()
@@ -1878,7 +1877,7 @@ class ExpKeyWin(QDialog): #QMainWindow):
         else:
             f_ext = 'KRIS decimal public keys(*.pbk-d);;All files(*)'
 
-        fn_dest = QFileDialog.getSaveFileName(self, tr('Export RSA key') + ' — KRIS', getcwd() + '/' + fn_src0, f_ext)[0]
+        fn_dest = QFileDialog.getSaveFileName(self, tr('Export RSA key') + ' — ' + glb.prog_name, getcwd() + '/' + fn_src0, f_ext)[0]
 
         if fn_dest in ((), ''):
             return -3 #Canceled
@@ -1906,7 +1905,7 @@ class InfoKeyWin(QDialog): #QMainWindow):
 
         #------ini
         super().__init__(parent)
-        self.setWindowTitle('Infos on RSA keys — KRIS')
+        self.setWindowTitle('Infos on RSA keys — ' + glb.prog_name)
 
         self.style = style
 
@@ -2006,7 +2005,7 @@ class RenKeyWin(QDialog): #QMainWindow):
 
         #------ini
         super().__init__(parent)
-        self.setWindowTitle('Rename RSA keys — KRIS')
+        self.setWindowTitle('Rename RSA keys — ' + glb.prog_name)
 
         #---Central widget
         # self.main_wid = QWidget()
@@ -2115,7 +2114,7 @@ class CvrtKeyWin(QDialog): #QMainWindow):
 
         #------ini
         super().__init__(parent)
-        self.setWindowTitle('Convert RSA keys — KRIS')
+        self.setWindowTitle('Convert RSA keys — ' + glb.prog_name)
 
         #---Central widget
         # self.main_wid = QWidget()
@@ -2223,7 +2222,7 @@ class EncKeyWin(QDialog): #QMainWindow):
 
         #------ini
         super().__init__(parent)
-        self.setWindowTitle('Encrypt RSA keys — KRIS')
+        self.setWindowTitle('Encrypt RSA keys — ' + glb.prog_name)
 
         main_lay = QGridLayout()
         self.setLayout(main_lay)
@@ -2354,7 +2353,7 @@ class DecKeyWin(QDialog): #QMainWindow):
 
         #------ini
         super().__init__(parent)
-        self.setWindowTitle('Encrypt RSA keys — KRIS')
+        self.setWindowTitle('Encrypt RSA keys — ' + glb.prog_name)
 
         main_lay = QGridLayout()
         self.setLayout(main_lay)
@@ -2471,7 +2470,7 @@ class ChPwdKeyWin(QDialog): #QMainWindow):
 
         #------ini
         super().__init__(parent)
-        self.setWindowTitle('Change RSA keys password — KRIS')
+        self.setWindowTitle('Change RSA keys password — ' + glb.prog_name)
 
         main_lay = QGridLayout()
         self.setLayout(main_lay)
@@ -2793,11 +2792,11 @@ class UseCiphers:
 
         if formatted_out and ciph in (*ciphers_list['KRIS'], *ciphers_list['AES'], *ciphers_list['RSA']):
             if ciph == 'RSA signature':
-                d = {'Version': 'KRIS_v' + kris_version, 'Cipher': ciph, 'Hash': C.h, 'Key_name': self.key_opt.currentText()}
+                d = {'Version': f'{glb.prog_name}_v' + kris_version, 'Cipher': ciph, 'Hash': C.h, 'Key_name': self.key_opt.currentText()}
                 msg_f = FormatMsg(msg_c, nl=False, md='sign').set(d)
 
             else: #ciph in (*ciphers_list['KRIS'], *ciphers_list['AES'], 'RSA'):
-                d = {'Version': 'KRIS_v' + kris_version, 'Cipher': ciph}
+                d = {'Version': f'{glb.prog_name}_v' + kris_version, 'Cipher': ciph}
 
                 if ciph in (*ciphers_list['KRIS'], 'RSA'):
                     d['Key_name'] = self.key_opt.currentText()

@@ -4,11 +4,12 @@
 '''Base functions of KRIS'''
 
 base_functions__auth = 'Lasercata'
-base_functions__last_update = '05.03.2021'
-base_functions__version = '2.3,1_kris'
+base_functions__last_update = '2023.08.16'
+base_functions__version = '3.0_kris'
 
 
 ##-Import
+#---------Packages
 from datetime import datetime as dt
 from os import system, walk, stat
 from os import chdir, mkdir, getcwd
@@ -17,6 +18,8 @@ import platform
 
 from modules.base import glb
 
+#------Kris' modules
+from modules.base.AskPwd import AskPwd
 
 ##-Date
 def date():
@@ -335,11 +338,75 @@ def xor(s1, s2):
 
 
 ##-Int and bytes
-def int_to_bytes(x: int) -> bytes:
+def int_to_bytes(x: int) -> bytes: #TODO: remove these functions (keep them for Cracker update)
     return x.to_bytes((x.bit_length() + 7) // 8, 'little')
 
 def bytes_to_int(xbytes: bytes) -> int:
     return int.from_bytes(xbytes, 'little')
+
+
+##-Input functions
+def print_error(err_msg, title='Error !!!', parent=None, interface=None):
+    '''
+    Show the error message using the right interface.
+
+    - err_msg   : the error message to show ;
+    - title     : the title for the QMessageBox popup (used only if interface is 'gui') ;
+    - parent    : the parent of the QMessageBox popup (used only if interface is 'gui') ;
+    - interface : the interface used by the program. In (None, 'console', 'gui').
+    '''
+
+    if interface == None:
+        print(err_msg)
+
+    elif interface == 'console':
+        cl_out(c_error, err_msg)
+
+    elif interface == 'gui':
+        QMessageBox.critical(parent, title, f'<h2>{err_msg}</h2>')
+
+    else:
+        raise ValueError('The argument "interface" should be None, "gui", \
+            or "console", but {} of type {} was found !!!'.format(interface, type(interface)))
+
+
+def get_pwd(label='RSA key password :', ret_hash=True, h='sha256', parent=None, interface=None):
+    '''
+    Ask for a password to the user using the right interface.
+
+    - ret_hash  : a boolean indicating if to hash the input ;
+    - h         : the hash to use ;
+    - parent    : the parent for the AskPwd window ;
+    - interface : the interface used by the program. In (None, 'console', 'gui').
+
+    Return :
+        pwd_clear    if ret_hash is False ;
+        pwd_h        otherwise ;
+        -3           if the user canceled.
+    '''
+
+    try:
+        if interface == None:
+            pwd_clear = input(label)
+
+        elif self.interface == 'console':
+            pwd_clear = getpass(tr(label))
+
+        elif self.interface == 'gui':
+            pwd_clear = AskPwd.use(ret_hash=False, parent=parent) #TODO: use label also here.
+
+            if pwd_clear == None: #Canceled by user
+                raise KeyboardInterrupt
+
+    except KeyboardInterrupt:
+        return -3
+
+    if ret_hash:
+        pwd_h = Hasher(h).hash(pwd_clear)
+        return pwd_h
+
+    else:
+        return pwd_clear
 
 
 ##-Maths functions

@@ -266,12 +266,7 @@ class RSA_old:
 
         if self.pb_key == None:
             msg_err = 'Cannot encrypt with an empty key !!!'
-
-            if self.interface == 'console':
-                cl_out(c_error, msg_err)
-
-            elif self.interface == 'gui':
-                QMessageBox.critical(None, 'Cannot encrypt !!!', '<h2>{}</h2>'.format(msg_err))
+            print_error(msg_err, title='Cannot encrypt !!!', interface=self.interface)
 
             raise TypeError(msg_err)
 
@@ -314,12 +309,7 @@ class RSA_old:
 
         if self.pv_key == None:
             msg_err = 'Cannot decrypt with an empty key !!!'
-
-            if self.interface == 'console':
-                cl_out(c_error, msg_err)
-
-            elif self.interface == 'gui':
-                QMessageBox.critical(None, 'Cannot decrypt !!!', '<h2>{}</h2>'.format(msg_err))
+            print_error(msg_err, title='Cannot decrypt !!!', interface=self.interface)
 
             raise TypeError(msg_err)
 
@@ -412,12 +402,7 @@ class RSA_old:
 
         if self.pv_key == None:
             msg_err = 'Cannot sign with an empty private key !!!'
-
-            if self.interface == 'console':
-                cl_out(c_error, msg_err)
-
-            elif self.interface == 'gui':
-                QMessageBox.critical(None, 'Cannot sign !!!', '<h2>{}</h2>'.format(msg_err))
+            print_error(msg_err, title='Cannot sign !!!', interface=self.interface)
 
             raise TypeError(msg_err)
 
@@ -436,12 +421,7 @@ class RSA_old:
 
         if self.pb_key == None:
             msg_err = 'Cannot unsign with an empty key !!!'
-
-            if self.interface == 'console':
-                cl_out(c_error, msg_err)
-
-            elif self.interface == 'gui':
-                QMessageBox.critical(None, 'Cannot unsign !!!', '<h2>{}</h2>'.format(msg_err))
+            print_error(msg_err, title='Cannot unsign !!!', interface=self.interface)
 
             raise TypeError(msg_err)
 

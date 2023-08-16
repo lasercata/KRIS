@@ -2,8 +2,8 @@
 # -*- coding: utf-8 -*-
 
 AskPwd__auth = 'Lasercata'
-AskPwd__ver = '1.0'
-AskPwd__last_update = '20.04.2021'
+AskPwd__ver = '1.1'
+AskPwd__last_update = '2023.08.16'
 
 ##-import
 import sys
@@ -27,12 +27,21 @@ from PyQt5.QtWidgets import (QApplication, QMainWindow, QComboBox, QStyleFactory
 ##-main
 class AskPwd(QDialog): #QMainWindow):
 
-    def __init__(self, parent=None):
-        '''Create the GUI to ask password.'''
+    def __init__(self, ret_hash=True, h='sha256', parent=None):
+        '''
+        Create the GUI to ask password.
+
+        - ret_hash  : a boolean indicating if to hash the input ;
+        - h         : the hash to use ;
+        - parent    : the window parent.
+        '''
+
+        self.ret_hash = ret_hash
+        self.h = h
 
         #------ini
         super().__init__(parent)
-        self.setWindowTitle(tr('RSA key password') + ' — KRIS')
+        self.setWindowTitle(tr('RSA key password') + ' — ' + glb.prog_name)
         self.setWindowIcon(QIcon('Style/KRIS_logo_by_surang.ico'))
 
         #------widgets
@@ -75,7 +84,12 @@ class AskPwd(QDialog): #QMainWindow):
         '''Activated when <enter> pressed or when the button is clicked.'''
 
         text = self.pwd.text()
-        pwd = Hasher('sha256').hash(text)
+
+        if self.ret_hash:
+            pwd = Hasher(self.h).hash(text)
+
+        else:
+            pwd = text
 
         self.the_pwd = text
         self.func(pwd)
@@ -102,14 +116,14 @@ class AskPwd(QDialog): #QMainWindow):
         self.func = function
 
 
-    def use(parent=None):
+    def use(ret_hash=True, h='sha256', parent=None):
         '''Use this function to launch the window. Return the word entered in the window.'''
 
         def get_pwd(pwd_ret):
             global pwd
             pwd = pwd_ret
 
-        dlg = AskPwd(parent)
+        dlg = AskPwd(ret_hash, h, parent)
         dlg.connect(get_pwd)
         dlg.exec_()
 

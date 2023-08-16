@@ -12,14 +12,13 @@ RSA__version = '5.0_kris'
 ##-Import
 #---------KRIS' modules
 #from modules.base.console.color import color, cl_inp, cl_out, c_error, c_wrdlt, c_output, c_prog, c_succes
-from modules.base.base_functions import chd, NewLine
+from modules.base.base_functions import chd, NewLine, get_pwd, print_error
 from modules.base.text_functions import NewLine
 from modules.base.FormatMsg import FormatMsg
 from modules.base.progress_bars import *
 from modules.ciphers.hasher import Hasher
 from modules.base import glb
 from modules.base.arithmetic import mult_inverse, isSurelyPrime
-from modules.base.AskPwd import AskPwd
 from Languages.lang import translate as tr
 
 from modules.ciphers.AES import AES
@@ -266,7 +265,7 @@ class RsaKey:
 
         #------ini progress bar
         if self.interface == 'gui':
-            pb = GuiProgressBar(title='Generating ... ― KRIS', undetermined=True)
+            pb = GuiProgressBar(title='Generating ... ― ' + glb.prog_name, undetermined=True)
 
         elif self.interface == 'console':
             pb = ConsoleProgressBar()
@@ -537,7 +536,7 @@ class RsaKeyFile: #TODO: Check that it works well.
             if self.interface == 'gui':
                 QMessageBox.critical(None, '!!! File error !!!', '<h2>{}</h2>'.format(msg))
             else:
-                print('KRIS: RsaKeys: read: ' + msg)
+                print(glb.prog_name + ': RsaKeys: read: ' + msg)
 
             return -2
 
@@ -551,7 +550,7 @@ class RsaKeyFile: #TODO: Check that it works well.
             if self.interface == 'gui':
                 QMessageBox.critical(None, '!!! Not found !!!', '<h2>{}</h2>'.format(msg))
             else:
-                print('KRIS: RsaKeys: read: ' + msg)
+                print(glb.prog_name + ': RsaKeys: read: ' + msg)
 
             return -1
 
@@ -566,18 +565,9 @@ class RsaKeyFile: #TODO: Check that it works well.
         #------Decrypt content, if encrypted
         if fn[-4:] == '.enc':
             #---Get password
-            if self.interface == 'gui': #TODO: make a function in base that does this !
-                pwd = AskPwd.use() #TODO: why no Hasher here ?
+            pwd = get_pwd(interface=self.interface)
 
-            elif self.interface == 'console':
-                pwd_clear = getpass(tr('RSA key password :'))
-                pwd = Hasher('sha256').hash(pwd_clear)
-
-            else:
-                pwd_clear = input('RSA key password :')
-                pwd = Hasher('sha256').hash(pwd_clear)
-
-            if pwd == None:
+            if pwd == -3:
                 return -3 # Canceled by user
 
             #---Decrypt
@@ -590,7 +580,7 @@ class RsaKeyFile: #TODO: Check that it works well.
                 if self.interface == 'gui':
                     QMessageBox.critical(None, '!!! Wrong password !!!', '<h2>{}</h2>'.format(msg))
                 else:
-                    print('KRIS: RsaKeys: read: ' + msg)
+                    print(glb.prog_name + ': RsaKeys: read: ' + msg)
 
                 return -3
 
@@ -991,7 +981,7 @@ class RsaKeyFile: #TODO: Check that it works well.
             if self.interface == 'gui':
                 QMessageBox.critical(None, '!!! Wrong password !!!', '<h2>{}</h2>'.format(msg))
             else:
-                print('KRIS: RsaKeys: decrypt: ' + msg)
+                print(glb.prog_name + ': RsaKeys: decrypt: ' + msg)
 
             chdir(old_path)
             return -3
@@ -1002,7 +992,7 @@ class RsaKeyFile: #TODO: Check that it works well.
             if self.interface == 'gui':
                 QMessageBox.critical(None, '!!! File error !!!', '<h2>{}</h2>'.format(msg))
             else:
-                print('KRIS: RsaKeys: decrypt: ' + msg)
+                print(glb.prog_name + ': RsaKeys: decrypt: ' + msg)
 
             chdir(old_path)
             return -2
@@ -1037,7 +1027,7 @@ class RsaKeyFile: #TODO: Check that it works well.
             if self.interface == 'gui':
                 QMessageBox.critical(None, '!!! Not encrypted !!!', '<h2>{}</h2>'.format(msg))
             else:
-                print('KRIS: RsaKeys: change_pwd: ' + msg)
+                print(glb.prog_name + ': RsaKeys: change_pwd: ' + msg)
 
             return -1
 
@@ -1055,7 +1045,7 @@ class RsaKeyFile: #TODO: Check that it works well.
             if self.interface == 'gui':
                 QMessageBox.critical(None, '!!! Wrong password !!!', '<h2>{}</h2>'.format(msg))
             else:
-                print('KRIS: RsaKeys: change_pwd: ' + msg)
+                print(glb.prog_name + ': RsaKeys: change_pwd: ' + msg)
 
             chdir(old_path)
             return -3
@@ -1066,7 +1056,7 @@ class RsaKeyFile: #TODO: Check that it works well.
             if self.interface == 'gui':
                 QMessageBox.critical(None, '!!! File error !!!', '<h2>{}</h2>'.format(msg))
             else:
-                print('KRIS: RsaKeys: change_pwd: ' + msg)
+                print(glb.prog_name + ': RsaKeys: change_pwd: ' + msg)
 
             chdir(old_path)
             return -2
@@ -1324,7 +1314,7 @@ class RSA:
 
         #---Ini progress bar
         if self.interface == 'gui':
-            pb = GuiProgressBar(title='Encrypting ... | RSA ― KRIS', verbose=True)
+            pb = GuiProgressBar(title='Encrypting ... | RSA ― ' + glb.prog_name, verbose=True)
 
         elif self.interface == 'console':
             pb = ConsoleProgressBar()
@@ -1357,7 +1347,7 @@ class RSA:
         
         #---Ini progress bar
         if self.interface == 'gui':
-            pb = GuiProgressBar(title='Decrypting ... | RSA ― KRIS', verbose=True)
+            pb = GuiProgressBar(title='Decrypting ... | RSA ― ' + glb.prog_name, verbose=True)
 
         elif self.interface == 'console':
             pb = ConsoleProgressBar()
@@ -1389,7 +1379,7 @@ class RSA:
 
         #---Ini progress bar
         if self.interface == 'gui':
-            pb = GuiProgressBar(title='Encrypting ... | RSA ― KRIS', verbose=True)
+            pb = GuiProgressBar(title='Encrypting ... | RSA ― ' + glb.prog_name, verbose=True)
 
         elif self.interface == 'console':
             pb = ConsoleProgressBar()
@@ -1422,7 +1412,7 @@ class RSA:
 
         #------Ini progress bar
         if self.interface == 'gui':
-            pb = GuiProgressBar(title='Decrypting ... | RSA ― KRIS', verbose=True)
+            pb = GuiProgressBar(title='Decrypting ... | RSA ― ' + glb.prog_name, verbose=True)
 
         elif self.interface == 'console':
             pb = ConsoleProgressBar()

@@ -62,7 +62,7 @@ class Lock(QWidget):
 
         #------ini
         super().__init__(parent)
-        self.setWindowTitle('KRIS v' + cracker_version + ' | ' + tr('locked'))
+        self.setWindowTitle(glb.prog_name + ' v' + cracker_version + ' | ' + tr('locked'))
         self.setWindowIcon(QIcon('Style/KRIS_logo_by_surang.ico'))
 
         self.pwd_hshed = pwd

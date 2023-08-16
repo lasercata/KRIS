@@ -192,15 +192,7 @@ class Kris:
 
         except ValueError as err:
             msg = 'You did NOT selected the right RSA key !!!'
-
-            if self.interface == None:
-                print(msg)
-
-            elif self.interface == 'console':
-                cl_out(c_error, msg)
-
-            else:
-                QMessageBox.critical(None, 'Bad RSA key !!!', '<h2>{}</h2>'.format(msg))
+            print_error(msg, title='Bad RSA key !!!', interface=self.interface)
 
             raise ValueError(msg)
 
@@ -268,14 +260,7 @@ class Kris:
             AES_key = self.RSA_ciph.decrypt((AES_key_c.decode()).replace('\n', ''))
 
         except Exception as err:
-            if self.interface == None:
-                print(err)
-
-            elif self.interface == 'console':
-                cl_out(c_error, err)
-
-            else:
-                QMessageBox.critical(None, 'Error', '<h2>{}</h2>'.format(err))
+            print_error(err, title='Error', interface=self.interface)
 
             with open(fn_in, 'ab') as f:
                 f.write(AES_key_c)
@@ -288,16 +273,7 @@ class Kris:
 
         except ValueError as err:
             msg = 'You did NOT selected the right RSA key !!!'
-
-            if self.interface == None:
-                print(msg)
-
-            elif self.interface == 'console':
-                cl_out(c_error, msg)
-
-            else:
-                QMessageBox.critical(None, 'Bad RSA key !!!', '<h2>{}</h2>'.format(msg))
-                pass
+            print_error(msg, title='Bad RSA key !!!', interface=self.interface)
 
             raise ValueError(msg)
 
