@@ -4,7 +4,7 @@
 '''Launch KRIS with PyQt5 graphical interface.'''
 
 KRIS_gui__auth = 'Lasercata'
-KRIS_gui__last_update = '2023.08.10'
+KRIS_gui__last_update = '2023.08.16'
 KRIS_gui__version = '2.4.3' #before the 2023.08.10 : 2.4.2
 
 # Note : there may still be parts of code which are useless in this file

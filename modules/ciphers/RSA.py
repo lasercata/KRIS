@@ -4,7 +4,7 @@
 '''This program allow you to encrypt and decrypt with RSA cipher.'''
 
 RSA__auth = 'Lasercata, Elerias'
-RSA__last_update = '2023.08.06'
+RSA__last_update = '2023.08.16'
 RSA__version = '5.0_kris'
 
 #TODO: check that all the imports are needed. Then correct the paths.
@@ -1096,9 +1096,9 @@ class OAEP:
         '''
         Initiate OAEP class.
         
-        - block_size   :    the bit size of each block ;
-        - k0           :    integer (number of bits in the random part). If None, it is set to block_size // 8 ;
-        - k1           :    integer such that len(block) + k0 + k1 = block_size. Default is 0.
+        - block_size : the bit size of each block ;
+        - k0         : integer (number of bits in the random part). If None, it is set to block_size // 8 ;
+        - k1         : integer such that len(block) + k0 + k1 = block_size. Default is 0.
         '''
 
         self.block_size = block_size #n
@@ -1132,13 +1132,13 @@ class OAEP:
 
     def encode(self, txt):
         '''
-        Encode txt
+        Encode txt.
         
         Entry :
             - txt : the string text to encode.
         
         Output :
-            bytes list
+            bytes list.
         '''
 
         if type(txt) != bytes:
@@ -1280,6 +1280,54 @@ class RSA:
             return self._decrypt_oaep(msg)
     
 
+    def encrypt_file(self, fn_in, fn_out):
+        '''
+        Encrypt the file `fn_in` into the file `fn_out` using the key given in init.
+        Redirect toward the right method (using the good padding).
+        The 'int' padding is not supported. Trying it will raise a ValueError.
+        
+        - fn_in  : the name of the file to encrypt ;
+        - fn_out : the name of the file in which to write the encryption of the previous file.
+
+        The functions do not test if any file exists nor if the file `fn_out` is empty, and will overwrite its potential content.
+        '''
+
+        if self.pad == 'int':
+            raise ValueError("Impossible to encrypt a file with the 'int' padding !")
+        
+        elif self.pad == 'raw':
+            return self._encrypt_file_raw(fn_in, fn_out)
+        
+        else:
+            return self._encrypt_file_oaep(fn_in, fn_out)
+    
+    
+    def decrypt_file(self, fn_in, fn_out):
+        '''
+        Decrypt the file `fn_in` into the file `fn_out` using the key given in init, if it is a private one.
+        Otherwise raise a TypeError.
+        Redirect toward the right method (using the good padding).
+        The 'int' padding is not supported. Trying it will raise a ValueError.
+        
+        - fn_in  : the name of the file to decrypt ;
+        - fn_out : the name of the file in which to write the decryption of the previous file.
+
+        This function does not test if any file exists nor if the file `fn_out` is empty, and will overwrite it.
+        '''
+
+        if not self.is_private:
+            raise TypeError('Can not decrypt using a public key.')
+
+        if self.pad == 'int':
+            raise ValueError("Impossible to decrypt a file with the 'int' padding !")
+        
+        elif self.pad == 'raw':
+            return self._decrypt_file_raw(fn_in, fn_out)
+
+        else:
+            return self._decrypt_file_oaep(fn_in, fn_out)
+    
+
     def _encrypt_int(self, msg):
         '''
         RSA encryption in its simplest form.
@@ -1309,7 +1357,12 @@ class RSA:
         '''
         Encrypt `msg` using the key given in init, using the 'raw' padding.
         
-        - msg : The string to encrypt
+        - msg : The string to encrypt.
+
+        This function encrypts `msg` by cutting it in blocks of size `self.block_size`.
+
+        The ciphertext is composed of the encryption of each block, encoded with base64, and the blocks are separated with spaces.
+        It returns a bytes string.
         '''
 
         #---Ini progress bar
@@ -1374,6 +1427,78 @@ class RSA:
         return txt.decode()
 
     
+    def _encrypt_file_raw(self, fn_in, fn_out):
+        '''
+        Encrypt the file `fn_in` into the file `fn_out` using the key given in init, using the 'raw' padding.
+        
+        - fn_in  : the name of the file to encrypt ;
+        - fn_out : the name of the file in which to write the encryption of the previous file.
+
+        This function does not test if any file exists nor if the file `fn_out` is empty, and will overwrite it.
+
+        The encryption is done block by block (file `fn_in` is read chunk by chunk).
+        Format of the file `fn_out` : each encrypted block is separated by a newline.
+        '''
+
+        #---Ini progress bar
+        if self.interface == 'gui':
+            pb = GuiProgressBar(title='Encrypting ... | RSA ― ' + glb.prog_name, verbose=True)
+
+        elif self.interface == 'console':
+            pb = ConsoleProgressBar()
+
+        #---Ini
+        e, n = self.pb
+
+        #---Encrypt message
+        if self.interface in ('console', 'gui'):
+            l = FileInfo(fn_in).size() // self.block_size #The number of blocks to encrypt in fn_in
+
+        with open(fn_out, 'wb') as f_out:
+            for j, block in enumerate(read_chunks(fn_in, self.block_size)):
+                enc_int = pow(bytes_to_int(block), e, n)
+
+                f_out.write(int_to_bytes(enc_int))
+                f_out.write(b'\n')
+
+                if self.interface in ('gui', 'console'): #TODO: check that this bar works correcly.
+                    pb.set(j, l)
+    
+
+    def _decrypt_file_raw(self, fn_in, fn_out):
+        '''
+        Decrypt the file `fn_in` into the file `fn_out` using the key given in init, using the 'raw' padding.
+        
+        - fn_in  : the name of the file to decrypt ;
+        - fn_out : the name of the file in which to write the decryption of the previous file.
+
+        This function does not test if any file exists nor if the file `fn_out` is empty, and will overwrite it.
+        '''
+        
+        #---Ini progress bar
+        if self.interface == 'gui':
+            pb = GuiProgressBar(title='Decrypting ... | RSA ― ' + glb.prog_name, verbose=True)
+
+        elif self.interface == 'console':
+            pb = ConsoleProgressBar()
+
+        #---Ini
+        d, n = self.pv
+
+        #---Decrypting
+        if self.interface in ('console', 'gui'):
+            l = get_line_count(fn_in) #The number of blocks to decrypt from fn_in
+
+        with open(fn_in, 'rb') as f_in, open(fn_out, 'wb') as f_out:
+            for j, block in enumerate(f_in): #Reading line by line
+                dec_int = pow(bytes_to_int(block), d, n)
+
+                f_out.write(int_to_bytes(dec_int))
+
+                if self.interface in ('gui', 'console'): #TODO: check that this bar works correcly.
+                    pb.set(j, l)
+
+
     def _encrypt_oaep(self, msg):
         '''Encrypt `msg` using the key given in init, using the 'oaep' padding.'''
 
@@ -1410,6 +1535,8 @@ class RSA:
     def _decrypt_oaep(self, msg):
         '''Decrypt `msg` using the key given in init if possible, using the 'oaep' padding.'''
 
+        #TODO: improve the doc
+
         #------Ini progress bar
         if self.interface == 'gui':
             pb = GuiProgressBar(title='Decrypting ... | RSA ― ' + glb.prog_name, verbose=True)
@@ -1441,37 +1568,82 @@ class RSA:
 
         return E.decode(encoded_lst)
 
-
-    def encrypt_file(self, fn_in, fn_out):
+    
+    def _encrypt_file_oaep(self, fn_in, fn_out):
         '''
-        Encrypt the content of `fn_in` and write it in `fn_out`.
-        It does NOT check if `fn_out` already exists and will overwrite it.
-        '''
+        Encrypt the file `fn_in` into the file `fn_out` using the key given in init, using the 'oaep' padding.
+        
+        - fn_in  : the name of the file to encrypt ;
+        - fn_out : the name of the file in which to write the encryption of the previous file.
 
-        #TODO: maybe do this in a better way for big files : as for big inputs, RSA cut it in blocks, maybe implement this also for files (reading the file block by block).
+        This function does not test if any file exists nor if the file `fn_out` is empty, and will overwrite its potential content.
 
-        with open(fn_in, 'r') as f:
-            txt = f.read()
-
-        txt_c = self.encrypt(txt)
-
-        with open(fn_out, 'w') as f:
-            f.write(txt_c)
-
-
-    def decrypt_file(self, fn_in, fn_out):
-        '''
-        Decrypt the content of `fn_in` and write it in `fn_out`.
-        It does NOT check if `fn_out` already exists and will overwrite it.
+        The encryption is done block by block (file `fn_in` is read chunk by chunk).
+        Format of the file `fn_out` : each encrypted block is separated by a newline.
         '''
 
-        with open(fn_in, 'r') as f:
-            txt = f.read()
+        #---Ini progress bar
+        if self.interface == 'gui':
+            pb = GuiProgressBar(title='Encrypting ... | RSA ― ' + glb.prog_name, verbose=True)
 
-        txt_d = self.decrypt(txt)
+        elif self.interface == 'console':
+            pb = ConsoleProgressBar()
 
-        with open(fn_out, 'w') as f:
-            f.write(txt_d)
+        #---Ini
+        e, n = self.pb
+        E = OAEP(self.block_size)
+        
+        #---Encrypt message
+        if self.interface in ('console', 'gui'):
+            l = FileInfo(fn_in).size() // (self.block_size - E.k0 - E.k1) #The number of blocks to encrypt in fn_in
+
+        with open(fn_out, 'wb') as f_out:
+            for j, block in enumerate(read_chunks(fn_in, self.block_size - E.k0 - E.k1)):
+                encoded_block = E._encode_block(block)
+                enc_int = pow(bytes_to_int(encoded_block), e, n)
+
+                f_out.write(int_to_bytes(enc_int))
+                f_out.write(b'\n') #Separating blocks with newlines
+
+                if self.interface in ('gui', 'console'): #TODO: check that this bar works correcly.
+                    pb.set(j, l)
+
+    
+    def _decrypt_file_oaep(self, fn_in, fn_out):
+        '''
+        Decrypt the file `fn_in` into the file `fn_out` using the key given in init, using the 'oaep' padding.
+        
+        - fn_in  : the name of the file to decrypt ;
+        - fn_out : the name of the file in which to write the decryption of the previous file.
+
+        This function does not test if any file exists nor if the file `fn_out` is empty, and will overwrite it.
+        '''
+
+        #------Ini progress bar
+        if self.interface == 'gui':
+            pb = GuiProgressBar(title='Decrypting ... | RSA ― ' + glb.prog_name, verbose=True)
+
+        elif self.interface == 'console':
+            pb = ConsoleProgressBar()
+
+        #---Ini
+        d, n = self.pv
+        E = OAEP(self.block_size)
+
+        #---Decrypt
+        if self.interface in ('console', 'gui'):
+            l = get_line_count(fn_in) #The number of blocks to decrypt from fn_in
+
+        with open(fn_in, 'rb') as f_in, open(fn_out, 'wb') as f_out:
+            for j, block in enumerate(f_in): #Reading line by line
+                dec_int = pow(bytes_to_int(block), d, n)
+                encoded = pad(int_to_bytes(dec_int), self.block_size, b'\0') #TODO: check that it works fine !
+                decoded = E._decode_block(encoded)
+
+                f_out.write(int_to_bytes(decoded))
+
+                if self.interface in ('gui', 'console'): #TODO: check that this bar works correcly.
+                    pb.set(j, l)
 
 
     def sign(self, txt):
@@ -1504,6 +1676,7 @@ class RSA:
         S = RSA(sign_key, self.pad, self.block_size)
 
         return S.decrypt(txt)
+
 
 
 class RsaSign: #TODO: add file signature and check.
@@ -1601,7 +1774,8 @@ class RsaSign: #TODO: add file signature and check.
         return self.check(msg, sign)
 
 
-    #todo: there is a bug when checking in gui with a 512 RSA key : it does not match, but it should (try sign and check a test message, i.g. 'test').
+    #todo: there is a bug when checking in gui with a 512 RSA key : it does not match, but it should (try sign and check a test message, e.g. 'test').
+    #This is an old todo. Maybe the new RSA will solve this ...
 
 
 

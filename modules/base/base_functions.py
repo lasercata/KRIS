@@ -319,6 +319,47 @@ class FileInfo:
             return self._set_date(self.date('c'))
 
 
+#---------Read file chunk by chunk
+def read_chunks(fn, chunk_size):
+    '''
+    Defines a generator that read a file by chunks.
+
+    - fn         : the file name ;
+    - chunk_size : the number of bytes to read at once.
+
+    Usage :
+    ```
+    for c in read_chunks(fn, size):
+        f(c)
+    ```
+    '''
+
+    with open(fn, 'rb') as f:
+        while True:
+            ck = f.read(chunk_size)
+
+            if ck:
+                yield ck
+
+            else:
+                break
+
+
+#---------Get the number of lines of a file
+def get_line_count(fn):
+    '''
+    Return the number of lines of the file `fn`.
+
+    Inspired from
+    https://stackoverflow.com/a/1019572
+    '''
+
+    with open("myfile.txt", "rbU") as f:
+        num_lines = sum(1 for _ in f)
+
+    return num_lines
+
+
 ##-Xor
 def xor(s1, s2):
     '''Return s1 xored with s2 bit per bit.'''
@@ -338,7 +379,7 @@ def xor(s1, s2):
 
 
 ##-Int and bytes
-def int_to_bytes(x: int) -> bytes: #TODO: remove these functions (keep them for Cracker update)
+def int_to_bytes(x: int) -> bytes:
     return x.to_bytes((x.bit_length() + 7) // 8, 'little')
 
 def bytes_to_int(xbytes: bytes) -> int:
