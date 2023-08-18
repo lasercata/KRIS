@@ -4,7 +4,7 @@
 '''Launch KRIS with PyQt5 graphical interface.'''
 
 KRIS_gui__auth = 'Lasercata'
-KRIS_gui__last_update = '2023.08.16'
+KRIS_gui__last_update = '2023.08.18'
 KRIS_gui__version = '2.4.3' #before the 2023.08.10 : 2.4.2
 
 # Note : there may still be parts of code which are useless in this file
@@ -2823,6 +2823,8 @@ class UseCiphers:
             return -3 #Abort
 
         #------FormatMsg
+        use_old_rsa = False
+
         try:
             txt, d = FormatMsg(raw_txt).unset()
             formatted_out = True
@@ -2834,6 +2836,8 @@ class UseCiphers:
             formatted_out = False
 
         else:
+            version = d['Version'][len(glb.prog_name):]
+
             if d['Cipher'] == 'RSA signature':
                 txt, d = FormatMsg(raw_txt, nl=False).unset()
 
@@ -2843,20 +2847,27 @@ class UseCiphers:
             else:
                 h = None
 
-            #TODO: check somewhere around here if the cipher is RSA or KRIS and the KRIS version is older than the 3.0.0.
-            #TODO: maybe don't use auto if a cipher or a key is selected ?
-            if auto:
-                self.cipher.setCurrentText(d['Cipher'])
-                win.ciph_bar.chk_ciph(d['Cipher'])
+            if auto: #The cipher will be changed only if none is selected. Same for the key.
+                if self.cipher.currentText() != tr('-- Select a cipher --'):
+                    self.cipher.setCurrentText(d['Cipher'])
+                    win.ciph_bar.chk_ciph(d['Cipher'])
 
-                ciph = d['Cipher']
+                    ciph = d['Cipher']
 
-                if 'Key_name' in d:
+                else:
+                    ciph = self.cipher.currentText()
+
+                if 'Key_name' in d and self.key_opt.currentText() != tr('-- Select a key --'):
                     if d['Key_name'] in RSA.list_keys('all'):
                         self.key_opt.setCurrentText(d['Key_name'])
 
                     else:
-                        QMessageBox.critical(None, '!!! {} !!!'.format(tr('Not found')), '<h2>{}</h2>'.format(tr('Key not found.')))
+                        QMessageBox.critical(None, '!!! {} !!!'.format(tr('Not found')), '<h2>{}</h2>\n<h2>{}</h2>'.format(tr(f'Key "{d["Key_name"]}" not found.'), tr('Trying with the selected key instead.')))
+
+                if ciph in (*ciphers_list['KRIS'], *ciphers_list['RSA']) and version < glb.new_RSA_kris_version: #TODO: check that it works correcly.
+                    QMessageBox.warning(None, 'Old version !', '<h2>{}</h2>'.format(tr('The message has been encrypted with an old version of RSA. Using this old version to decrypt.')))
+
+                    use_old_rsa = True
 
             else:
                 ciph = self.cipher.currentText()
@@ -2885,8 +2896,12 @@ class UseCiphers:
             if ciph in ciphers_list['KRIS']:
                 AES_md = (256, 192, 128)[ciphers_list['KRIS'].index(ciph)]
 
-                # C = KRIS.Kris((None, key), AES_md, encod, bytes_md, interface='gui') #TODO: adapt this line
-                RSA_ciph = RSA.RSA(key, padding='oaep', interface='gui')
+                if use_old_rsa:
+                    RSA_ciph = RSA_old.RSA_old(key, interface='gui')
+
+                else:
+                    RSA_ciph = RSA.RSA(key, padding='oaep', interface='gui')
+
                 C = KRIS.Kris(RSA_ciph, AES_md, encod, bytes_md, interface='gui')
 
                 try:
@@ -2900,20 +2915,26 @@ class UseCiphers:
 
 
             elif ciph == 'RSA':
-                # C = RSA.RSA((None, key), interface='gui')
-                C = RSA.RSA(key, padding='oaep', interface='gui')
+                if use_old_rsa:
+                    C = RSA_old.RSA_old(key, interface='gui')
+
+                else:
+                    C = RSA.RSA(key, padding='oaep', interface='gui')
+
                 msg_d = C.decrypt(txt)
 
 
             elif ciph == 'RSA signature':
-                if h == None:
-                    # C = RSA.RsaSign((key, None), interface='gui')
+                if use_old_rsa:
+                    RSA_ciph = RSA_old.RSA_old(key, interface='gui')
+
+                else:
                     RSA_ciph = RSA.RSA(key, padding='oaep', interface='gui')
+
+                if h == None:
                     C = RSA.RsaSign(RSA_ciph)
 
                 else:
-                    # C = RSA.RsaSign((key, None), h, interface='gui')
-                    RSA_ciph = RSA.RSA(key, padding='oaep', interface='gui')
                     C = RSA.RsaSign(RSA_ciph, h)
 
                 if formatted_out:

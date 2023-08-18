@@ -48,8 +48,6 @@ from PyQt5.QtWidgets import QMessageBox
 ##-ini
 # alf_36 = '0123456789abcdefghijklmnopkrstuvwxyz'
 
-new_RSA_kris_version = '3.0.0' #This is the KRIS version when the new RSA implementation (with OAEP) has been added.
-
 #---------KRIS version
 try:
     with open('version.txt', 'r') as f:

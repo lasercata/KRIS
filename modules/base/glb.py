@@ -33,3 +33,8 @@ else:
 
 #------Program name
 prog_name = 'KRIS'
+
+
+#------Version changing RSA
+new_RSA_kris_version = '3.0.0' #This is the KRIS version when the new RSA implementation (with OAEP) has been added.
+
