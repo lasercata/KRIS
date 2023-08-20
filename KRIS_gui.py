@@ -10,6 +10,7 @@ KRIS_gui__version = '2.4.3' #before the 2023.08.10 : 2.4.2
 # Note : there may still be parts of code which are useless in this file
 # and maybe some imported modules too.
 
+#TODO: remove the non used packages.
 
 ##-import
 #from modules.base.ini import *
@@ -36,38 +37,38 @@ from ast import literal_eval #safer than eval
 import webbrowser #Open web page (in About)
 
 #---------KRIS modules
-try:
-    from Languages.lang import translate as tr
-    from Languages.lang import langs_lst, lang
+# try:
+from Languages.lang import translate as tr
+from Languages.lang import langs_lst, lang
 
-    from modules.base.base_functions import *
-    from modules.base.text_functions import *
-    from modules.base.progress_bars import *
+from modules.base.base_functions import *
+from modules.base.text_functions import *
+from modules.base.progress_bars import *
 
-    from modules.base.gui.lock_gui import Lock
-    from modules.base.gui.GuiStyle import GuiStyle
-    from modules.base.gui.Popup import Popup
+from modules.gui.lock_gui import Lock
+from modules.gui.GuiStyle import GuiStyle
+from modules.gui.Popup import Popup
 
-    from modules.ciphers import hasher
-    from modules.ciphers import AES, RSA, RSA_old, KRIS
-    from modules.base.FormatMsg import FormatMsg
+from modules.ciphers import hasher
+from modules.ciphers import AES, RSA, RSA_old, KRIS
+from modules.base.FormatMsg import FormatMsg
 
-    from modules.base.mini_pwd_testor import get_sth
+from modules.base.mini_pwd_testor import get_sth
 
-except ModuleNotFoundError as ept:
-    err = str(ept).strip("No module named")
-
-    try:
-        cl_out(c_error, tr('Put the module {} back !!!').format(err))
-
-    except NameError:
-        try:
-            print('\n' + tr('Put the module {} back !!!').format(err))
-
-        except NameError:
-            print('\n' + 'Put the module {} back !!!'.format(err))
-
-    sys.exit()
+# except ModuleNotFoundError as ept:
+#     err = str(ept).strip("No module named")
+#
+#     try:
+#         cl_out(c_error, tr('Put the module {} back !!!').format(err))
+#
+#     except NameError:
+#         try:
+#             print('\n' + tr('Put the module {} back !!!').format(err))
+#
+#         except NameError:
+#             print('\n' + 'Put the module {} back !!!'.format(err))
+#
+#     sys.exit()
 
 
 ##-ini
@@ -2675,19 +2676,33 @@ class UseCiphers:
         ciph = self.cipher.currentText()
 
         if ciph in (*ciphers_list['KRIS'], *ciphers_list['RSA']):
-            try:
-                # key = RSA.RsaKeyFile(self.key_opt.currentText(), interface='gui').get_key(md)
-                key = RSA.RsaKeyFile(self.key_opt.currentText(), interface='gui').read(mode) #TODO: check if the error are risen the same as the above function
+            # try:
+            # key = RSA.RsaKeyFile(self.key_opt.currentText(), interface='gui').get_key(md)
+            key = RSA.RsaKeyFile(self.key_opt.currentText(), interface='gui').read(mode, verbose=False)
 
-            except Exception as err:
-                if str(err) == "Can't read the private key of a pbk set of keys !!!": #TODO: this may not work.
-                    msg_err = '<h2>' + tr('Impossible to do this, private keys not found.') + '</h2>'
+            if key == -1 and md == 0: # Not found and was searching for public key.
+                QMessageBox.critical(None, 'Error: key not found !', '<h2>{}</h2>'.format(tr('The key was not found !')))
+                return -3
 
-                else:
-                    msg_err = '<h2>{}</h2>'.format(err)
+            elif key == -1 and md == 1: # Not found the private key.
+                QMessageBox.critical(None, 'Error: no private key !', '<h2>{}</h2>'.format(tr('Impossible to do this, private keys not found.')))
+                return -3
 
-                QMessageBox.critical(None, '!!! Error !!!', msg_err)
-                return -3 #Abort
+            elif key == -2: # Not well formatted
+                QMessageBox.critical(None, 'Error: key wrongly formatted !', '<h2>{}</h2>'.format(tr('The key is wronly formatted !')))
+                return -3
+
+            elif key == -3: # Wrong password
+                QMessageBox.critical(None, '!!! Wrong password !!!', '<h2>{}</h2>'.format(tr('This is not the good password !')))
+                return -3
+
+            if md == 1 and not key.is_private:
+                QMessageBox.critical(None, 'Error: no private key !', '<h2>{}</h2>'.format(tr('Impossible to do this, private keys not found.')))
+                return -3
+
+            # except Exception as err:
+            #     QMessageBox.critical(None, '!!! Error !!!', '<h2>{}</h2>'.format(err))
+            #     return -3 #Abort
 
         elif ciph == 'SecHash':
             key = self.key_nb.value()
@@ -2725,7 +2740,6 @@ class UseCiphers:
         if key == -3:
             return -3 #Abort
 
-
         #------encrypt with the right cipher
         if ciph in ciphers_list['KRIS']:
             AES_md = (256, 192, 128)[ciphers_list['KRIS'].index(ciph)]
@@ -2750,7 +2764,10 @@ class UseCiphers:
             C = RSA.RsaSign(RSA_ciph)
 
             if formatted_out:
-                msg_c = C.str_sign(txt)
+                msg_c = C.str_sign(txt, encod)
+
+                if type(msg_c) == bytes:
+                    msg_c.decode(encod)
 
             else:
                 msg_c = txt + ' ' + C.sign(txt)
@@ -2836,7 +2853,7 @@ class UseCiphers:
             formatted_out = False
 
         else:
-            version = d['Version'][len(glb.prog_name):]
+            version = d['Version'][len(glb.prog_name + '_v'):]
 
             if d['Cipher'] == 'RSA signature':
                 txt, d = FormatMsg(raw_txt, nl=False).unset()
@@ -2848,7 +2865,7 @@ class UseCiphers:
                 h = None
 
             if auto: #The cipher will be changed only if none is selected. Same for the key.
-                if self.cipher.currentText() != tr('-- Select a cipher --'):
+                if self.cipher.currentText() == tr('-- Select a cipher --'):
                     self.cipher.setCurrentText(d['Cipher'])
                     win.ciph_bar.chk_ciph(d['Cipher'])
 
@@ -2857,14 +2874,14 @@ class UseCiphers:
                 else:
                     ciph = self.cipher.currentText()
 
-                if 'Key_name' in d and self.key_opt.currentText() != tr('-- Select a key --'):
+                if 'Key_name' in d and self.key_opt.currentText() == tr('-- Select a key --'):
                     if d['Key_name'] in RSA.list_keys('all'):
                         self.key_opt.setCurrentText(d['Key_name'])
 
                     else:
                         QMessageBox.critical(None, '!!! {} !!!'.format(tr('Not found')), '<h2>{}</h2>\n<h2>{}</h2>'.format(tr(f'Key "{d["Key_name"]}" not found.'), tr('Trying with the selected key instead.')))
 
-                if ciph in (*ciphers_list['KRIS'], *ciphers_list['RSA']) and version < glb.new_RSA_kris_version: #TODO: check that it works correcly.
+                if ciph in (*ciphers_list['KRIS'], *ciphers_list['RSA']) and version < glb.new_RSA_kris_version: #TODO: check that it works correctly.
                     QMessageBox.warning(None, 'Old version !', '<h2>{}</h2>'.format(tr('The message has been encrypted with an old version of RSA. Using this old version to decrypt.')))
 
                     use_old_rsa = True
@@ -2923,6 +2940,9 @@ class UseCiphers:
 
                 msg_d = C.decrypt(txt)
 
+                if type(msg_d) == bytes:
+                    msg_d = msg_d.decode(encod)
+
 
             elif ciph == 'RSA signature':
                 if use_old_rsa:
@@ -2960,7 +2980,7 @@ class UseCiphers:
                 msg_d = C.decryptText(txt, encoding=encod, mode_c='hexa', mode=md)
 
         except Exception as err:
-            QMessageBox.critical(None, '!!! ' + tr('Decryption error') + ' !!!', '<h2>' + tr('An error occured during decryption. Maybe you tried to decrypt clear text, or the cipher text is not good formated.') + '</h2>\n<h3>' + tr('The text to be decrypted should be in the main text editor.') + '</h3>\n<h4>' + tr('Error') + ' :</h4>{}'.format(err))
+            QMessageBox.critical(None, '!!! ' + tr('Decryption error') + ' !!!', '<h2>' + tr('An error occured during decryption. Maybe you tried to decrypt clear text, or the cipher text is not well formatted.') + '</h2>\n<h3>' + tr('The text to be decrypted should be in the main text editor.') + '</h3>\n<h4>' + tr('Error') + ' :</h4>{}'.format(err))
             return -3 # Abort
 
         self.txt_out.setPlainText(msg_d)

@@ -131,7 +131,7 @@ class Kris:
         '''Represent the Kris object.'''
 
         return "Kris(RSA_ciph='{}', AES_mode='{}', encod='{}', mode='{}', interface='{}')".format(
-            self.RSA_ciph
+            self.RSA_ciph,
             self.AES_mode,
             self.encod,
             self.mode,
@@ -152,6 +152,8 @@ class Kris:
         #------AES key
         AES_key = AES_rnd_key_gen(AES_key_size, self.AES_mode)
         AES_key_c = self.RSA_ciph.encrypt(AES_key)
+        if type(AES_key_c) == bytes:
+            AES_key_c = AES_key_c.decode()
 
         #------encrypt text
         AES_cipher = AES(self.AES_mode, AES_key, False, self.encod)

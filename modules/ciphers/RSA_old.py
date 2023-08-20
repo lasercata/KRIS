@@ -240,7 +240,7 @@ class RSA_old:
     def __repr__(self):
         '''represent the RSA object'''
 
-        return "RSA(pb_key='{}', pv_key='{}', interface='{}')".format(
+        return "RSA_old(pb_key='{}', pv_key='{}', interface='{}')".format(
             self.pb_key,
             self.pv_key,
             self.interface
@@ -410,7 +410,7 @@ class RSA_old:
         d, n = self.pv_key
         sign_key = RsaKey(e=d, d=e, n=n)
 
-        return RSA(sign_key, self.interface).encrypt(txt)
+        return RSA_old(sign_key, self.interface).encrypt(txt)
 
 
     def unsign(self, txt):
@@ -426,8 +426,7 @@ class RSA_old:
             raise TypeError(msg_err)
 
         e, n = self.pb_key
-        d, n = self.pv_key
-        sign_key = RsaKey(e=d, d=e, n=n)
+        sign_key = RsaKey(e=None, d=e, n=n)
 
-        return RSA(sign_key, self.interface).decrypt(txt)
+        return RSA_old(sign_key, self.interface).decrypt(txt)
 

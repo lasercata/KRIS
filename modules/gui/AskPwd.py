@@ -8,14 +8,15 @@ AskPwd__last_update = '2023.08.16'
 ##-import
 import sys
 
-try:
-    from Languages.lang import translate as tr
-    from modules.ciphers.hashes.hasher import Hasher
+# try:
+from Languages.lang import translate as tr
+from modules.ciphers.hasher import Hasher
+from modules.base import glb
 
-except ModuleNotFoundError as ept:
-    print('\nPut the module' + ' ' + str(ept).strip('No module named') + ' back !!!')
-    sys.exit()
-    # tr = lambda t: t #TODO: this is just to test.
+# except ModuleNotFoundError as ept:
+#     print('\nPut the module' + ' ' + str(ept).strip('No module named') + ' back !!!')
+#     sys.exit()
+#     # tr = lambda t: t #TODO: this is just to test.
 
 from PyQt5.QtCore import QSize, Qt
 from PyQt5.QtGui import QIcon

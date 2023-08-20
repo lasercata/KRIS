@@ -8,12 +8,12 @@ FormatMsg__last_update = '15.04.2021'
 FormatMsg__version = '1.1'
 
 ##-import
-from modules.base.base_functions import NewLine
+from modules.base.text_functions import NewLine
 from Languages.lang import translate as tr
 
 
 ##-ini
-ciphers_list = {
+ciphers_list = { #TODO: put this in a global file.
     'KRIS' : ('KRIS-AES-256', 'KRIS-AES-192', 'KRIS-AES-128'),
 
     'AES' : ('AES-256', 'AES-192', 'AES-128'),
@@ -37,6 +37,9 @@ class FormatMsg: #TODO: the message should be an argument of set and unset, not 
 
         if md not in ('msg', 'sign'):
             raise ValueError('The argument `md` is not in ("msg", "sign"). found "{}".'.format(md))
+
+        if type(msg) == bytes:
+            msg = msg.decode()
 
         self.msg = msg
         self.nl = nl

@@ -18,7 +18,7 @@ from modules.base import glb
 
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import (QApplication, QMainWindow, QLabel, QGridLayout,
-    QMessageBox, QWidget, QPushButton, QProgressBar)
+    QMessageBox, QWidget, QPushButton, QProgressBar, QDialog)
 
 #------Cracker's modules
 # from modules.base.base_functions import list_files
@@ -72,7 +72,7 @@ class ConsoleProgressBar:
 
 
 ##-GUI
-class GuiProgressBar(QWidget): #TODO: inherit from QDialog instead ?
+class GuiProgressBar(QDialog):
     '''Class creating a progess bar popup.'''
 
     def __init__(self, title='Processing ... ― Kris', undetermined=False, verbose=True, mn=0, parent=None):

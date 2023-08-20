@@ -12,8 +12,8 @@ RSA__version = '5.0_kris'
 ##-Import
 #---------KRIS' modules
 #from modules.base.console.color import color, cl_inp, cl_out, c_error, c_wrdlt, c_output, c_prog, c_succes
-from modules.base.base_functions import chd, NewLine, get_pwd, print_error
-from modules.base.text_functions import NewLine
+from modules.base.base_functions import *
+from modules.base.text_functions import *
 from modules.base.FormatMsg import FormatMsg
 from modules.base.progress_bars import *
 from modules.ciphers.hasher import Hasher
@@ -28,6 +28,8 @@ import math
 from random import randint, randbytes
 from secrets import randbits
 
+import base64
+
 from ast import literal_eval #Safer than eval
 from getpass import getpass
 
@@ -37,6 +39,8 @@ from time import sleep
 from os import chdir, mkdir, getcwd, listdir, rename, remove
 from os.path import expanduser, isfile, isdir
 from shutil import copy
+
+from hashlib import sha256 as hashlib_sha256
 
 #if glb.interface == 'gui':
 from PyQt5.QtWidgets import QMessageBox
@@ -188,24 +192,42 @@ class RsaKey:
         self.p = p
         self.q = q
 
+        if e != None:
+            self.e = int(e)
+
+        if d != None:
+            self.d = int(d)
+
+        if n != None:
+            self.n = int(n)
+
+        if phi != None:
+            self.phi = int(phi)
+
+        if p != None:
+            self.p = int(p)
+
+        if q != None:
+            self.q = int(q)
+
         self.date = date_
 
         self.is_private = self.d != None
 
-        if self.is_private:
+        if p != None and q != None:
             if self.q < self.q:
-                self.p = q
-                self.q = p
+                self.p = int(q)
+                self.q = int(p)
 
-        self.pb = (e, n)
+        self.pb = (self.e, self.n)
         if self.is_private:
-            self.pv = (d, n)
+            self.pv = (self.d, self.n)
 
         if n == None:
             self.size = None
 
         else:
-            self.size = round(math.log2(n))
+            self.size = round(math.log2(self.n))
 
         self.k_name = None #Used when saving the key to a file and when reading from a file
 
@@ -220,6 +242,9 @@ class RsaKey:
     
     def __eq__(self, other):
         '''Return True if the key are of the same type (public / private) and have the same values.'''
+
+        if type(other) != type(self):
+            return False
         
         ret = self.is_private == other.is_private
 
@@ -512,12 +537,13 @@ class RsaKeyFile: #TODO: Check that it works well.
         return "RsaKeyFile('{}', interface='{}')".format(self.k_name, self.interface) #Printing self.k_name and not the full filename with the extension as the key can be saved in multiple formats at the same time.
 
 
-    def read(self, mode='all', also_ret_pwd=False):
+    def read(self, mode='all', also_ret_pwd=False, verbose=True):
         '''
         Try to read the content of the file `[self.k_name] + ext`, and return an RsaKey object.
 
-        - mode : the self.get_fn mode. in ('pvk', 'pbk', 'all'). Default is 'all' ;
-        - also_ret_pwd : a bool indicating if also return the password. If True, return the password at the end of the return tuple.
+        - mode         : the self.get_fn mode. in ('pvk', 'pbk', 'all'). Default is 'all' ;
+        - also_ret_pwd : a bool indicating if also return the password. If True, return the password at the end of the return tuple ;
+        - verbose      : if True, show error messages (before returning -1, -2, or -3).
 
         Return :
             key         where `key` is an RsaKey object representing the RSA key ;
@@ -529,12 +555,9 @@ class RsaKeyFile: #TODO: Check that it works well.
 
         #------other
         def err_not_well_formated():
-            msg = tr('The file is not well formatted !')
-
-            if self.interface == 'gui':
-                QMessageBox.critical(None, '!!! File error !!!', '<h2>{}</h2>'.format(msg))
-            else:
-                print(glb.prog_name + ': RsaKeys: read: ' + msg)
+            if verbose:
+                msg = glb.prog_name + ': RsaKeys: read: ' + tr('The file is not well formatted !')
+                print_error(msg, '!!! File error !!!', interface=self.interface)
 
             return -2
 
@@ -543,13 +566,9 @@ class RsaKeyFile: #TODO: Check that it works well.
             fn, md = self.get_fn(mode, also_ret_md=True)
 
         except FileNotFoundError:
-            msg = tr('File not found !')
-
-            if self.interface == 'gui':
-                QMessageBox.critical(None, '!!! Not found !!!', '<h2>{}</h2>'.format(msg))
-            else:
-                print(glb.prog_name + ': RsaKeys: read: ' + msg)
-
+            if verbose:
+                msg = glb.prog_name + ': RsaKeyFile: read: ' + tr('File not found !')
+                print_error(msg, '!!! Not found !!!', interface=self.interface)
             return -1
 
         #------Read file
@@ -573,12 +592,9 @@ class RsaKeyFile: #TODO: Check that it works well.
                 f_content_dec = AES(256, pwd, hexa=True).decryptText(f_content, mode_c='hexa')
 
             except UnicodeDecodeError:
-                msg = tr('This is not the good password !')
-
-                if self.interface == 'gui':
-                    QMessageBox.critical(None, '!!! Wrong password !!!', '<h2>{}</h2>'.format(msg))
-                else:
-                    print(glb.prog_name + ': RsaKeys: read: ' + msg)
+                if verbose:
+                    msg = glb.prog_name + ': RsaKeyFile: read: ' + tr('This is not the good password !')
+                    print_error(msg, '!!! Wrong password !!!', interface=self.interface)
 
                 return -3
 
@@ -607,8 +623,8 @@ class RsaKeyFile: #TODO: Check that it works well.
                 return err_not_well_formated()
 
             if md[1] == 'hexa': #convert in decimal
-                n_strth = str(int(n_strth, 16))
-                e, n = str(int(e, 16)), str(int(n, 16))
+                n_strth = int(n_strth, 16)
+                e, n = int(e, 16), int(n, 16)
 
             key = RsaKey(e=e, n=n, date_=date_, interface=self.interface)
             key.k_name = self.k_name
@@ -628,12 +644,9 @@ class RsaKeyFile: #TODO: Check that it works well.
                 return err_not_well_formated()
 
             if md[1] == 'hexa': #convert in decimal
-                n_strth = str(int(n_strth, 16))
-                p, q, n, phi, e, d = str(int(p, 16)), str(int(q, 16)), \
-                    str(int(n, 16)), str(int(phi, 16)), str(int(e, 16)), str(int(d, 16))
-
-            pvk = str(d) + ',' + str(n)
-            pbk = str(e) + ',' + str(n)
+                n_strth = int(n_strth, 16)
+                p, q, n, phi, e, d = int(p, 16), int(q, 16), \
+                    int(n, 16), int(phi, 16), int(e, 16), int(d, 16)
 
             key = RsaKey(e=e, d=d, n=n, phi=phi, p=p, q=q, date_=date_, interface=self.interface)
 
@@ -1070,10 +1083,10 @@ class RsaKeyFile: #TODO: Check that it works well.
 ##-Padding
 #------Mask generation function
 # From https://en.wikipedia.org/wiki/Mask_generation_function
-def i2osp(integer: int, size: int = 4) -> str:
+def i2osp(integer: int, size: int = 4) -> bytes:
     return int.to_bytes(integer % 256**size, size, 'big')
 
-def mgf1(input_str: bytes, length: int, hash_func=hashlib.sha256) -> str:
+def mgf1(input_str: bytes, length: int, hash_func=hashlib_sha256) -> str: #TODO: check that this works nicely.
     '''Mask generation function.'''
 
     counter = 0
@@ -1081,6 +1094,7 @@ def mgf1(input_str: bytes, length: int, hash_func=hashlib.sha256) -> str:
     while len(output) < length:
         C = i2osp(counter, 4)
         output += hash_func(input_str + C).digest()
+        # output += hash_func(input_str + C)
         counter += 1
 
     return output[:length]
@@ -1535,6 +1549,9 @@ class RSA:
 
         #TODO: improve the doc
 
+        if type(msg) != bytes:
+            msg = msg.encode()
+
         #------Ini progress bar
         if self.interface == 'gui':
             pb = GuiProgressBar(title='Decrypting ... | RSA ― ' + glb.prog_name, verbose=True)
@@ -1718,10 +1735,13 @@ class RsaSign: #TODO: add file signature and check.
         msg_h = self.Hasher.hash(msg)
         unsign = self.RSA.unsign(sign)
 
+        if type(unsign) == bytes:
+            msg_h = msg_h.encode()
+
         return msg_h == unsign
 
 
-    def str_sign(self, msg):
+    def str_sign(self, msg, encod='utf-8'):
         '''
         Sign 'txt' and return it, with the message, in a string of this form (the commented lines are set with FormatedMsg, in KRIS_gui.py) :
 
@@ -1749,7 +1769,7 @@ class RsaSign: #TODO: add file signature and check.
             #------END KRIS SIGNED MESSAGE------
         '''
 
-        sign = self.sign(msg)
+        sign = self.sign(msg).decode(encod)
 
         txt = '{}\n\n------BEGIN KRIS SIGNATURE------\n{}\n------END KRIS SIGNATURE------'.format(msg, NewLine(64).set(sign))
 

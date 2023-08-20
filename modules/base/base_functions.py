@@ -16,10 +16,13 @@ from os import chdir, mkdir, getcwd
 from os.path import expanduser
 import platform
 
-from modules.base import glb
+#if glb.interface == 'gui':
+from PyQt5.QtWidgets import QMessageBox
 
 #------Kris' modules
-from modules.base.AskPwd import AskPwd
+from modules.gui.AskPwd import AskPwd
+from modules.base import glb
+from modules.ciphers.hasher import Hasher
 
 ##-Date
 def date():
@@ -442,10 +445,10 @@ def get_pwd(label='RSA key password :', ret_hash=True, h='sha256', parent=None, 
         if interface == None:
             pwd_clear = input(label)
 
-        elif self.interface == 'console':
+        elif interface == 'console':
             pwd_clear = getpass(tr(label))
 
-        elif self.interface == 'gui':
+        elif interface == 'gui':
             pwd_clear = AskPwd.use(ret_hash=False, parent=parent) #TODO: use label also here.
 
             if pwd_clear == None: #Canceled by user

@@ -67,10 +67,10 @@ class Hasher:
 
         if self.h != 'SecHash':
             try:
-                ret = eval(self.h_str[self.h_str.index(self.h)])(txt)
+                ret = eval(self.h_str[self.h_str.index(self.h)])(txt) #TODO: what did I do there !?
 
             except:
-                ret = new(self.h_str[self.h_str.index(self.h)], txt)
+                ret = new(self.h_str[self.h_str.index(self.h)], txt) #TODO: and here !?
 
 
             if self.h in ('shake_128', 'shake_256'):
