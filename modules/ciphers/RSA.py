@@ -1129,6 +1129,9 @@ class OAEP:
         - block : an n - k0 - k1 long bytes string.
         '''
 
+        if len(block) != self.block_size - self.k0 - self.k1:
+            raise ValueError('OAEP: _encode_block: `block` should be made of `self.block_size - self.k0 - self.k1` chars !')
+
         #---Add k1 \0 to block
         block += (b'\0')*self.k1
         
@@ -1553,7 +1556,7 @@ class RSA:
             msg = msg.encode()
 
         #------Ini progress bar
-        if self.interface == 'gui':
+        if self.interface == 'gui': #TODO: set parent !
             pb = GuiProgressBar(title='Decrypting ... | RSA ― ' + glb.prog_name, verbose=True)
 
         elif self.interface == 'console':
@@ -1614,13 +1617,14 @@ class RSA:
 
         with open(fn_out, 'wb') as f_out:
             for j, block in enumerate(read_chunks(fn_in, self.block_size - E.k0 - E.k1)):
+                block = pad(block, self.block_size - E.k0 - E.k1, b'\0') # for the last block.
                 encoded_block = E._encode_block(block)
                 enc_int = pow(bytes_to_int(encoded_block), e, n)
 
                 f_out.write(int_to_bytes(enc_int))
                 f_out.write(b'\n') #Separating blocks with newlines
 
-                if self.interface in ('gui', 'console'): #TODO: check that this bar works correcly.
+                if self.interface in ('gui', 'console'):
                     pb.set(j, l)
 
     
@@ -1651,13 +1655,16 @@ class RSA:
 
         with open(fn_in, 'rb') as f_in, open(fn_out, 'wb') as f_out:
             for j, block in enumerate(f_in): #Reading line by line
-                dec_int = pow(bytes_to_int(block), d, n)
-                encoded = pad(int_to_bytes(dec_int), self.block_size, b'\0') #TODO: check that it works fine !
-                decoded = E._decode_block(encoded)
+                # dec_int = pow(bytes_to_int(block), d, n)
+                # # encoded = pad(int_to_bytes(dec_int), self.block_size, b'\0') #TODO: check that it works fine !
+                # encoded = int_to_bytes(dec_int) #TODO: check that it works fine !
+                # decoded = E._decode_block(encoded)
 
-                f_out.write(int_to_bytes(decoded))
+                decoded = E._decode_block(int_to_bytes(pow(bytes_to_int(block), d, n))) #TODO: something does not works: the decryption does not correspond to the clear file.
 
-                if self.interface in ('gui', 'console'): #TODO: check that this bar works correcly.
+                f_out.write(decoded)
+
+                if self.interface in ('console', 'gui'):
                     pb.set(j, l)
 
 

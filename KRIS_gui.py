@@ -3091,17 +3091,11 @@ class UseCiphers:
                     raise Exception('The file does not seem to be well formatted for that software, or the used key is the wrong one.')
 
 
-
             elif ciph == 'RSA':
                 # C = RSA.RSA((None, key), interface='gui')
                 C = RSA.RSA(key, padding='oaep', interface='gui')
 
-                try:
-                    C.decrypt_file(fn_in, fn_out)
-
-                except Exception as err:
-                    QMessageBox.critical(None, '!!! Error !!!', f'<h2>{err}</h2>')
-                    return -3
+                C.decrypt_file(fn_in, fn_out)
 
 
             elif  ciph in ciphers_list['AES']:
@@ -3109,12 +3103,8 @@ class UseCiphers:
 
                 C = AES.AES(AES_md, key, False)
 
-                try:
-                    C.decryptFile(fn_in, fn_out)
+                C.decryptFile(fn_in, fn_out)
 
-                except Exception as err:
-                    QMessageBox.critical(None, '!!! Error !!!', f'<h2>{err}</h2>')
-                    return -3
 
         except Exception as err:
             QMessageBox.critical(None, '!!! ' + tr('Decryption error') + ' !!!', '<h2>' + tr('An error occured during decryption. Maybe you tried to decrypt clear text, or the cipher text is not good formated.') + '</h2>\n<h4>' + tr('Error') + ' :</h4>{}'.format(err))
