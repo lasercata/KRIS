@@ -227,7 +227,7 @@ class Kris:
         AES_cipher.encryptFile(fn_in, fn_out)
 
         with open(fn_out, 'ab') as f:
-            f.write(('\n' + AES_key_c).encode())
+            f.write(b'\n' + AES_key_c)
 
         return AES_key_c
 
