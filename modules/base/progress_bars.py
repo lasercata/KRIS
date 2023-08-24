@@ -79,14 +79,16 @@ class GuiProgressBar(QDialog):
         '''Create the GuiProgressBar window.
 
         - undetermined : Should be True or False. Set it to True if the time duration is undetermined ;
-        - verbose : Should be True or False. If True, increase verbosity ;
-        - mn : the minimum of i, in set. Default is 0.
+        - verbose      : Should be True or False. If True, increase verbosity ;
+        - mn           : the minimum of i, in set. Default is 0.
         '''
 
         #------ini
         super().__init__(parent)
         self.setWindowTitle(title)
         self.setMinimumSize(500, 150)
+
+        self.parent_ = parent
 
         main_lay = QGridLayout()
         self.setLayout(main_lay)
@@ -144,7 +146,7 @@ class GuiProgressBar(QDialog):
         if i == n:
             if self.verbose:
                 t_end = dt.now() - self.t0
-                QMessageBox.about(None, 'Done !', '<h2>Done in ' + str(t_end) + 's !</h2>')
+                QMessageBox.about(self.parent_, 'Done !', '<h2>Done in ' + str(t_end) + 's !</h2>')
 
             self.lst = []
             self.close()
@@ -172,9 +174,9 @@ class GuiProgressBar(QDialog):
     def _stop(self):
         self.close()
         if self.verbose:
-            QMessageBox.about(None, 'Stoped', '<h1>The action has been be stoped.</h1>')
+            QMessageBox.about(self.parent_, 'Stopped', '<h1>The action has been stopped.</h1>')
 
-        raise KeyboardInterrupt('Stoped')
+        raise KeyboardInterrupt('Stopped') #TODO: this crashes the whole program as it is not ran through a try block !
 
 
 ##-Gui Double progress bar
@@ -197,6 +199,8 @@ class GuiDoubleProgressBar(QWidget):
         self.setLayout(main_lay)
 
         mx = 100
+
+        self.parent_ = parent
 
         #------widgets
         self.pb_top = QProgressBar()
@@ -254,7 +258,7 @@ class GuiDoubleProgressBar(QWidget):
         if i == n and bar == 0:
             if self.verbose:
                 t_end = dt.now() - self.t0
-                QMessageBox.about(None, 'Done !', '<h2>Done in ' + str(t_end) + 's !</h2>')
+                QMessageBox.about(self.parent_, 'Done !', '<h2>Done in ' + str(t_end) + 's !</h2>')
 
             self.close()
 
@@ -286,9 +290,9 @@ class GuiDoubleProgressBar(QWidget):
     def _stop(self):
         self.close()
         if self.verbose:
-            QMessageBox.about(None, 'Stoped', '<h1>The action has been be stoped.</h1>')
+            QMessageBox.about(self.parent_, 'Stopped', '<h1>The action has been be stopped.</h1>')
 
-        raise KeyboardInterrupt('Stoped')
+        raise KeyboardInterrupt('Stopped')
 
 
 ##-test

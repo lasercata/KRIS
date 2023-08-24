@@ -513,7 +513,8 @@ class KrisGui(QMainWindow):
             self.ciph_bar.cipher_ledit_keys,
             self.ciph_bar.cipher_nb_key,
             self.ciph_bar.cipher_opt_ciphs,
-            self.encod_box
+            self.encod_box,
+            parent=self
         )
 
         enc = lambda: use_ciph.encrypt(self.formatted_out_ac.isChecked())
@@ -1418,7 +1419,8 @@ class FileEncWin(QDialog):
             self.ciph_bar.cipher_opt_ciphs,
             None, #encod_box
             self.input_fn_ledt,
-            self.output_fn_ledt
+            self.output_fn_ledt,
+            parent=self
         )
 
 
@@ -2610,7 +2612,7 @@ class ChPwdKeyWin(QDialog): #QMainWindow):
 class UseCiphers:
     '''Class which allow to use the Cipher tab.'''
 
-    def __init__(self, txt_in, txt_out, key_opt, key_ledit, key_nb, cipher, encod, fn_in=None, fn_out=None):
+    def __init__(self, txt_in, txt_out, key_opt, key_ledit, key_nb, cipher, encod, fn_in=None, fn_out=None, parent=None):
         '''Create the UseCiphers object.'''
 
         self.txt_in = txt_in
@@ -2620,8 +2622,11 @@ class UseCiphers:
         self.key_nb = key_nb
         self.cipher = cipher
         self.encod = encod
+
         self.fn_in = fn_in #Used with file encryption
         self.fn_out = fn_out #Same.
+
+        self.parent = parent
 
 
     def _verify(self, md):
@@ -2640,19 +2645,19 @@ class UseCiphers:
         ciph = self.cipher.currentText()
 
         if ciph == tr('-- Select a cipher --'):
-            QMessageBox.critical(None, 'No cipher selected !!!', '<h2>Please select a cipher !</h2>')
+            QMessageBox.critical(self.parent, 'No cipher selected !!!', '<h2>Please select a cipher !</h2>')
             return -3
 
         if ciph in (*ciphers_list['KRIS'], *ciphers_list['RSA']):
             if self.key_opt.currentText() == tr('-- Select a key --'):
-                QMessageBox.critical(None, 'No key selected !!!', '<h2>Please select a key !</h2>')
+                QMessageBox.critical(self.parent, 'No key selected !!!', '<h2>Please select a key !</h2>')
                 return -3
 
         elif ciph not in ciphers_list['hash']:
             key = self._get_key(md)
 
             if key == '':
-                QMessageBox.critical(None, 'No key entered !!!', '<h2>Please enter a key !</h2>')
+                QMessageBox.critical(self.parent, 'No key entered !!!', '<h2>Please enter a key !</h2>')
                 return -3
 
         return 0 #Everything is fine
@@ -2681,27 +2686,27 @@ class UseCiphers:
             key = RSA.RsaKeyFile(self.key_opt.currentText(), interface='gui').read(mode, verbose=False)
 
             if key == -1 and md == 0: # Not found and was searching for public key.
-                QMessageBox.critical(None, 'Error: key not found !', '<h2>{}</h2>'.format(tr('The key was not found !')))
+                QMessageBox.critical(self.parent, 'Error: key not found !', '<h2>{}</h2>'.format(tr('The key was not found !')))
                 return -3
 
             elif key == -1 and md == 1: # Not found the private key.
-                QMessageBox.critical(None, 'Error: no private key !', '<h2>{}</h2>'.format(tr('Impossible to do this, private keys not found.')))
+                QMessageBox.critical(self.parent, 'Error: no private key !', '<h2>{}</h2>'.format(tr('Impossible to do this, private keys not found.')))
                 return -3
 
             elif key == -2: # Not well formatted
-                QMessageBox.critical(None, 'Error: key wrongly formatted !', '<h2>{}</h2>'.format(tr('The key is wronly formatted !')))
+                QMessageBox.critical(self.parent, 'Error: key wrongly formatted !', '<h2>{}</h2>'.format(tr('The key is wronly formatted !')))
                 return -3
 
             elif key == -3: # Wrong password
-                QMessageBox.critical(None, '!!! Wrong password !!!', '<h2>{}</h2>'.format(tr('This is not the good password !')))
+                QMessageBox.critical(self.parent, '!!! Wrong password !!!', '<h2>{}</h2>'.format(tr('This is not the good password !')))
                 return -3
 
             if md == 1 and not key.is_private:
-                QMessageBox.critical(None, 'Error: no private key !', '<h2>{}</h2>'.format(tr('Impossible to do this, private keys not found.')))
+                QMessageBox.critical(self.parent, 'Error: no private key !', '<h2>{}</h2>'.format(tr('Impossible to do this, private keys not found.')))
                 return -3
 
             # except Exception as err:
-            #     QMessageBox.critical(None, '!!! Error !!!', '<h2>{}</h2>'.format(err))
+            #     QMessageBox.critical(self.parent, '!!! Error !!!', '<h2>{}</h2>'.format(err))
             #     return -3 #Abort
 
         elif ciph == 'SecHash':
@@ -2724,7 +2729,7 @@ class UseCiphers:
         #------ini
         txt = self.txt_in.toPlainText()
         if txt in ('', '\n'):
-            QMessageBox.critical(None, '!!! ' + tr('No text') + ' !!!', '<h2>' + tr('There is nothing to encrypt.') + '</h2>')
+            QMessageBox.critical(self.parent, '!!! ' + tr('No text') + ' !!!', '<h2>' + tr('There is nothing to encrypt.') + '</h2>')
             return -3 #Abort
 
         ciph = self.cipher.currentText()
@@ -2744,7 +2749,7 @@ class UseCiphers:
         if ciph in ciphers_list['KRIS']:
             AES_md = (256, 192, 128)[ciphers_list['KRIS'].index(ciph)]
 
-            RSA_ciph = RSA.RSA(key, padding='oaep', interface='gui')
+            RSA_ciph = RSA.RSA(key, padding='oaep', parent=self.parent, interface='gui')
             C = KRIS.Kris(RSA_ciph, AES_md, encod, interface='gui')
 
             msg_c = C.encrypt(txt)
@@ -2754,13 +2759,13 @@ class UseCiphers:
 
         elif ciph == 'RSA':
             # C = RSA.RSA((key, None), interface='gui')
-            C = RSA.RSA(key, padding='oaep', interface='gui')
+            C = RSA.RSA(key, padding='oaep', parent=self.parent, interface='gui')
             msg_c = C.encrypt(txt)
 
 
         elif ciph == 'RSA signature':
             # C = RSA.RsaSign((None, key), interface='gui')
-            RSA_ciph = RSA.RSA(key, padding='oaep', interface='gui')
+            RSA_ciph = RSA.RSA(key, padding='oaep', parent=self.parent, interface='gui')
             C = RSA.RsaSign(RSA_ciph)
 
             if formatted_out:
@@ -2781,7 +2786,7 @@ class UseCiphers:
                 C = AES.AES(AES_md, key, False, encod)
 
             except ValueError as err:
-                QMessageBox.critical(None, '!!! Value error !!!', '<h2>{}</h2>'.format(err))
+                QMessageBox.critical(self.parent, '!!! Value error !!!', '<h2>{}</h2>'.format(err))
                 return -3
 
             msg_c = C.encryptText(txt, encoding=encod, mode_c='hexa', mode=md)
@@ -2792,7 +2797,7 @@ class UseCiphers:
                 C = hasher.Hasher(ciph)
 
             except ValueError:
-                QMessageBox.critical(None, '!!! Unknown hash !!!', '<h2>The hash "{}" is unknown !!!</h2>'.format(ciph))
+                QMessageBox.critical(self.parent, '!!! Unknown hash !!!', '<h2>The hash "{}" is unknown !!!</h2>'.format(ciph))
                 return -3
 
             msg_c = C.hash(txt)
@@ -2803,7 +2808,7 @@ class UseCiphers:
                 msg_c = hasher.SecHash(txt, key)
 
             except RecursionError:
-                QMessageBox.critical(None, '!!! Too large loop !!!', '<h2>The number of loops is too large !!!</h2>')
+                QMessageBox.critical(self.parent, '!!! Too large loop !!!', '<h2>The number of loops is too large !!!</h2>')
                 return -3
 
 
@@ -2836,7 +2841,7 @@ class UseCiphers:
         #------ini
         raw_txt = self.txt_in.toPlainText()
         if raw_txt in ('', '\n'):
-            QMessageBox.critical(None, '!!! No text !!!', '<h2>' + tr('There is nothing to decrypt.') + '</h2>')
+            QMessageBox.critical(self.parent, '!!! No text !!!', '<h2>' + tr('There is nothing to decrypt.') + '</h2>')
             return -3 #Abort
 
         #------FormatMsg
@@ -2879,10 +2884,10 @@ class UseCiphers:
                         self.key_opt.setCurrentText(d['Key_name'])
 
                     else:
-                        QMessageBox.critical(None, '!!! {} !!!'.format(tr('Not found')), '<h2>{}</h2>\n<h2>{}</h2>'.format(tr(f'Key "{d["Key_name"]}" not found.'), tr('Trying with the selected key instead.')))
+                        QMessageBox.critical(self.parent, '!!! {} !!!'.format(tr('Not found')), '<h2>{}</h2>\n<h2>{}</h2>'.format(tr(f'Key "{d["Key_name"]}" not found.'), tr('Trying with the selected key instead.')))
 
                 if ciph in (*ciphers_list['KRIS'], *ciphers_list['RSA']) and version < glb.new_RSA_kris_version: #TODO: check that it works correctly.
-                    QMessageBox.warning(None, 'Old version !', '<h2>{}</h2>'.format(tr('The message has been encrypted with an old version of RSA. Using this old version to decrypt.')))
+                    QMessageBox.warning(self.parent, 'Old version !', '<h2>{}</h2>'.format(tr('The message has been encrypted with an old version of RSA. Using this old version to decrypt.')))
 
                     use_old_rsa = True
 
@@ -2917,7 +2922,7 @@ class UseCiphers:
                     RSA_ciph = RSA_old.RSA_old(key, interface='gui')
 
                 else:
-                    RSA_ciph = RSA.RSA(key, padding='oaep', interface='gui')
+                    RSA_ciph = RSA.RSA(key, padding='oaep', parent=self.parent, interface='gui')
 
                 C = KRIS.Kris(RSA_ciph, AES_md, encod, bytes_md, interface='gui')
 
@@ -2936,7 +2941,7 @@ class UseCiphers:
                     C = RSA_old.RSA_old(key, interface='gui')
 
                 else:
-                    C = RSA.RSA(key, padding='oaep', interface='gui')
+                    C = RSA.RSA(key, padding='oaep', parent=self.parent, interface='gui')
 
                 msg_d = C.decrypt(txt)
 
@@ -2949,7 +2954,7 @@ class UseCiphers:
                     RSA_ciph = RSA_old.RSA_old(key, interface='gui')
 
                 else:
-                    RSA_ciph = RSA.RSA(key, padding='oaep', interface='gui')
+                    RSA_ciph = RSA.RSA(key, padding='oaep', parent=self.parent, interface='gui')
 
                 if h == None:
                     C = RSA.RsaSign(RSA_ciph)
@@ -2965,11 +2970,11 @@ class UseCiphers:
 
                 if b:
                     msg_d = tr('The signature match the message.')
-                    QMessageBox.about(None, tr('Signature result'), '<h2>' + msg_d + '</h2>')
+                    QMessageBox.about(self.parent, tr('Signature result'), '<h2>' + msg_d + '</h2>')
 
                 else:
                     msg_d = tr('The signature does not match the message !') + '\n' + tr('You may not have selected the right RSA key, or the message was modified before you received it !!!')
-                    QMessageBox.about(None, tr('Signature result'), '<h2>' + tr('The signature does not match to the message !') + '</h2>\n<h3>' + tr('You may not have selected the right RSA key, or the message was modified before you received it !!!') + '</h3>')
+                    QMessageBox.about(self.parent, tr('Signature result'), '<h2>' + tr('The signature does not match to the message !') + '</h2>\n<h3>' + tr('You may not have selected the right RSA key, or the message was modified before you received it !!!') + '</h3>')
 
 
             elif  ciph in ciphers_list['AES']:
@@ -2980,7 +2985,7 @@ class UseCiphers:
                 msg_d = C.decryptText(txt, encoding=encod, mode_c='hexa', mode=md)
 
         except Exception as err:
-            QMessageBox.critical(None, '!!! ' + tr('Decryption error') + ' !!!', '<h2>' + tr('An error occured during decryption. Maybe you tried to decrypt clear text, or the cipher text is not well formatted.') + '</h2>\n<h3>' + tr('The text to be decrypted should be in the main text editor.') + '</h3>\n<h4>' + tr('Error') + ' :</h4>{}'.format(err))
+            QMessageBox.critical(self.parent, '!!! ' + tr('Decryption error') + ' !!!', '<h2>' + tr('An error occured during decryption. Maybe you tried to decrypt clear text, or the cipher text is not well formatted.') + '</h2>\n<h3>' + tr('The text to be decrypted should be in the main text editor.') + '</h3>\n<h4>' + tr('Error') + ' :</h4>{}'.format(err))
             return -3 # Abort
 
         self.txt_out.setPlainText(msg_d)
@@ -3011,7 +3016,7 @@ class UseCiphers:
             AES_md = (256, 192, 128)[ciphers_list['KRIS'].index(ciph)]
 
             # C = KRIS.Kris((key, None), AES_md, interface='gui')
-            RSA_ciph = RSA.RSA(key, padding='oaep', interface='gui')
+            RSA_ciph = RSA.RSA(key, padding='oaep', parent=self.parent, interface='gui')
             C = KRIS.Kris(RSA_ciph, AES_md, interface='gui')
 
             try:
@@ -3024,13 +3029,13 @@ class UseCiphers:
 
         elif ciph == 'RSA':
             # C = RSA.RSA((key, None), interface='gui')
-            C = RSA.RSA(key, padding='oaep', interface='gui')
+            C = RSA.RSA(key, padding='oaep', parent=self.parent, interface='gui')
 
             try:
                 C.encrypt_file(fn_in, fn_out)
 
             except Exception as err:
-                QMessageBox.critical(None, '!!! Error !!!', f'<h2>{err}</h2>')
+                QMessageBox.critical(self.parent, '!!! Error !!!', f'<h2>{err}</h2>')
                 return -3
 
 
@@ -3042,21 +3047,21 @@ class UseCiphers:
                 C = AES.AES(AES_md, key, False)
 
             except ValueError as err:
-                QMessageBox.critical(None, '!!! Value error !!!', '<h2>{}</h2>'.format(err))
+                QMessageBox.critical(self.parent, '!!! Value error !!!', '<h2>{}</h2>'.format(err))
                 return -3
 
             try:
                 C.encryptFile(fn_in, fn_out)
 
             except Exception as err:
-                QMessageBox.critical(None, '!!! Error !!!', f'<h2>{err}</h2>')
+                QMessageBox.critical(self.parent, '!!! Error !!!', f'<h2>{err}</h2>')
                 return -3
 
         f_in = fn_in.split('/')
         f_out = fn_out.split('/')
         filename_in = f_in[-1] if f_in[-1] != '' else f_in[-2]
         filename_out = f_out[-1] if f_out[-1] != '' else f_out[-2]
-        QMessageBox.about(None, 'Done !', f'<h2>The file {filename_in} was encrypted in the file {filename_out}.</h2>')
+        QMessageBox.about(self.parent, 'Done !', f'<h2>The file {filename_in} was encrypted in the file {filename_out}.</h2>')
 
 
     def decrypt_file(self):
@@ -3084,7 +3089,7 @@ class UseCiphers:
                 AES_md = (256, 192, 128)[ciphers_list['KRIS'].index(ciph)]
 
                 # C = KRIS.Kris((None, key), AES_md, interface='gui')
-                RSA_ciph = RSA.RSA(key, padding='oaep', interface='gui')
+                RSA_ciph = RSA.RSA(key, padding='oaep', parent=self.parent, interface='gui')
                 C = KRIS.Kris(RSA_ciph, AES_md, interface='gui')
 
                 if C.decryptFile(fn_in, fn_out) == -1:
@@ -3093,7 +3098,7 @@ class UseCiphers:
 
             elif ciph == 'RSA':
                 # C = RSA.RSA((None, key), interface='gui')
-                C = RSA.RSA(key, padding='oaep', interface='gui')
+                C = RSA.RSA(key, padding='oaep', parent=self.parent, interface='gui')
 
                 C.decrypt_file(fn_in, fn_out)
 
@@ -3107,14 +3112,14 @@ class UseCiphers:
 
 
         except Exception as err:
-            QMessageBox.critical(None, '!!! ' + tr('Decryption error') + ' !!!', '<h2>' + tr('An error occured during decryption. Maybe you tried to decrypt clear text, or the cipher text is not good formated.') + '</h2>\n<h4>' + tr('Error') + ' :</h4>{}'.format(err))
+            QMessageBox.critical(self.parent, '!!! ' + tr('Decryption error') + ' !!!', '<h2>' + tr('An error occured during decryption. Maybe you tried to decrypt clear text, or the cipher text is not good formated.') + '</h2>\n<h4>' + tr('Error') + ' :</h4>{}'.format(err))
             return -3 # Abort
 
         f_in = fn_in.split('/')
         f_out = fn_out.split('/')
         filename_in = f_in[-1] if f_in[-1] != '' else f_in[-2]
         filename_out = f_out[-1] if f_out[-1] != '' else f_out[-2]
-        QMessageBox.about(None, 'Done !', f'<h2>The file {filename_in} was decrypted in the file {filename_out}.</h2>')
+        QMessageBox.about(self.parent, 'Done !', f'<h2>The file {filename_in} was decrypted in the file {filename_out}.</h2>')
 
 
 

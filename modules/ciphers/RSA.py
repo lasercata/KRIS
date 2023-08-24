@@ -168,7 +168,7 @@ def rm_lst(lst, lst_to_rm):
 class RsaKey:
     '''Class representing an RSA key, and implementing manipulations on it.'''
 
-    def __init__(self, e=None, d=None, n=None, phi=None, p=None, q=None, date_=None, interface=None):
+    def __init__(self, e=None, d=None, n=None, phi=None, p=None, q=None, date_=None, parent=None, interface=None):
         '''
         - e         : public exponent ;
         - d         : private exponent ;
@@ -176,6 +176,7 @@ class RsaKey:
         - p, q      : primes that verify pq = n ;
         - phi       = (p - 1)(q - 1) ;
         - date_     : the date of the key generation ;
+        - parent    : the parent for gui progress bars. Used when interface is 'gui' ;
         - interface : in (None, 'gui', 'console'). Used to choose the progress bars and other stuff.
         '''
 
@@ -184,6 +185,7 @@ class RsaKey:
                 or "console", but {} of type {} was found !!!'.format(interface, type(interface)))
 
         self.interface = interface
+        self.parent = parent
 
         self.e = e
         self.d = d
@@ -288,7 +290,7 @@ class RsaKey:
 
         #------ini progress bar
         if self.interface == 'gui':
-            pb = GuiProgressBar(title='Generating ... ― ' + glb.prog_name, undetermined=True)
+            pb = GuiProgressBar(title='Generating ... ― ' + glb.prog_name, undetermined=True, parent=self.parent)
 
         elif self.interface == 'console':
             pb = ConsoleProgressBar()
@@ -512,7 +514,7 @@ class RsaKey:
 
 
 
-class RsaKeyFile: #TODO: Check that it works well.
+class RsaKeyFile:
     '''Class representing an RSA key file, and implementing manipulations on them.'''
 
     def __init__(self, keys_name, interface=None):
@@ -1208,7 +1210,7 @@ class OAEP:
 class RSA:
     '''Implementation of the RSA cipher'''
 
-    def __init__(self, key, padding, block_size=None, interface=None):
+    def __init__(self, key, padding, block_size=None, parent=None, interface=None):
         '''
         - key        : a RsaKey object ;
         - padding    : the padding to use. Possible values are :
@@ -1217,6 +1219,7 @@ class RSA:
             * 'oaep' : OAEP padding ;
 
         - block_size : the size of encryption blocks. If None, it is set to `key.size // 8 - 1`.
+        - parent     : the parent for the gui progress bar (used if interface is 'gui') ;
         - interface  : the interface using this class. Should be None,
            'gui', or 'console'. Used to choose the progress bar.
         '''
@@ -1226,6 +1229,7 @@ class RSA:
                 or "console", but {} of type {} was found !!!'.format(interface, type(interface)))
 
         self.interface = interface
+        self.parent = parent
 
         self.pb = key.pb
         if key.is_private:
@@ -1266,14 +1270,18 @@ class RSA:
         - msg     : The string (or int for 'int' padding) to encrypt.
         '''
 
-        if self.pad == 'int':
-            return self._encrypt_int(msg)
-        
-        elif self.pad == 'raw':
-            return self._encrypt_raw(msg)
-        
-        else:
-            return self._encrypt_oaep(msg)
+        try: #TODO: is this try block useful ?
+            if self.pad == 'int':
+                return self._encrypt_int(msg)
+            
+            elif self.pad == 'raw':
+                return self._encrypt_raw(msg)
+            
+            else:
+                return self._encrypt_oaep(msg)
+
+        except KeyboardInterrupt: #Stopped from gui progress bar (or console).
+            return
     
     
     def decrypt(self, msg):
@@ -1285,14 +1293,18 @@ class RSA:
         if not self.is_private:
             raise TypeError('Can not decrypt using a public key.')
 
-        if self.pad == 'int':
-            return self._decrypt_int(msg)
-        
-        elif self.pad == 'raw':
-            return self._decrypt_raw(msg)
-        
-        else:
-            return self._decrypt_oaep(msg)
+        try:
+            if self.pad == 'int':
+                return self._decrypt_int(msg)
+            
+            elif self.pad == 'raw':
+                return self._decrypt_raw(msg)
+            
+            else:
+                return self._decrypt_oaep(msg)
+
+        except KeyboardInterrupt: #Stopped from progress bar.
+            return
     
 
     def encrypt_file(self, fn_in, fn_out):
@@ -1307,14 +1319,18 @@ class RSA:
         The functions do not test if any file exists nor if the file `fn_out` is empty, and will overwrite its potential content.
         '''
 
-        if self.pad == 'int':
-            raise ValueError("Impossible to encrypt a file with the 'int' padding !")
-        
-        elif self.pad == 'raw':
-            return self._encrypt_file_raw(fn_in, fn_out)
-        
-        else:
-            return self._encrypt_file_oaep(fn_in, fn_out)
+        try:
+            if self.pad == 'int':
+                raise ValueError("Impossible to encrypt a file with the 'int' padding !")
+            
+            elif self.pad == 'raw':
+                return self._encrypt_file_raw(fn_in, fn_out)
+            
+            else:
+                return self._encrypt_file_oaep(fn_in, fn_out)
+
+        except KeyboardInterrupt: #Stopped from progress bar.
+            return
     
     
     def decrypt_file(self, fn_in, fn_out):
@@ -1333,14 +1349,18 @@ class RSA:
         if not self.is_private:
             raise TypeError('Can not decrypt using a public key.')
 
-        if self.pad == 'int':
-            raise ValueError("Impossible to decrypt a file with the 'int' padding !")
-        
-        elif self.pad == 'raw':
-            return self._decrypt_file_raw(fn_in, fn_out)
+        try:
+            if self.pad == 'int':
+                raise ValueError("Impossible to decrypt a file with the 'int' padding !")
+            
+            elif self.pad == 'raw':
+                return self._decrypt_file_raw(fn_in, fn_out)
 
-        else:
-            return self._decrypt_file_oaep(fn_in, fn_out)
+            else:
+                return self._decrypt_file_oaep(fn_in, fn_out)
+
+        except KeyboardInterrupt: #Stopped from progress bar.
+            return
     
 
     def _encrypt_int(self, msg):
@@ -1382,7 +1402,7 @@ class RSA:
 
         #---Ini progress bar
         if self.interface == 'gui':
-            pb = GuiProgressBar(title='Encrypting ... | RSA ― ' + glb.prog_name, verbose=True)
+            pb = GuiProgressBar(title='Encrypting ... | RSA ― ' + glb.prog_name, verbose=True, parent=self.parent)
 
         elif self.interface == 'console':
             pb = ConsoleProgressBar()
@@ -1415,7 +1435,7 @@ class RSA:
         
         #---Ini progress bar
         if self.interface == 'gui':
-            pb = GuiProgressBar(title='Decrypting ... | RSA ― ' + glb.prog_name, verbose=True)
+            pb = GuiProgressBar(title='Decrypting ... | RSA ― ' + glb.prog_name, verbose=True, parent=self.parent)
 
         elif self.interface == 'console':
             pb = ConsoleProgressBar()
@@ -1457,7 +1477,7 @@ class RSA:
 
         #---Ini progress bar
         if self.interface == 'gui':
-            pb = GuiProgressBar(title='Encrypting ... | RSA ― ' + glb.prog_name, verbose=True)
+            pb = GuiProgressBar(title='Encrypting ... | RSA ― ' + glb.prog_name, verbose=True, parent=self.parent)
 
         elif self.interface == 'console':
             pb = ConsoleProgressBar()
@@ -1492,7 +1512,7 @@ class RSA:
         
         #---Ini progress bar
         if self.interface == 'gui':
-            pb = GuiProgressBar(title='Decrypting ... | RSA ― ' + glb.prog_name, verbose=True)
+            pb = GuiProgressBar(title='Decrypting ... | RSA ― ' + glb.prog_name, verbose=True, parent=self.parent)
 
         elif self.interface == 'console':
             pb = ConsoleProgressBar()
@@ -1519,7 +1539,7 @@ class RSA:
 
         #---Ini progress bar
         if self.interface == 'gui':
-            pb = GuiProgressBar(title='Encrypting ... | RSA ― ' + glb.prog_name, verbose=True)
+            pb = GuiProgressBar(title='Encrypting ... | RSA ― ' + glb.prog_name, mn=1, verbose=False, parent=self.parent)
 
         elif self.interface == 'console':
             pb = ConsoleProgressBar()
@@ -1542,7 +1562,7 @@ class RSA:
             enc_lst.append(pow(bytes_to_int(k), e, n))
 
             if self.interface in ('gui', 'console'): #TODO: check that this bar works correcly.
-                pb.set(j, l)
+                pb.set(j + 1, l)
         
         return b' '.join([base64.b64encode(int_to_bytes(k)) for k in enc_lst])
 
@@ -1557,7 +1577,7 @@ class RSA:
 
         #------Ini progress bar
         if self.interface == 'gui': #TODO: set parent !
-            pb = GuiProgressBar(title='Decrypting ... | RSA ― ' + glb.prog_name, verbose=True)
+            pb = GuiProgressBar(title='Decrypting ... | RSA ― ' + glb.prog_name, verbose=False, mn=1, parent=self.parent)
 
         elif self.interface == 'console':
             pb = ConsoleProgressBar()
@@ -1575,7 +1595,7 @@ class RSA:
 
             #---progress bar
             if self.interface in ('gui', 'console'): #TODO: check that it works well.
-                pb.set(j, l)
+                pb.set(j + 1, l)
         
         #---Decode
         encoded_lst = []
@@ -1602,7 +1622,7 @@ class RSA:
 
         #---Ini progress bar
         if self.interface == 'gui':
-            pb = GuiProgressBar(title='Encrypting ... | RSA ― ' + glb.prog_name, verbose=True)
+            pb = GuiProgressBar(title='Encrypting ... | RSA ― ' + glb.prog_name, verbose=False, mn=1, parent=self.parent)
 
         elif self.interface == 'console':
             pb = ConsoleProgressBar()
@@ -1625,7 +1645,7 @@ class RSA:
                 f_out.write(b'\n') #Separating blocks with newlines
 
                 if self.interface in ('gui', 'console'):
-                    pb.set(j, l)
+                    pb.set(j + 1, l)
 
     
     def _decrypt_file_oaep(self, fn_in, fn_out):
@@ -1640,7 +1660,7 @@ class RSA:
 
         #------Ini progress bar
         if self.interface == 'gui':
-            pb = GuiProgressBar(title='Decrypting ... | RSA ― ' + glb.prog_name, verbose=True)
+            pb = GuiProgressBar(title='Decrypting ... | RSA ― ' + glb.prog_name, verbose=False, mn=1, parent=self.parent)
 
         elif self.interface == 'console':
             pb = ConsoleProgressBar()
@@ -1665,7 +1685,7 @@ class RSA:
                 f_out.write(decoded)
 
                 if self.interface in ('console', 'gui'):
-                    pb.set(j, l)
+                    pb.set(j + 1, l)
 
 
     def sign(self, txt):
