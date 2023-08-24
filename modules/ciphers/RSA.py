@@ -1402,7 +1402,7 @@ class RSA:
 
         #---Ini progress bar
         if self.interface == 'gui':
-            pb = GuiProgressBar(title='Encrypting ... | RSA ― ' + glb.prog_name, verbose=True, parent=self.parent)
+            pb = GuiProgressBar(title='Encrypting ... | RSA ― ' + glb.prog_name, verbose=False, mn=1, parent=self.parent)
 
         elif self.interface == 'console':
             pb = ConsoleProgressBar()
@@ -1425,7 +1425,7 @@ class RSA:
             enc_lst.append(pow(bytes_to_int(k), e, n))
 
             if self.interface in ('gui', 'console'): #TODO: check that this bar works correcly.
-                pb.set(j, l)
+                pb.set(j + 1, l)
 
         return b' '.join([base64.b64encode(int_to_bytes(k)) for k in enc_lst])
     
@@ -1435,7 +1435,7 @@ class RSA:
         
         #---Ini progress bar
         if self.interface == 'gui':
-            pb = GuiProgressBar(title='Decrypting ... | RSA ― ' + glb.prog_name, verbose=True, parent=self.parent)
+            pb = GuiProgressBar(title='Decrypting ... | RSA ― ' + glb.prog_name, verbose=False, mn=1, parent=self.parent)
 
         elif self.interface == 'console':
             pb = ConsoleProgressBar()
@@ -1452,7 +1452,7 @@ class RSA:
             c_lst.append(pow(bytes_to_int(k), d, n))
 
             if self.interface in ('gui', 'console'): #TODO: check that this bar works correcly.
-                pb.set(j, l)
+                pb.set(j + 1, l)
         
         #---Decoding
         txt = b''
@@ -1477,7 +1477,7 @@ class RSA:
 
         #---Ini progress bar
         if self.interface == 'gui':
-            pb = GuiProgressBar(title='Encrypting ... | RSA ― ' + glb.prog_name, verbose=True, parent=self.parent)
+            pb = GuiProgressBar(title='Encrypting ... | RSA ― ' + glb.prog_name, verbose=False, mn=1, parent=self.parent)
 
         elif self.interface == 'console':
             pb = ConsoleProgressBar()
@@ -1492,12 +1492,14 @@ class RSA:
         with open(fn_out, 'wb') as f_out:
             for j, block in enumerate(read_chunks(fn_in, self.block_size)):
                 enc_int = pow(bytes_to_int(block), e, n)
+                encrypted_block = int_to_bytes(enc_int)
+                enc = base64.b64encode(encrypted_block)
 
-                f_out.write(int_to_bytes(enc_int))
+                f_out.write(enc)
                 f_out.write(b'\n')
 
                 if self.interface in ('gui', 'console'): #TODO: check that this bar works correcly.
-                    pb.set(j, l)
+                    pb.set(j + 1, l)
     
 
     def _decrypt_file_raw(self, fn_in, fn_out):
@@ -1512,7 +1514,7 @@ class RSA:
         
         #---Ini progress bar
         if self.interface == 'gui':
-            pb = GuiProgressBar(title='Decrypting ... | RSA ― ' + glb.prog_name, verbose=True, parent=self.parent)
+            pb = GuiProgressBar(title='Decrypting ... | RSA ― ' + glb.prog_name, verbose=False, mn=1, parent=self.parent)
 
         elif self.interface == 'console':
             pb = ConsoleProgressBar()
@@ -1526,12 +1528,13 @@ class RSA:
 
         with open(fn_in, 'rb') as f_in, open(fn_out, 'wb') as f_out:
             for j, block in enumerate(f_in): #Reading line by line
-                dec_int = pow(bytes_to_int(block), d, n)
+                raw_block = base64.b64decode(block)
+                dec_int = pow(bytes_to_int(raw_block), d, n)
 
                 f_out.write(int_to_bytes(dec_int))
 
                 if self.interface in ('gui', 'console'): #TODO: check that this bar works correcly.
-                    pb.set(j, l)
+                    pb.set(j + 1, l)
 
 
     def _encrypt_oaep(self, msg):
@@ -1617,7 +1620,7 @@ class RSA:
         This function does not test if any file exists nor if the file `fn_out` is empty, and will overwrite its potential content.
 
         The encryption is done block by block (file `fn_in` is read chunk by chunk).
-        Format of the file `fn_out` : each encrypted block is separated by a newline.
+        Format of the file `fn_out` : each encrypted block encoded in base64 and is separated by a newline.
         '''
 
         #---Ini progress bar
@@ -1641,11 +1644,19 @@ class RSA:
                 encoded_block = E._encode_block(block)
                 enc_int = pow(bytes_to_int(encoded_block), e, n)
 
-                f_out.write(int_to_bytes(enc_int))
+                encrypted_block = int_to_bytes(enc_int)
+
+                enc = base64.b64encode(encrypted_block)
+
+                f_out.write(enc)
                 f_out.write(b'\n') #Separating blocks with newlines
 
                 if self.interface in ('gui', 'console'):
                     pb.set(j + 1, l)
+
+                # #TODO: this is a test
+                # if j >= 2:
+                #     break
 
     
     def _decrypt_file_oaep(self, fn_in, fn_out):
@@ -1675,12 +1686,14 @@ class RSA:
 
         with open(fn_in, 'rb') as f_in, open(fn_out, 'wb') as f_out:
             for j, block in enumerate(f_in): #Reading line by line
+                raw_block = base64.b64decode(block)
+
                 # dec_int = pow(bytes_to_int(block), d, n)
-                # # encoded = pad(int_to_bytes(dec_int), self.block_size, b'\0') #TODO: check that it works fine !
-                # encoded = int_to_bytes(dec_int) #TODO: check that it works fine !
+                # # encoded = pad(int_to_bytes(dec_int), self.block_size, b'\0')
+                # encoded = int_to_bytes(dec_int)
                 # decoded = E._decode_block(encoded)
 
-                decoded = E._decode_block(int_to_bytes(pow(bytes_to_int(block), d, n))) #TODO: something does not works: the decryption does not correspond to the clear file.
+                decoded = E._decode_block(int_to_bytes(pow(bytes_to_int(raw_block), d, n)))
 
                 f_out.write(decoded)
 
