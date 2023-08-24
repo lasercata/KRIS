@@ -1376,6 +1376,7 @@ class FileEncWin(QDialog):
 
         self.input_fn_ledt = QLineEdit()
         self.input_fn_ledt.setMinimumSize(500, 35)
+        self.input_fn_ledt.returnPressed.connect(self._start)
         main_lay.addWidget(self.input_fn_ledt, 2, 1)
 
         self.input_fn_bt = QPushButton(tr('Browse'))
@@ -1387,6 +1388,7 @@ class FileEncWin(QDialog):
 
         self.output_fn_ledt = QLineEdit()
         self.output_fn_ledt.setMinimumSize(500, 35)
+        self.output_fn_ledt.returnPressed.connect(self._start)
         main_lay.addWidget(self.output_fn_ledt, 3, 1)
 
         self.output_fn_bt = QPushButton(tr('Browse'))
@@ -1712,7 +1714,7 @@ class GenKeyWin(QDialog): #QMainWindow):
         ciph = self.cipher_box.currentText()
 
         if ciph == tr('-- Select a cipher --'):
-            QMessageBox.critical(None, '!!! No cipher selected !!!', '<h2>Please select a cipher !!!</h2>')
+            QMessageBox.critical(self, '!!! No cipher selected !!!', '<h2>Please select a cipher !!!</h2>')
             return -3
 
         if ciph == 'RSA':
@@ -1723,7 +1725,7 @@ class GenKeyWin(QDialog): #QMainWindow):
                 ret = self._show_key(ciph, KRIS.AES_rnd_key_gen(self.str1_lth.value(), int(ciph[-3:])))
 
             except ValueError as err:
-                QMessageBox.warning(None, tr('Key size error'), '<h2>{}</h2>'.format(err))
+                QMessageBox.warning(self, tr('Key size error'), '<h2>{}</h2>'.format(err))
                 return -3
 
 
@@ -1744,35 +1746,10 @@ class GenKeyWin(QDialog): #QMainWindow):
         #---Check that there is a name
         name = self.ledt.text()
         if name == '':
-            QMessageBox.critical(None, '!!! No name !!!', '<h2>' + tr('Please enter a name for the RSA keys !') + '</h2>')
+            QMessageBox.critical(self, '!!! No name !!!', '<h2>' + tr('Please enter a name for the RSA keys !') + '</h2>')
             return -3 #Abort
 
-        #---Check if file already exists
-        fn = str(name) + ('.pvk-d', '.pvk-h')[md_st != 'dec']
-        if pwd != None:
-            fn += '.enc'
-
-        old_path = chd_rsa(glb.home)
-
-        overwrite = False
-        if isfile(fn):
-            rep = QMessageBox.question(
-                None,
-                'File error !',
-                '<h2>' + tr('A set of keys named "{}" already exist !').format(name) + '</h2>\n<h2>' + tr('Overwite it !?') + '</h2>\n<h3>' + tr('This action can NOT be undone !!!') + '</h3>',
-                QMessageBox.Yes | QMessageBox.No,
-                QMessageBox.No
-            )
-
-            if rep == QMessageBox.Yes:
-                overwrite = True
-
-            else:
-                return -2
-
-        chdir(old_path)
-
-        #---Check other inputs
+        #---Check for password
         if self.chbt_rsa_enc.isChecked():
             if self.pwd1_ledit.text() != self.pwd2_ledit.text():
                 QMessageBox.critical(self, '!!! Wrong passwords !!!', '<h2>' + tr('The passwords does not correspond !') + '</h2>')
@@ -1789,11 +1766,36 @@ class GenKeyWin(QDialog): #QMainWindow):
         else:
             pwd = None
 
+        #---Check if file already exists
+        fn = str(name) + ('.pvk-d', '.pvk-h')[md_st != 'dec']
+        if pwd != None:
+            fn += '.enc'
+
+        old_path = RSA.chd_rsa(glb.home)
+
+        overwrite = False
+        if isfile(fn):
+            rep = QMessageBox.question(
+                self,
+                'File error !',
+                '<h2>' + tr('A set of keys named "{}" already exist !').format(name) + '</h2>\n<h2>' + tr('Overwite it !?') + '</h2>\n<h3>' + tr('This action can NOT be undone !!!') + '</h3>',
+                QMessageBox.Yes | QMessageBox.No,
+                QMessageBox.No
+            )
+
+            if rep == QMessageBox.Yes:
+                overwrite = True
+
+            else:
+                return -2
+
+        chdir(old_path)
+
         #---Generate the key
         # val = RSA.RsaKeys(name, 'gui').generate(size, pwd, md_stored=md_st)
-        key = RSA.RsaKey(interface='gui')
+        key = RSA.RsaKey(parent=self, interface='gui')
         key.new(size=size)
-        key.save(name, pwd, overwrite=overwrite, md_storded=md_st)
+        key.save(name, pwd, overwrite=overwrite, md_stored=md_st)
 
         win.ciph_bar.reload_keys()
 

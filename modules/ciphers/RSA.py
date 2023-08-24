@@ -310,6 +310,9 @@ class RsaKey:
             if self.interface in ('gui', 'console'):
                 pb.load()
 
+        if self.interface == 'gui':
+            pb.close()
+
         self.phi = (self.p - 1) * (self.q - 1)
         self.n = self.p * self.q
 
@@ -446,6 +449,8 @@ class RsaKey:
 
         if overwrite not in (True, False) or md_stored not in ('hexa', 'dec'):
             raise ValueError('Some arguments are not correct !')
+
+        self.k_name = k_name
 
         if md_stored == 'dec':
             fn = str(self.k_name) + '.pvk-d'

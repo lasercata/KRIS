@@ -8,6 +8,10 @@ arithmetic__last_update = '2023.08.10'
 arithmetic__version = '2.0.0'
 
 
+##-Imports
+from random import randint
+
+
 ##-Diophantien equations
 def ext_euclid(a: int, b: int) -> (int, (int, int)):
     '''
