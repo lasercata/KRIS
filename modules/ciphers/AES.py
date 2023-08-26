@@ -41,11 +41,11 @@ else:
     dll_fn = 'AES_unix.dll'
 
 try:
-    lib_AES = ctypes.cdll.LoadLibrary('{}/modules/ciphers/kris/AES_library/{}'.format(os.getcwd(), dll_fn))
+    lib_AES = ctypes.cdll.LoadLibrary('{}/modules/ciphers/AES_library/{}'.format(os.getcwd(), dll_fn))
 
 except OSError as err:
     if platform.system() == 'Windows':
-        lib_AES = ctypes.cdll.LoadLibrary('{}/modules/ciphers/kris/AES_library/{}'.format(os.getcwd(), 'AES_win_2.dll'))
+        lib_AES = ctypes.cdll.LoadLibrary('{}/modules/ciphers/AES_library/{}'.format(os.getcwd(), 'AES_win_2.dll'))
 
     else:
         raise OSError(str(err))

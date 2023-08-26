@@ -13,7 +13,7 @@ from PyQt5.QtWidgets import (QApplication, QMainWindow, QComboBox, QStyleFactory
     QHBoxLayout, QGroupBox, QButtonGroup, QRadioButton, QTextEdit, QFileDialog, QDialog)
 
 
-from modules.base.gui.GuiStyle import GuiStyle
+from modules.gui.GuiStyle import GuiStyle
 
 
 ##-main

@@ -553,3 +553,8 @@ Importer un clé RSA
 Veuillez remplir le champ du mot de passe !
 Veuillez remplir les trois champs de mot de passe.
 &Schéma de couleurs
+Fichier d'entrée
+Chercher
+Fichier de sortie
+Chiffrer
+Déchiffrer

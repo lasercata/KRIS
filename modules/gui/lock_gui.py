@@ -9,13 +9,13 @@ lock_gui__last_update = '07.03.2021'
 import sys
 from time import sleep
 
-try:
-    from Languages.lang import translate as tr
-    from modules.ciphers.hashes.hasher import Hasher
+# try:
+from Languages.lang import translate as tr
+from modules.ciphers.hasher import Hasher
 
-except ModuleNotFoundError as ept:
-    print('\n' + tr('Put the module') + " " + str(ept).strip("No module named") + " " + tr('back') + ' !!!')
-    sys.exit()
+# except ModuleNotFoundError as ept:
+#     print('\n' + tr('Put the module') + " " + str(ept).strip("No module named") + " " + tr('back') + ' !!!')
+#     sys.exit()
 
 from PyQt5.QtCore import QSize, Qt
 from PyQt5.QtGui import QIcon
@@ -62,7 +62,7 @@ class Lock(QWidget):
 
         #------ini
         super().__init__(parent)
-        self.setWindowTitle('KRIS v' + cracker_version + ' | ' + tr('locked'))
+        self.setWindowTitle(glb.prog_name + ' v' + cracker_version + ' | ' + tr('locked'))
         self.setWindowIcon(QIcon('Style/KRIS_logo_by_surang.ico'))
 
         self.pwd_hshed = pwd

@@ -4,12 +4,13 @@
 '''Launch KRIS with PyQt5 graphical interface.'''
 
 KRIS_gui__auth = 'Lasercata'
-KRIS_gui__last_update = '21.12.2021'
-KRIS_gui__version = '2.4.2' #2.4.1
+KRIS_gui__last_update = '2023.08.18'
+KRIS_gui__version = '2.4.3' #before the 2023.08.10 : 2.4.2
 
 # Note : there may still be parts of code which are useless in this file
 # and maybe some imported modules too.
 
+#TODO: remove the non used packages.
 
 ##-import
 #from modules.base.ini import *
@@ -18,7 +19,7 @@ KRIS_gui__version = '2.4.2' #2.4.1
 from modules.base import glb
 
 from PyQt5.QtCore import QSize, Qt
-from PyQt5.QtGui import QIcon, QPixmap, QCloseEvent, QPalette, QColor, QFont
+from PyQt5.QtGui import QIcon, QPixmap, QCloseEvent, QPalette, QColor, QFont #TODO: ensure that all the modules are needed.
 from PyQt5.QtWidgets import (QApplication, QMainWindow, QComboBox, QStyleFactory,
     QLabel, QGridLayout, QLineEdit, QMessageBox, QWidget, QPushButton, QCheckBox,
     QHBoxLayout, QVBoxLayout, QGroupBox, QTabWidget, QTableWidget, QFileDialog,
@@ -36,39 +37,38 @@ from ast import literal_eval #safer than eval
 import webbrowser #Open web page (in About)
 
 #---------KRIS modules
-try:
+# try:
+from Languages.lang import translate as tr
+from Languages.lang import langs_lst, lang
 
-    from Languages.lang import translate as tr
-    from Languages.lang import langs_lst, lang
+from modules.base.base_functions import *
+from modules.base.text_functions import *
+from modules.base.progress_bars import *
 
-    from modules.base.base_functions import *
-    from modules.base.progress_bars import *
-    # from modules.base.AskPwd import AskPwd
+from modules.gui.lock_gui import Lock
+from modules.gui.GuiStyle import GuiStyle
+from modules.gui.Popup import Popup
 
-    from modules.base.gui.lock_gui import Lock
-    from modules.base.gui.GuiStyle import GuiStyle
-    from modules.base.gui.Popup import Popup
+from modules.ciphers import hasher
+from modules.ciphers import AES, RSA, RSA_old, KRIS
+from modules.base.FormatMsg import FormatMsg
 
-    from modules.ciphers.hashes import hasher
-    from modules.ciphers.kris import AES, RSA, KRIS
-    from modules.base.FormatMsg import FormatMsg
+from modules.base.mini_pwd_testor import get_sth
 
-    from modules.base.mini_pwd_testor import get_sth
-
-except ModuleNotFoundError as ept:
-    err = str(ept).strip("No module named")
-
-    try:
-        cl_out(c_error, tr('Put the module {} back !!!').format(err))
-
-    except NameError:
-        try:
-            print('\n' + tr('Put the module {} back !!!').format(err))
-
-        except NameError:
-            print('\n' + 'Put the module {} back !!!'.format(err))
-
-    sys.exit()
+# except ModuleNotFoundError as ept:
+#     err = str(ept).strip("No module named")
+#
+#     try:
+#         cl_out(c_error, tr('Put the module {} back !!!').format(err))
+#
+#     except NameError:
+#         try:
+#             print('\n' + tr('Put the module {} back !!!').format(err))
+#
+#         except NameError:
+#             print('\n' + 'Put the module {} back !!!'.format(err))
+#
+#     sys.exit()
 
 
 ##-ini
@@ -83,12 +83,12 @@ try:
 
 except FileNotFoundError:
     cl_out(c_error, tr('The file "version.txt" was not found. A version will be set but can be wrong.'))
-    kris_version = '2.0.0 ?'
+    kris_version = '3.0.0 ?'
 
 else:
     if len(kris_version) > 16:
         cl_out(c_error, tr('The file "version.txt" contain more than 16 characters, so it certainly doesn\'t contain the actual version. A version will be set but can be wrong.'))
-        kris_version = '2.0.0 ?'
+        kris_version = '3.0.0 ?'
 
 
 #---------passwords
@@ -149,11 +149,11 @@ alf_25 = alf_az.replace('j', '')
 alf_25AZ = alf_AZ.replace('J', '')
 
 crypta_alf_list = {
-    'alf_25': alf_25,
     'alf_az': alf_az,
+    'alf_25': alf_25,
     'alf_az09': alf_az09,
-    'alf_25AZ': alf_25AZ,
     'alf_AZ': alf_AZ,
+    'alf_25AZ': alf_25AZ,
     'alf_AZ09': alf_AZ09
 }
 
@@ -168,7 +168,7 @@ class KrisGui(QMainWindow):
 
         #------ini
         super().__init__(parent)
-        self.setWindowTitle('KRIS v' + kris_version)
+        self.setWindowTitle(glb.prog_name + 'v' + kris_version)
         self.setWindowIcon(QIcon('Style/KRIS_logo_by_surang.ico'))
 
         #self.style = style_test
@@ -467,7 +467,7 @@ class KrisGui(QMainWindow):
         self.settings_m.addSeparator()
 
         #-Configure KRIS
-        self.config_ac = QAction(tr('&Configure KRIS ...'), self)
+        self.config_ac = QAction(tr(f'&Configure {glb.prog_name} ...'), self)
         self.config_ac.setShortcut('Ctrl+R')
         self.config_ac.triggered.connect(lambda: SettingsWin.use(self.style, self.app_style, parent=self))
         self.settings_m.addAction(self.config_ac)
@@ -513,7 +513,8 @@ class KrisGui(QMainWindow):
             self.ciph_bar.cipher_ledit_keys,
             self.ciph_bar.cipher_nb_key,
             self.ciph_bar.cipher_opt_ciphs,
-            self.encod_box
+            self.encod_box,
+            parent=self
         )
 
         enc = lambda: use_ciph.encrypt(self.formatted_out_ac.isChecked())
@@ -568,7 +569,7 @@ class KrisGui(QMainWindow):
     def _clear_out(self):
         '''Clear the output text viewer'''
 
-        if self._msg_box_save('out', tr('Clear') + ' ' + tr('Output text') + ' - KRIS'):
+        if self._msg_box_save('out', tr('Clear') + ' ' + tr('Output text') + ' - ' + glb.prog_name):
             self.txt_out.setPlainText('')
             self.statusbar.showMessage(tr('Output cleared !'), 3000)
 
@@ -679,7 +680,7 @@ class KrisGui(QMainWindow):
         self._set_save_lb_txt()
 
 
-    def _msg_box_save(self, part='all', title='Quit KRIS'):
+    def _msg_box_save(self, part='all', title='Quit ' + glb.prog_name):
         '''
         Check if there are things unsaved (text), and show a QMessageBox question.
         Return a bool indicating if continue (True) or not (False).
@@ -737,7 +738,7 @@ class KrisGui(QMainWindow):
     def new(self):
         '''Clear the two text editors (input and output).'''
 
-        if self._msg_box_save(title=tr('New — KRIS')):
+        if self._msg_box_save(title=tr('New — ' + glb.prog_name)):
             self.txt_in.setPlainText('')
             self.txt_out.setPlainText('')
 
@@ -756,11 +757,11 @@ class KrisGui(QMainWindow):
             None otherwise.
         '''
 
-        if not self._msg_box_save(part='in', title=tr('Open — KRIS')):
+        if not self._msg_box_save(part='in', title=tr('Open — ' + glb.prog_name)):
             return -3
 
         if filename == False:
-            fn = QFileDialog.getOpenFileName(self, tr('Open file') + ' — KRIS')[0]#, getcwd())[0]
+            fn = QFileDialog.getOpenFileName(self, tr('Open file') + ' — ' + glb.prog_name)[0]#, getcwd())[0]
 
             if fn in ((), ''):
                 return -3 #Canceled
@@ -826,7 +827,7 @@ class KrisGui(QMainWindow):
             txt = self.txt_in.toPlainText()
 
             if self.fn_in == None or as_:
-                fn = QFileDialog.getSaveFileName(self, tr('Save') + ' ' + tr('Input text') + ' — KRIS', getcwd(), tr('Text files(*.txt);;All files(*)'))[0]
+                fn = QFileDialog.getSaveFileName(self, tr('Save') + ' ' + tr('Input text') + ' — ' + glb.prog_name, getcwd(), tr('Text files(*.txt);;All files(*)'))[0]
                 self.fn_in = fn
 
             else:
@@ -836,7 +837,7 @@ class KrisGui(QMainWindow):
             txt = self.txt_out.toPlainText()
 
             if self.fn_out == None or as_:
-                fn = QFileDialog.getSaveFileName(self, tr('Save') + ' ' + tr('Output text') + ' - KRIS', getcwd(), tr('Text files(*.txt);;All files(*)'))[0]
+                fn = QFileDialog.getSaveFileName(self, tr('Save') + ' ' + tr('Output text') + ' - ' + glb.prog_name, getcwd(), tr('Text files(*.txt);;All files(*)'))[0]
                 self.fn_out = fn
 
             else:
@@ -864,12 +865,12 @@ class KrisGui(QMainWindow):
     def show_help(self):
         '''Show help using Popup.'''
 
-        help_ = '<center><h1>KRIS_v{} — {}</h1></center>\n'.format(kris_version, tr('Help'))
+        help_ = '<center><h1>{}_v{} — {}</h1></center>\n'.format(glb.prog_name, kris_version, tr('Help'))
 
-        help_ += tr('KRIS is a simple software that allow to encrypt some text. The UI is in three main parts : the text editor (at center), the cipher toolbar (top), and the output (bottom).')
+        help_ += tr(f'{glb.prog_name} is a simple software that allow to encrypt some text. The UI is in three main parts : the text editor (at center), the cipher toolbar (top), and the output (bottom).')
 
         help_ += '<h2>{}</h2>'.format(tr('Ciphers'))
-        help_ += '<p>{}</p>'.format(tr('In KRIS, there are three types of cryptographic function : the symetric ciphers, the asymetric ciphers, and the hash functions.'))
+        help_ += '<p>{}</p>'.format(tr(f'In {glb.prog_name}, there are three types of cryptographic function : the symetric ciphers, the asymetric ciphers, and the hash functions.'))
 
         help_ += '<p>{}</p>'.format(tr('The symetric ciphers (AES-256, AES-192, AES-256) use the same key to encrypt and decrypt. They are faster than the asymetric ciphers (RSA).'))
         help_ += '<p>{}</p>'.format(tr('The asymetric ciphers uses key pairs : one public and available key to encrypt, and one private and safely kept key to decrypt. With these ciphers, anyone can send an encrypted message to a person, and only that person can decrypt it. It is not needed to share a secret (the key) with the recipent. Since RSA is a lot slower than AES, KRIS cipher is a mix of both : it generate a random AES key, encrypt the message with this key, and encrypt the AES key with RSA.'))
@@ -906,15 +907,15 @@ class KrisGui(QMainWindow):
 
         p = Popup(bt_align='right', style=self.style, parent=self)
         p.main_lay.addWidget(bt_repo, 1, 0, Qt.AlignLeft)
-        p.pop(tr('Help') + ' — KRIS', help_, html=True, dialog=False)
+        p.pop(tr('Help') + ' — ' + glb.prog_name, help_, html=True, dialog=False)
 
 
     def show_about(self):
         '''Show the about popup.'''
 
-        about = '<center><h1>KRIS_v{}</h1></center>\n'.format(kris_version)
+        about = '<center><h1>{}_v{}</h1></center>\n'.format(glb.prog_name, kris_version)
 
-        about += tr('KRIS is an open source software that implements secure ciphers in a GUI. It allow to encrypt, decrypt, sign, and hash text.')
+        about += tr(f'{glb.prog_name} is an open source software that implements secure ciphers in a GUI. It allow to encrypt, decrypt, sign, and hash text.')
 
         about += '<h2>{}</h2>'.format(tr('Authors'))
         about += '<p>Lasercata (https://github.com/lasercata)</p>'
@@ -930,7 +931,7 @@ class KrisGui(QMainWindow):
 
         p = Popup(bt_align='right', style=self.style, parent=self)
         p.main_lay.addWidget(bt_repo, 1, 0, Qt.AlignLeft)
-        p.pop(tr('About') + ' — KRIS', about, html=True)
+        p.pop(tr('About') + ' — ' + glb.prog_name, about, html=True)
 
 
 
@@ -939,7 +940,7 @@ class KrisGui(QMainWindow):
 
         f_ext = 'KRIS public keys(*.pbk-*);;KRIS hex public keys(*.pbk-h);;KRIS decimal public keys(.pbk-d);;All files(*)'
 
-        fn_src = QFileDialog.getOpenFileName(self, tr('Import RSA key') + ' — KRIS', '', f_ext)[0]
+        fn_src = QFileDialog.getOpenFileName(self, tr('Import RSA key') + ' — ' + glb.prog_name, '', f_ext)[0]
 
         if fn_src in ((), ''):
             return -3 #Canceled
@@ -1156,7 +1157,7 @@ class SettingsWin(QDialog): #QMainWindow):
 
         #------Ini
         super().__init__(parent)
-        self.setWindowTitle('KRIS v' + kris_version + ' | ' + tr('Settings'))
+        self.setWindowTitle(f'{glb.prog_name} v' + kris_version + ' | ' + tr('Settings'))
         self.setWindowIcon(QIcon('Style/KRIS_logo_by_surang.ico'))
 
         self.style = style
@@ -1232,7 +1233,7 @@ class SettingsWin(QDialog): #QMainWindow):
             #---close
             rep = QMessageBox.question(
                 None, tr('Done !'),
-                '<h2>' + tr('The new lang will apply the next time you launch KRIS.') + '</h2>\n<h2>' + tr('Quit now ?') + '</h2>',
+                '<h2>' + tr(f'The new lang will apply the next time you launch {glb.prog_name}.') + '</h2>\n<h2>' + tr('Quit now ?') + '</h2>',
                 QMessageBox.No | QMessageBox.Yes,
                 QMessageBox.Yes
             )
@@ -1340,7 +1341,7 @@ class FileEncWin(QDialog):
 
         #------ini
         super().__init__(parent)
-        self.setWindowTitle(tr('File encryption') + ' — KRIS')
+        self.setWindowTitle(tr('File encryption') + ' — ' + glb.prog_name)
 
         self.style = style
 
@@ -1375,6 +1376,7 @@ class FileEncWin(QDialog):
 
         self.input_fn_ledt = QLineEdit()
         self.input_fn_ledt.setMinimumSize(500, 35)
+        self.input_fn_ledt.returnPressed.connect(self._start)
         main_lay.addWidget(self.input_fn_ledt, 2, 1)
 
         self.input_fn_bt = QPushButton(tr('Browse'))
@@ -1386,6 +1388,7 @@ class FileEncWin(QDialog):
 
         self.output_fn_ledt = QLineEdit()
         self.output_fn_ledt.setMinimumSize(500, 35)
+        self.output_fn_ledt.returnPressed.connect(self._start)
         main_lay.addWidget(self.output_fn_ledt, 3, 1)
 
         self.output_fn_bt = QPushButton(tr('Browse'))
@@ -1418,7 +1421,8 @@ class FileEncWin(QDialog):
             self.ciph_bar.cipher_opt_ciphs,
             None, #encod_box
             self.input_fn_ledt,
-            self.output_fn_ledt
+            self.output_fn_ledt,
+            parent=self
         )
 
 
@@ -1430,7 +1434,7 @@ class FileEncWin(QDialog):
         '''
 
         if which == 0:
-            f_url = QFileDialog.getOpenFileName(self, tr('Input file') + ' — KRIS')[0]
+            f_url = QFileDialog.getOpenFileName(self, tr('Input file') + ' — ' + glb.prog_name)[0]
 
             if f_url in ((), ''):
                 return -3 #Canceled
@@ -1451,7 +1455,7 @@ class FileEncWin(QDialog):
                 self.output_fn_ledt.setText(new_f_url)
 
         else:
-            f_url = QFileDialog.getSaveFileName(self, tr('Output file') + ' — KRIS')[0]
+            f_url = QFileDialog.getSaveFileName(self, tr('Output file') + ' — ' + glb.prog_name)[0]
             self.output_fn_ledt.setText(f_url)
 
 
@@ -1514,7 +1518,7 @@ class GenKeyWin(QDialog): #QMainWindow):
 
         #------ini
         super().__init__(parent)
-        self.setWindowTitle(tr('Generate RSA keys') + ' — KRIS')
+        self.setWindowTitle(tr('Generate RSA keys') + ' — ' + glb.prog_name)
 
         self.style = style
 
@@ -1686,7 +1690,7 @@ class GenKeyWin(QDialog): #QMainWindow):
                 w.setDisabled(True)
 
         else:
-            self.setWindowTitle('Generate {} keys — KRIS'.format(ciph))
+            self.setWindowTitle('Generate {} keys — {}'.format(ciph, glb.prog_name))
 
             for w in self.w_lst:
                 w.setDisabled(False)
@@ -1710,7 +1714,7 @@ class GenKeyWin(QDialog): #QMainWindow):
         ciph = self.cipher_box.currentText()
 
         if ciph == tr('-- Select a cipher --'):
-            QMessageBox.critical(None, '!!! No cipher selected !!!', '<h2>Please select a cipher !!!</h2>')
+            QMessageBox.critical(self, '!!! No cipher selected !!!', '<h2>Please select a cipher !!!</h2>')
             return -3
 
         if ciph == 'RSA':
@@ -1721,7 +1725,7 @@ class GenKeyWin(QDialog): #QMainWindow):
                 ret = self._show_key(ciph, KRIS.AES_rnd_key_gen(self.str1_lth.value(), int(ciph[-3:])))
 
             except ValueError as err:
-                QMessageBox.warning(None, tr('Key size error'), '<h2>{}</h2>'.format(err))
+                QMessageBox.warning(self, tr('Key size error'), '<h2>{}</h2>'.format(err))
                 return -3
 
 
@@ -1736,11 +1740,16 @@ class GenKeyWin(QDialog): #QMainWindow):
 
         global win
 
+        size = self.slider_sz.value()
+        md_st = ('dec', 'hexa')[self.chbt_h.isChecked()]
+
+        #---Check that there is a name
         name = self.ledt.text()
         if name == '':
-            QMessageBox.critical(None, '!!! No name !!!', '<h2>' + tr('Please enter a name for the RSA keys !') + '</h2>')
+            QMessageBox.critical(self, '!!! No name !!!', '<h2>' + tr('Please enter a name for the RSA keys !') + '</h2>')
             return -3 #Abort
 
+        #---Check for password
         if self.chbt_rsa_enc.isChecked():
             if self.pwd1_ledit.text() != self.pwd2_ledit.text():
                 QMessageBox.critical(self, '!!! Wrong passwords !!!', '<h2>' + tr('The passwords does not correspond !') + '</h2>')
@@ -1757,14 +1766,17 @@ class GenKeyWin(QDialog): #QMainWindow):
         else:
             pwd = None
 
-        size = self.slider_sz.value()
-        md_st = ('dec', 'hexa')[self.chbt_h.isChecked()]
+        #---Check if file already exists
+        fn = str(name) + ('.pvk-d', '.pvk-h')[md_st != 'dec']
+        if pwd != None:
+            fn += '.enc'
 
-        val = RSA.RsaKeys(name, 'gui').generate(size, pwd, md_stored=md_st)
+        old_path = RSA.chd_rsa(glb.home)
 
-        if val == -2: #The set of keys already exists
+        overwrite = False
+        if isfile(fn):
             rep = QMessageBox.question(
-                None,
+                self,
                 'File error !',
                 '<h2>' + tr('A set of keys named "{}" already exist !').format(name) + '</h2>\n<h2>' + tr('Overwite it !?') + '</h2>\n<h3>' + tr('This action can NOT be undone !!!') + '</h3>',
                 QMessageBox.Yes | QMessageBox.No,
@@ -1772,21 +1784,29 @@ class GenKeyWin(QDialog): #QMainWindow):
             )
 
             if rep == QMessageBox.Yes:
-                val = RSA.RsaKeys(name, 'gui').generate(size, pwd, md_stored=md_st, overwrite=True)
+                overwrite = True
 
             else:
                 return -2
 
+        chdir(old_path)
+
+        #---Generate the key
+        # val = RSA.RsaKeys(name, 'gui').generate(size, pwd, md_stored=md_st)
+        key = RSA.RsaKey(parent=self, interface='gui')
+        key.new(size=size)
+        key.save(name, pwd, overwrite=overwrite, md_stored=md_st)
+
         win.ciph_bar.reload_keys()
 
-        QMessageBox.about(self, 'Done !', '<h2>' + tr('Your brand new RSA keys "{}" are ready !').format(name) + '</h2>\n<h3>' + tr('`n` size : {} bits').format(val[2]) + '</h3>')
+        QMessageBox.about(self, 'Done !', '<h2>' + tr('Your brand new RSA keys "{}" are ready !').format(name) + '</h2>\n<h3>' + tr('`n` size : {} bits').format(key.size) + '</h3>')
 
 
 
     def _show_key(self, ciph, key):
         '''Show the key using Popup.'''
 
-        Popup(500, 100, style=self.style, parent=self).pop('{} key — KRIS'.format(ciph), str(key), dialog=False)
+        Popup(500, 100, style=self.style, parent=self).pop('{} key — {}'.format(ciph, glb.prog_name), str(key), dialog=False)
 
 
     def use(style, parent=None):
@@ -1806,7 +1826,7 @@ class ExpKeyWin(QDialog): #QMainWindow):
 
         #------ini
         super().__init__(parent)
-        self.setWindowTitle('Export RSA keys — KRIS')
+        self.setWindowTitle('Export RSA keys — ' + glb.prog_name)
 
         #---Central widget
         # self.main_wid = QWidget()
@@ -1851,7 +1871,7 @@ class ExpKeyWin(QDialog): #QMainWindow):
             QMessageBox.critical(None, '!!! No selected key !!!', '<h2>Please select a key !!!</h2>')
             return -3
 
-        key = RSA.RsaKeys(k_name, interface='gui')
+        key = RSA.RsaKeyFile(k_name, interface='gui')
         fn_src0, (md, md_stored) = key.get_fn('pbk', also_ret_md=True)
 
         fn_src = (glb.KRIS_data_path + '/RSA_keys', expanduser('~/.RSA_keys'))[glb.home] + '/' + fn_src0
@@ -1862,7 +1882,7 @@ class ExpKeyWin(QDialog): #QMainWindow):
         else:
             f_ext = 'KRIS decimal public keys(*.pbk-d);;All files(*)'
 
-        fn_dest = QFileDialog.getSaveFileName(self, tr('Export RSA key') + ' — KRIS', getcwd() + '/' + fn_src0, f_ext)[0]
+        fn_dest = QFileDialog.getSaveFileName(self, tr('Export RSA key') + ' — ' + glb.prog_name, getcwd() + '/' + fn_src0, f_ext)[0]
 
         if fn_dest in ((), ''):
             return -3 #Canceled
@@ -1890,7 +1910,7 @@ class InfoKeyWin(QDialog): #QMainWindow):
 
         #------ini
         super().__init__(parent)
-        self.setWindowTitle('Infos on RSA keys — KRIS')
+        self.setWindowTitle('Infos on RSA keys — ' + glb.prog_name)
 
         self.style = style
 
@@ -1938,40 +1958,37 @@ class InfoKeyWin(QDialog): #QMainWindow):
             QMessageBox.critical(None, '!!! No selected key !!!', '<h2>Please select a key !!!</h2>')
             return -3
 
-        keys = RSA.RsaKeys(k_name, 'gui')
+        keys = RSA.RsaKeyFile(k_name, 'gui')
 
         md_stg = keys.get_fn(also_ret_md=True)[1][1]
 
         if md_stg == -1:
             return -1 #File not found
 
-        keys_read = keys.read()
-        if keys_read in (-1, -2, -3):
-            return keys_read
+        key = keys.read()
+        if key in (-1, -2, -3):
+            return key
 
-        lst_keys, lst_values, lst_infos = keys_read
+        # lst_keys, lst_values, lst_infos = key
 
-        if len(lst_keys) == 2: #Full keys
-            (pbk, pvk), (p, q, n, phi, e, d), (n_strth, date_) = lst_keys, lst_values, lst_infos
+        # if len(lst_keys) == 2: #Full keys
+        if key.is_private: #Full keys
+            prnt = f'The keys were created the {key.date}'
+            prnt += f'\nModulus size : {key.size} bits ;\n'
 
-            prnt = 'The keys were created the ' + date_
-            prnt += '\nThe n\'s strenth : ' + n_strth + ' bytes ;\n'
+            prnt += f'\n\nValues :\n\tp : {key.p} ;\n\tq : {key.q} ;\n\tn : {key.n}'
+            prnt += f' ;\n\tphi : {key.phi} ;\n\te : {key.e} ;\n\td : {key.d} ;\n'
 
-            prnt += '\n\nValues :\n\tp : ' + str(p) + ' ;\n\tq : ' + str(q) + ' ;\n\tn : ' + str(n)
-            prnt += ' ;\n\tphi : ' + str(phi) + ' ;\n\te : ' + str(e) + ' ;\n\td : ' + str(d) + ' ;\n'
-
-            prnt += '\n\tPublic key : ' + str(pbk) + ' ;'
-            prnt += '\n\tPrivate key : ' + str(pvk) + '.'
+            prnt += f'\n\tPublic key : {key.pb} ;'
+            prnt += f'\n\tPrivate key : {key.pv}.'
 
         else: #Public keys
-            (pbk,), (n, e), (n_strth, date_) = lst_keys, lst_values, lst_infos
+            prnt = f'The keys were created the {key.date}'
+            prnt += f'\nModulus size : {key.size} bits ;\n'
 
-            prnt = 'The keys were created the ' + date_
-            prnt += '\nThe n\'s strenth : ' + n_strth + ' bytes ;\n'
+            prnt += f'\n\nValues :\n\tn : {key.n} ;\n\te : {key.e} ;\n'
 
-            prnt += '\n\nValues :\n\tn : ' + str(n) + ' ;\n\te : ' + str(e) + ' ;\n'
-
-            prnt += '\n\tPublic key : ' + str(pbk) + '.'
+            prnt += f'\n\tPublic key : {key.pb}.'
 
         Popup(style=self.style, parent=self).pop('Info on {}'.format(k_name), prnt, dialog=False)
 
@@ -1993,7 +2010,7 @@ class RenKeyWin(QDialog): #QMainWindow):
 
         #------ini
         super().__init__(parent)
-        self.setWindowTitle('Rename RSA keys — KRIS')
+        self.setWindowTitle('Rename RSA keys — ' + glb.prog_name)
 
         #---Central widget
         # self.main_wid = QWidget()
@@ -2055,13 +2072,30 @@ class RenKeyWin(QDialog): #QMainWindow):
             QMessageBox.critical(None, '!!! No name !!!', '<h2>Please enter a new name !</h2>')
             return -3
 
+        #TODO: check if overwrite !
 
-        keys = RSA.RsaKeys(k_name, 'gui')
+
+        keys = RSA.RsaKeyFile(k_name, 'gui')
         out = keys.rename(new_name)
 
         if out == -1:
             QMessageBox.critical(None, '!!! Keys not found !!!', '<h2>The set of keys was NOT found !!!</h2>')
             return -1
+
+        elif out == -2:
+            rep = QMessageBox.question(
+                None,
+                'File error !',
+                '<h2>' + tr('A set of keys named "{}" already exist !').format(name) + '</h2>\n<h2>' + tr('Overwite it !?') + '</h2>\n<h3>' + tr('This action can NOT be undone !!!') + '</h3>',
+                QMessageBox.Yes | QMessageBox.No,
+                QMessageBox.No
+            )
+
+            if rep == QMessageBox.Yes:
+                out = keys.rename(new_name, overwrite=True)
+
+            else:
+                return -2
 
         QMessageBox.about(self, 'Done !', '<h2>Your keys "{}" have been renamed "{}" !</h2>'.format(k_name, new_name))
 
@@ -2085,7 +2119,7 @@ class CvrtKeyWin(QDialog): #QMainWindow):
 
         #------ini
         super().__init__(parent)
-        self.setWindowTitle('Convert RSA keys — KRIS')
+        self.setWindowTitle('Convert RSA keys — ' + glb.prog_name)
 
         #---Central widget
         # self.main_wid = QWidget()
@@ -2163,7 +2197,7 @@ class CvrtKeyWin(QDialog): #QMainWindow):
             QMessageBox.critical(None, '!!! No selected key !!!', '<h2>Please select a key !!!</h2>')
             return -3
 
-        out = RSA.RsaKeys(k_name, 'gui').convert()
+        out = RSA.RsaKeyFile(k_name, 'gui').convert()
 
         if out == -1:
             QMessageBox.critical(None, '!!! Keys not found !!!', '<h2>The keys were NOT found !!!</h2>')
@@ -2193,7 +2227,7 @@ class EncKeyWin(QDialog): #QMainWindow):
 
         #------ini
         super().__init__(parent)
-        self.setWindowTitle('Encrypt RSA keys — KRIS')
+        self.setWindowTitle('Encrypt RSA keys — ' + glb.prog_name)
 
         main_lay = QGridLayout()
         self.setLayout(main_lay)
@@ -2290,7 +2324,7 @@ class EncKeyWin(QDialog): #QMainWindow):
             pwd = hasher.Hasher('sha256').hash(pwd_clear)
 
 
-        keys = RSA.RsaKeys(k_name, 'gui')
+        keys = RSA.RsaKeyFile(k_name, interface='gui')
 
         try:
             keys.encrypt(pwd)
@@ -2315,16 +2349,16 @@ class EncKeyWin(QDialog): #QMainWindow):
         rn_win.exec_()
 
 
-#---------Encrypt RSA keys
+#---------Decrypt RSA keys
 class DecKeyWin(QDialog): #QMainWindow):
-    '''Class which define a window which allow to encrypt RSA keys.'''
+    '''Class which define a window which allow to decrypt RSA keys.'''
 
     def __init__(self, style, parent=None):
         '''Initiate the DecKeyWin window.'''
 
         #------ini
         super().__init__(parent)
-        self.setWindowTitle('Encrypt RSA keys — KRIS')
+        self.setWindowTitle('Encrypt RSA keys — ' + glb.prog_name)
 
         main_lay = QGridLayout()
         self.setLayout(main_lay)
@@ -2404,7 +2438,7 @@ class DecKeyWin(QDialog): #QMainWindow):
             return -3 #Cancel.
 
 
-        keys = RSA.RsaKeys(k_name, 'gui')
+        keys = RSA.RsaKeyFile(k_name, interface='gui')
 
         try:
             out = keys.decrypt(pwd)
@@ -2432,16 +2466,16 @@ class DecKeyWin(QDialog): #QMainWindow):
         rn_win.exec_()
 
 
-#---------Encrypt RSA keys
+#---------Change RSA keys password
 class ChPwdKeyWin(QDialog): #QMainWindow):
-    '''Class which define a window which allow to encrypt RSA keys.'''
+    '''Class which define a window which allow to change RSA keys password.'''
 
     def __init__(self, style, parent=None):
         '''Initiate the ChPwdKeyWin window.'''
 
         #------ini
         super().__init__(parent)
-        self.setWindowTitle('Change RSA keys password — KRIS')
+        self.setWindowTitle('Change RSA keys password — ' + glb.prog_name)
 
         main_lay = QGridLayout()
         self.setLayout(main_lay)
@@ -2550,7 +2584,7 @@ class ChPwdKeyWin(QDialog): #QMainWindow):
         new_pwd = hasher.Hasher('sha256').hash(self.pwd1_ledit.text())
 
 
-        keys = RSA.RsaKeys(k_name, 'gui')
+        keys = RSA.RsaKeyFile(k_name, interface='gui')
 
         try:
             out = keys.change_pwd(old_pwd, new_pwd)
@@ -2580,7 +2614,7 @@ class ChPwdKeyWin(QDialog): #QMainWindow):
 class UseCiphers:
     '''Class which allow to use the Cipher tab.'''
 
-    def __init__(self, txt_in, txt_out, key_opt, key_ledit, key_nb, cipher, encod, fn_in=None, fn_out=None):
+    def __init__(self, txt_in, txt_out, key_opt, key_ledit, key_nb, cipher, encod, fn_in=None, fn_out=None, parent=None):
         '''Create the UseCiphers object.'''
 
         self.txt_in = txt_in
@@ -2590,17 +2624,20 @@ class UseCiphers:
         self.key_nb = key_nb
         self.cipher = cipher
         self.encod = encod
+
         self.fn_in = fn_in #Used with file encryption
         self.fn_out = fn_out #Same.
+
+        self.parent = parent
 
 
     def _verify(self, md):
         '''
-        Verify if the infos are good, warn the user else.
+        Check if the infos are right, warn the user otherwise.
         md : 0 - encrypt : 1 - decrypt.
 
         Return :
-            -3 if  not good ;
+            -3 if not good ;
             0 otherwise.
         '''
 
@@ -2610,19 +2647,19 @@ class UseCiphers:
         ciph = self.cipher.currentText()
 
         if ciph == tr('-- Select a cipher --'):
-            QMessageBox.critical(None, 'No cipher selected !!!', '<h2>Please select a cipher !</h2>')
+            QMessageBox.critical(self.parent, 'No cipher selected !!!', '<h2>Please select a cipher !</h2>')
             return -3
 
         if ciph in (*ciphers_list['KRIS'], *ciphers_list['RSA']):
             if self.key_opt.currentText() == tr('-- Select a key --'):
-                QMessageBox.critical(None, 'No key selected !!!', '<h2>Please select a key !</h2>')
+                QMessageBox.critical(self.parent, 'No key selected !!!', '<h2>Please select a key !</h2>')
                 return -3
 
         elif ciph not in ciphers_list['hash']:
             key = self._get_key(md)
 
             if key == '':
-                QMessageBox.critical(None, 'No key entered !!!', '<h2>Please enter a key !</h2>')
+                QMessageBox.critical(self.parent, 'No key entered !!!', '<h2>Please enter a key !</h2>')
                 return -3
 
         return 0 #Everything is fine
@@ -2641,21 +2678,38 @@ class UseCiphers:
         if md not in (0, 1):
             raise ValueError('"md" not in (0, 1) !!!')
 
+        mode = ('pbk', 'pvk')[md]
+
         ciph = self.cipher.currentText()
 
         if ciph in (*ciphers_list['KRIS'], *ciphers_list['RSA']):
-            try:
-                key = RSA.RsaKeys(self.key_opt.currentText(), interface='gui').get_key(md)
+            # try:
+            # key = RSA.RsaKeyFile(self.key_opt.currentText(), interface='gui').get_key(md)
+            key = RSA.RsaKeyFile(self.key_opt.currentText(), interface='gui').read(mode, verbose=False)
 
-            except Exception as err:
-                if str(err) == "Can't read the private key of a pbk set of keys !!!":
-                    msg_err = '<h2>' + tr('Impossible to do this, private keys not found.') + '</h2>'
+            if key == -1 and md == 0: # Not found and was searching for public key.
+                QMessageBox.critical(self.parent, 'Error: key not found !', '<h2>{}</h2>'.format(tr('The key was not found !')))
+                return -3
 
-                else:
-                    msg_err = '<h2>{}</h2>'.format(err)
+            elif key == -1 and md == 1: # Not found the private key.
+                QMessageBox.critical(self.parent, 'Error: no private key !', '<h2>{}</h2>'.format(tr('Impossible to do this, private keys not found.')))
+                return -3
 
-                QMessageBox.critical(None, '!!! Error !!!', msg_err)
-                return -3 #Abort
+            elif key == -2: # Not well formatted
+                QMessageBox.critical(self.parent, 'Error: key wrongly formatted !', '<h2>{}</h2>'.format(tr('The key is wronly formatted !')))
+                return -3
+
+            elif key == -3: # Wrong password
+                QMessageBox.critical(self.parent, '!!! Wrong password !!!', '<h2>{}</h2>'.format(tr('This is not the good password !')))
+                return -3
+
+            if md == 1 and not key.is_private:
+                QMessageBox.critical(self.parent, 'Error: no private key !', '<h2>{}</h2>'.format(tr('Impossible to do this, private keys not found.')))
+                return -3
+
+            # except Exception as err:
+            #     QMessageBox.critical(self.parent, '!!! Error !!!', '<h2>{}</h2>'.format(err))
+            #     return -3 #Abort
 
         elif ciph == 'SecHash':
             key = self.key_nb.value()
@@ -2677,7 +2731,7 @@ class UseCiphers:
         #------ini
         txt = self.txt_in.toPlainText()
         if txt in ('', '\n'):
-            QMessageBox.critical(None, '!!! ' + tr('No text') + ' !!!', '<h2>' + tr('There is nothing to encrypt.') + '</h2>')
+            QMessageBox.critical(self.parent, '!!! ' + tr('No text') + ' !!!', '<h2>' + tr('There is nothing to encrypt.') + '</h2>')
             return -3 #Abort
 
         ciph = self.cipher.currentText()
@@ -2693,27 +2747,34 @@ class UseCiphers:
         if key == -3:
             return -3 #Abort
 
-
-        #------encrypt with the good cipher
+        #------encrypt with the right cipher
         if ciph in ciphers_list['KRIS']:
             AES_md = (256, 192, 128)[ciphers_list['KRIS'].index(ciph)]
 
-            C = KRIS.Kris((key, None), AES_md, encod, interface='gui')
+            RSA_ciph = RSA.RSA(key, padding='oaep', parent=self.parent, interface='gui')
+            C = KRIS.Kris(RSA_ciph, AES_md, encod, interface='gui')
+
             msg_c = C.encrypt(txt)
 
             msg_c = '{} {}'.format(msg_c[0], msg_c[1])
 
 
         elif ciph == 'RSA':
-            C = RSA.RSA((key, None), interface='gui')
+            # C = RSA.RSA((key, None), interface='gui')
+            C = RSA.RSA(key, padding='oaep', parent=self.parent, interface='gui')
             msg_c = C.encrypt(txt)
 
 
         elif ciph == 'RSA signature':
-            C = RSA.RsaSign((None, key), interface='gui')
+            # C = RSA.RsaSign((None, key), interface='gui')
+            RSA_ciph = RSA.RSA(key, padding='oaep', parent=self.parent, interface='gui')
+            C = RSA.RsaSign(RSA_ciph)
 
             if formatted_out:
-                msg_c = C.str_sign(txt)
+                msg_c = C.str_sign(txt, encod)
+
+                if type(msg_c) == bytes:
+                    msg_c.decode(encod)
 
             else:
                 msg_c = txt + ' ' + C.sign(txt)
@@ -2727,7 +2788,7 @@ class UseCiphers:
                 C = AES.AES(AES_md, key, False, encod)
 
             except ValueError as err:
-                QMessageBox.critical(None, '!!! Value error !!!', '<h2>{}</h2>'.format(err))
+                QMessageBox.critical(self.parent, '!!! Value error !!!', '<h2>{}</h2>'.format(err))
                 return -3
 
             msg_c = C.encryptText(txt, encoding=encod, mode_c='hexa', mode=md)
@@ -2738,7 +2799,7 @@ class UseCiphers:
                 C = hasher.Hasher(ciph)
 
             except ValueError:
-                QMessageBox.critical(None, '!!! Unknown hash !!!', '<h2>The hash "{}" is unknown !!!</h2>'.format(ciph))
+                QMessageBox.critical(self.parent, '!!! Unknown hash !!!', '<h2>The hash "{}" is unknown !!!</h2>'.format(ciph))
                 return -3
 
             msg_c = C.hash(txt)
@@ -2749,17 +2810,17 @@ class UseCiphers:
                 msg_c = hasher.SecHash(txt, key)
 
             except RecursionError:
-                QMessageBox.critical(None, '!!! Too big loop !!!', '<h2>The number of loops is too big !!!</h2>')
+                QMessageBox.critical(self.parent, '!!! Too large loop !!!', '<h2>The number of loops is too large !!!</h2>')
                 return -3
 
 
         if formatted_out and ciph in (*ciphers_list['KRIS'], *ciphers_list['AES'], *ciphers_list['RSA']):
             if ciph == 'RSA signature':
-                d = {'Version': 'KRIS_v' + kris_version, 'Cipher': ciph, 'Hash': C.h, 'Key_name': self.key_opt.currentText()}
+                d = {'Version': f'{glb.prog_name}_v' + kris_version, 'Cipher': ciph, 'Hash': C.h, 'Key_name': self.key_opt.currentText()}
                 msg_f = FormatMsg(msg_c, nl=False, md='sign').set(d)
 
             else: #ciph in (*ciphers_list['KRIS'], *ciphers_list['AES'], 'RSA'):
-                d = {'Version': 'KRIS_v' + kris_version, 'Cipher': ciph}
+                d = {'Version': f'{glb.prog_name}_v' + kris_version, 'Cipher': ciph}
 
                 if ciph in (*ciphers_list['KRIS'], 'RSA'):
                     d['Key_name'] = self.key_opt.currentText()
@@ -2782,10 +2843,12 @@ class UseCiphers:
         #------ini
         raw_txt = self.txt_in.toPlainText()
         if raw_txt in ('', '\n'):
-            QMessageBox.critical(None, '!!! No text !!!', '<h2>' + tr('There is nothing to decrypt.') + '</h2>')
+            QMessageBox.critical(self.parent, '!!! No text !!!', '<h2>' + tr('There is nothing to decrypt.') + '</h2>')
             return -3 #Abort
 
         #------FormatMsg
+        use_old_rsa = False
+
         try:
             txt, d = FormatMsg(raw_txt).unset()
             formatted_out = True
@@ -2797,6 +2860,8 @@ class UseCiphers:
             formatted_out = False
 
         else:
+            version = d['Version'][len(glb.prog_name + '_v'):]
+
             if d['Cipher'] == 'RSA signature':
                 txt, d = FormatMsg(raw_txt, nl=False).unset()
 
@@ -2806,18 +2871,27 @@ class UseCiphers:
             else:
                 h = None
 
-            if auto:
-                self.cipher.setCurrentText(d['Cipher'])
-                win.ciph_bar.chk_ciph(d['Cipher'])
+            if auto: #The cipher will be changed only if none is selected. Same for the key.
+                if self.cipher.currentText() == tr('-- Select a cipher --'):
+                    self.cipher.setCurrentText(d['Cipher'])
+                    win.ciph_bar.chk_ciph(d['Cipher'])
 
-                ciph = d['Cipher']
+                    ciph = d['Cipher']
 
-                if 'Key_name' in d:
+                else:
+                    ciph = self.cipher.currentText()
+
+                if 'Key_name' in d and self.key_opt.currentText() == tr('-- Select a key --'):
                     if d['Key_name'] in RSA.list_keys('all'):
                         self.key_opt.setCurrentText(d['Key_name'])
 
                     else:
-                        QMessageBox.critical(None, '!!! {} !!!'.format(tr('Not found')), '<h2>{}</h2>'.format(tr('Key not found.')))
+                        QMessageBox.critical(self.parent, '!!! {} !!!'.format(tr('Not found')), '<h2>{}</h2>\n<h2>{}</h2>'.format(tr(f'Key "{d["Key_name"]}" not found.'), tr('Trying with the selected key instead.')))
+
+                if ciph in (*ciphers_list['KRIS'], *ciphers_list['RSA']) and version < glb.new_RSA_kris_version: #TODO: check that it works correctly.
+                    QMessageBox.warning(self.parent, 'Old version !', '<h2>{}</h2>'.format(tr('The message has been encrypted with an old version of RSA. Using this old version to decrypt.')))
+
+                    use_old_rsa = True
 
             else:
                 ciph = self.cipher.currentText()
@@ -2842,11 +2916,17 @@ class UseCiphers:
 
 
         try:
-            #------decrypt using the good cipher
+            #------decrypt using the right cipher
             if ciph in ciphers_list['KRIS']:
                 AES_md = (256, 192, 128)[ciphers_list['KRIS'].index(ciph)]
 
-                C = KRIS.Kris((None, key), AES_md, encod, bytes_md, interface='gui')
+                if use_old_rsa:
+                    RSA_ciph = RSA_old.RSA_old(key, interface='gui')
+
+                else:
+                    RSA_ciph = RSA.RSA(key, padding='oaep', parent=self.parent, interface='gui')
+
+                C = KRIS.Kris(RSA_ciph, AES_md, encod, bytes_md, interface='gui')
 
                 try:
                     if bytes_md_d == 't':
@@ -2859,16 +2939,30 @@ class UseCiphers:
 
 
             elif ciph == 'RSA':
-                C = RSA.RSA((None, key), interface='gui')
+                if use_old_rsa:
+                    C = RSA_old.RSA_old(key, interface='gui')
+
+                else:
+                    C = RSA.RSA(key, padding='oaep', parent=self.parent, interface='gui')
+
                 msg_d = C.decrypt(txt)
+
+                if type(msg_d) == bytes:
+                    msg_d = msg_d.decode(encod)
 
 
             elif ciph == 'RSA signature':
-                if h == None:
-                    C = RSA.RsaSign((key, None), interface='gui')
+                if use_old_rsa:
+                    RSA_ciph = RSA_old.RSA_old(key, interface='gui')
 
                 else:
-                    C = RSA.RsaSign((key, None), h, interface='gui')
+                    RSA_ciph = RSA.RSA(key, padding='oaep', parent=self.parent, interface='gui')
+
+                if h == None:
+                    C = RSA.RsaSign(RSA_ciph)
+
+                else:
+                    C = RSA.RsaSign(RSA_ciph, h)
 
                 if formatted_out:
                     b = C.str_check(txt)
@@ -2877,12 +2971,12 @@ class UseCiphers:
                     b = C.check(*txt.split(' '))
 
                 if b:
-                    msg_d = tr('The signature match to the message.')
-                    QMessageBox.about(None, tr('Signature result'), '<h2>' + msg_d + '</h2>')
+                    msg_d = tr('The signature match the message.')
+                    QMessageBox.about(self.parent, tr('Signature result'), '<h2>' + msg_d + '</h2>')
 
                 else:
-                    msg_d = tr('The signature does not match to the message !') + '\n' + tr('You may not have selected the right RSA key, or the message was modified before you received it !!!')
-                    QMessageBox.about(None, tr('Signature result'), '<h2>' + tr('The signature does not match to the message !') + '</h2>\n<h3>' + tr('You may not have selected the right RSA key, or the message was modified before you received it !!!') + '</h3>')
+                    msg_d = tr('The signature does not match the message !') + '\n' + tr('You may not have selected the right RSA key, or the message was modified before you received it !!!')
+                    QMessageBox.about(self.parent, tr('Signature result'), '<h2>' + tr('The signature does not match to the message !') + '</h2>\n<h3>' + tr('You may not have selected the right RSA key, or the message was modified before you received it !!!') + '</h3>')
 
 
             elif  ciph in ciphers_list['AES']:
@@ -2893,7 +2987,7 @@ class UseCiphers:
                 msg_d = C.decryptText(txt, encoding=encod, mode_c='hexa', mode=md)
 
         except Exception as err:
-            QMessageBox.critical(None, '!!! ' + tr('Decryption error') + ' !!!', '<h2>' + tr('An error occured during decryption. Maybe you tried to decrypt clear text, or the cipher text is not good formated.') + '</h2>\n<h3>' + tr('The text to be decrypted should be in the main text editor.') + '</h3>\n<h4>' + tr('Error') + ' :</h4>{}'.format(err))
+            QMessageBox.critical(self.parent, '!!! ' + tr('Decryption error') + ' !!!', '<h2>' + tr('An error occured during decryption. Maybe you tried to decrypt clear text, or the cipher text is not well formatted.') + '</h2>\n<h3>' + tr('The text to be decrypted should be in the main text editor.') + '</h3>\n<h4>' + tr('Error') + ' :</h4>{}'.format(err))
             return -3 # Abort
 
         self.txt_out.setPlainText(msg_d)
@@ -2919,11 +3013,13 @@ class UseCiphers:
             return -3 #Abort
 
 
-        #------encrypt with the good cipher
+        #------encrypt with the right cipher
         if ciph in ciphers_list['KRIS']:
             AES_md = (256, 192, 128)[ciphers_list['KRIS'].index(ciph)]
 
-            C = KRIS.Kris((key, None), AES_md, interface='gui')
+            # C = KRIS.Kris((key, None), AES_md, interface='gui')
+            RSA_ciph = RSA.RSA(key, padding='oaep', parent=self.parent, interface='gui')
+            C = KRIS.Kris(RSA_ciph, AES_md, interface='gui')
 
             try:
                 C.encryptFile(fn_in, fn_out)
@@ -2934,13 +3030,14 @@ class UseCiphers:
 
 
         elif ciph == 'RSA':
-            C = RSA.RSA((key, None), interface='gui')
+            # C = RSA.RSA((key, None), interface='gui')
+            C = RSA.RSA(key, padding='oaep', parent=self.parent, interface='gui')
 
             try:
                 C.encrypt_file(fn_in, fn_out)
 
             except Exception as err:
-                QMessageBox.critical(None, '!!! Error !!!', f'<h2>{err}</h2>')
+                QMessageBox.critical(self.parent, '!!! Error !!!', f'<h2>{err}</h2>')
                 return -3
 
 
@@ -2952,21 +3049,21 @@ class UseCiphers:
                 C = AES.AES(AES_md, key, False)
 
             except ValueError as err:
-                QMessageBox.critical(None, '!!! Value error !!!', '<h2>{}</h2>'.format(err))
+                QMessageBox.critical(self.parent, '!!! Value error !!!', '<h2>{}</h2>'.format(err))
                 return -3
 
             try:
                 C.encryptFile(fn_in, fn_out)
 
             except Exception as err:
-                QMessageBox.critical(None, '!!! Error !!!', f'<h2>{err}</h2>')
+                QMessageBox.critical(self.parent, '!!! Error !!!', f'<h2>{err}</h2>')
                 return -3
 
         f_in = fn_in.split('/')
         f_out = fn_out.split('/')
         filename_in = f_in[-1] if f_in[-1] != '' else f_in[-2]
         filename_out = f_out[-1] if f_out[-1] != '' else f_out[-2]
-        QMessageBox.about(None, 'Done !', f'<h2>The file {filename_in} was encrypted in the file {filename_out}.</h2>')
+        QMessageBox.about(self.parent, 'Done !', f'<h2>The file {filename_in} was encrypted in the file {filename_out}.</h2>')
 
 
     def decrypt_file(self):
@@ -2989,26 +3086,23 @@ class UseCiphers:
 
 
         try:
-            #------decrypt using the good cipher
+            #------decrypt using the right cipher
             if ciph in ciphers_list['KRIS']:
                 AES_md = (256, 192, 128)[ciphers_list['KRIS'].index(ciph)]
 
-                C = KRIS.Kris((None, key), AES_md, interface='gui')
+                # C = KRIS.Kris((None, key), AES_md, interface='gui')
+                RSA_ciph = RSA.RSA(key, padding='oaep', parent=self.parent, interface='gui')
+                C = KRIS.Kris(RSA_ciph, AES_md, interface='gui')
 
                 if C.decryptFile(fn_in, fn_out) == -1:
                     raise Exception('The file does not seem to be well formatted for that software, or the used key is the wrong one.')
 
 
-
             elif ciph == 'RSA':
-                C = RSA.RSA((None, key), interface='gui')
+                # C = RSA.RSA((None, key), interface='gui')
+                C = RSA.RSA(key, padding='oaep', parent=self.parent, interface='gui')
 
-                try:
-                    C.decrypt_file(fn_in, fn_out)
-
-                except Exception as err:
-                    QMessageBox.critical(None, '!!! Error !!!', f'<h2>{err}</h2>')
-                    return -3
+                C.decrypt_file(fn_in, fn_out)
 
 
             elif  ciph in ciphers_list['AES']:
@@ -3016,22 +3110,18 @@ class UseCiphers:
 
                 C = AES.AES(AES_md, key, False)
 
-                try:
-                    C.decryptFile(fn_in, fn_out)
+                C.decryptFile(fn_in, fn_out)
 
-                except Exception as err:
-                    QMessageBox.critical(None, '!!! Error !!!', f'<h2>{err}</h2>')
-                    return -3
 
         except Exception as err:
-            QMessageBox.critical(None, '!!! ' + tr('Decryption error') + ' !!!', '<h2>' + tr('An error occured during decryption. Maybe you tried to decrypt clear text, or the cipher text is not good formated.') + '</h2>\n<h4>' + tr('Error') + ' :</h4>{}'.format(err))
+            QMessageBox.critical(self.parent, '!!! ' + tr('Decryption error') + ' !!!', '<h2>' + tr('An error occured during decryption. Maybe you tried to decrypt clear text, or the cipher text is not good formated.') + '</h2>\n<h4>' + tr('Error') + ' :</h4>{}'.format(err))
             return -3 # Abort
 
         f_in = fn_in.split('/')
         f_out = fn_out.split('/')
         filename_in = f_in[-1] if f_in[-1] != '' else f_in[-2]
         filename_out = f_out[-1] if f_out[-1] != '' else f_out[-2]
-        QMessageBox.about(None, 'Done !', f'<h2>The file {filename_in} was decrypted in the file {filename_out}.</h2>')
+        QMessageBox.about(self.parent, 'Done !', f'<h2>The file {filename_in} was decrypted in the file {filename_out}.</h2>')
 
 
 

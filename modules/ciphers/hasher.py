@@ -3,7 +3,7 @@
 '''Module incuding hasher fonctions'''
 
 hasher__auth = 'Lasercata'
-hasher__last_update = '05.03.2021'
+hasher__last_update = '06.08.2023'
 hasher__version = '4.0_kris'
 
 ##-import
@@ -36,13 +36,13 @@ def hasher(txt, h):
 
 
 class Hasher:
-    '''Class which define hasher.'''
+    '''Class implementing operations with hash funcions'''
 
     def __init__(self, h, loop=512):
         '''
         Initiate the Hasher object.
 
-        - h : the hash to use ;
+        - h : the string of the hash to use ;
         - loop : only used if h is 'SecHash'. Cf to the doc of 'SecHash' function.
         '''
 
@@ -62,15 +62,15 @@ class Hasher:
             txt = txt.encode()
 
         elif type(txt) != bytes:
-            raise ValueError('The text "txt" must be a string !!!')
+            raise ValueError('The argument "txt" must be a (bytes) string !!!')
 
 
         if self.h != 'SecHash':
             try:
-                ret = eval(self.h_str[self.h_str.index(self.h)])(txt)
+                ret = eval(self.h_str[self.h_str.index(self.h)])(txt) #TODO: what did I do there !?
 
             except:
-                ret = new(self.h_str[self.h_str.index(self.h)], txt)
+                ret = new(self.h_str[self.h_str.index(self.h)], txt) #TODO: and here !?
 
 
             if self.h in ('shake_128', 'shake_256'):
@@ -90,13 +90,11 @@ def SecHash(txt, loop=512):
     Hash 'txt' with the following schem :
         sha512(sha256(sha512(sha256(sha512(txt*3 + str(loop))))))
 
-    Do this 'loop' times.
+    and it does this 'loop' times.
     '''
 
     if type(loop) != int:
         raise ValueError('The arg "loop" should be an intenger !!!')
-
-    txt = txt*3 + str(loop)
 
     h512 = Hasher('sha512').hash
     h256 = Hasher('sha256').hash
@@ -106,7 +104,7 @@ def SecHash(txt, loop=512):
             h512(
                 h256(
                     h512(
-                        txt
+                        txt*3 + str(loop)
                     )
                 )
             )

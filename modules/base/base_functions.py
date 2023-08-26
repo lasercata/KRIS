@@ -4,92 +4,27 @@
 '''Base functions of KRIS'''
 
 base_functions__auth = 'Lasercata'
-base_functions__last_update = '05.03.2021'
-base_functions__version = '2.3,1_kris'
+base_functions__last_update = '2023.08.16'
+base_functions__version = '3.0_kris'
 
 
-##-import
+##-Import
+#---------Packages
 from datetime import datetime as dt
 from os import system, walk, stat
 from os import chdir, mkdir, getcwd
 from os.path import expanduser
 import platform
 
+#if glb.interface == 'gui':
+from PyQt5.QtWidgets import QMessageBox
+
+#------Kris' modules
+from modules.gui.AskPwd import AskPwd
 from modules.base import glb
+from modules.ciphers.hasher import Hasher
 
-
-##-set functions
-def set_prompt(lst):
-    '''
-    Return a str organized correctly to print.
-    'lst' should be a list, a tuple, or a set.
-    '''
-
-    ret = ''
-    for k in lst:
-        ret += str(k)
-
-        if k != lst[-1]:
-            ret += ', '
-
-    return ret
-
-
-def set_lst(lst, py=False):
-    '''
-    Same as set_dict, but with a list.
-
-    - lst : the list to process ;
-    - py : a boolean which indicates if the result should work in python.
-    '''
-
-    if py:
-        ret = '('
-
-    else:
-        ret = ''
-
-    for k in lst:
-        if py:
-            ret += '\n\t{},'.format(set_str(k))
-
-        else:
-            ret += '\n\t- {} ;'.format(set_str(k))
-
-
-    if py:
-        ret = ret[:-1] + '\n)'
-
-    else:
-        ret = ret[:-2] + '.'
-
-    return ret
-
-
-def set_dict(dct):
-    '''
-    Return a string representing the dict, with line by line key-value.
-    Usefull to set readable dict in your programs
-    '''
-
-    ret = '{'
-
-    for k in dct:
-        ret += '\n\t{}: {},'.format(set_str(k), set_str(dct[k]))
-
-    ret = ret[:-1] + '\n}'
-
-    return ret
-
-
-def set_str(obj):
-    if type(obj) == str:
-        return "'{}'".format(obj)
-
-    return '{}'.format(obj)
-
-
-##-Others functions
+##-Date
 def date():
     now = str(dt.now())
     lst_now = now.split(' ')
@@ -148,122 +83,11 @@ def date_format(sec=False):
     return ret
 
 
-def space(n, grp=3, sep=' ', rev_lst=True):
-    '''Return n with spaced groups of grp.
-    .n : the number / string to space ;
-    .grp : the group size ;
-    .sep : the separation (default is a space) ;
-    .rev_lst : reverse the string or not. Useful to not reverse it with RSA.
-    '''
-
-    lth = len(str(n))
-    if type(n) == int:
-        n = str(n)
-
-    n_lst = list(n)
-
-    if rev_lst:
-        n_lst.reverse()
-
-    i = 0
-    for k in range(lth):
-        if k % grp == 0 and k != 0:
-            n_lst.insert(k + i, sep)
-            i += 1
-
-    if rev_lst:
-        n_lst.reverse()
-
-    ret = ''
-    for k in n_lst:
-        ret += k
-
-    return ret
-
-
-def indent(string, c='\t'):
-    '''
-    Return the string 'string' indented, i.e. with the character 'c' added at
-    the begining of every line.
-    '''
-
-    return c + string.replace('\n', '\n{}'.format(c))
-
-
-def newline(string, n=50, nl='\n'):
-    '''Return the string with newline every n.'''
-
-    ls = list(string)
-
-    for k in range(len(ls)):
-        if k != 0:
-            ls.insert(n * k - 1, nl)
-
-    return ''.join(ls).strip(nl)
-
-class NewLine:
-    '''Class which manages the text's width.'''
-
-    def __init__(self, width=50, c='\n'):
-        '''
-        Initiate the NewLine class.
-
-        - width : the text's width ;
-        - c : the newline character.
-        '''
-
-        self.width = width
-        self.c = c
-
-
-    def set(self, txt):
-        '''Add `c` every `width` in 'txt'.'''
-
-        ls = list(txt)
-
-        for k in range(len(ls)):
-            if k != 0:
-                ls.insert(self.width * k - 1, self.c)
-
-        return ''.join(ls).strip(self.c)
-
-    def unset(self, txt):
-        '''Unset txt's width'''
-
-        return txt.replace(self.c, '')
-
-
-    def text_set(self, txt):
-        '''Same as self.set, but only adds `c` in the spaces.'''
-
-        ls = str(txt)
-        ret = ''
-
-        for k in range(self.width, len(ls) + self.width, self.width):
-            l = ls[k - self.width:self.width * k//self.width]
-
-            d = False
-            step = ''
-
-            for j in l[::-1]:
-                if j == ' ' and not d:
-                    step += self.c[::-1]
-                    d = True
-
-                else:
-                    step += j
-
-            ret += step[::-1]
-
-        return ret
-
-
-
-#---------chd
+##-chd
 def chd(path):
     '''
-    Change current directory to [cracker]/Data/[path], where [cracker] is the path
-    where cracker is launched.
+    Change current directory to [kris]/Data/[path], where [kris] is the path
+    where kris is launched.
     If directory "Data" don't exist, it create it.
 
 
@@ -293,7 +117,7 @@ def chd(path):
     return old_path
 
 
-#---------list_dir
+##-list_dir
 def list_files(path='.', ext=None, exclude=None):
     '''
     Return a tuple containing all the filenames at path. Not recursive.
@@ -324,7 +148,7 @@ def list_files(path='.', ext=None, exclude=None):
     return tuple(lst)
 
 
-
+##-Files functions
 #---------h_size
 def h_size(size, bi=None, prec=1):
     '''
@@ -365,7 +189,6 @@ def h_size(size, bi=None, prec=1):
         round(size / b**i, prec),
         FileInfo.prefix[p][i]
     )
-
 
 
 #---------FileInfo
@@ -441,7 +264,7 @@ class FileInfo:
 
     #------dates
     def _set_date(self, date_):
-        '''Return the given date, in a readable string, at the format 'YYYY-MM-DD hh:mm:ss'.'''
+        '''Return the given date, in a readable string, in the format 'YYYY-MM-DD hh:mm:ss'.'''
 
         frmt = lambda x, y='02' : format(x, y)
 
@@ -499,8 +322,150 @@ class FileInfo:
             return self._set_date(self.date('c'))
 
 
-##-Maths functions
+#---------Read file chunk by chunk
+def read_chunks(fn, chunk_size):
+    '''
+    Defines a generator that read a file by chunks.
 
+    - fn         : the file name ;
+    - chunk_size : the number of bytes to read at once.
+
+    Usage :
+    ```
+    for c in read_chunks(fn, size):
+        f(c)
+    ```
+    '''
+
+    with open(fn, 'rb') as f:
+        while True:
+            ck = f.read(chunk_size)
+
+            if ck:
+                yield ck
+
+            else:
+                break
+
+
+#---------Get the number of lines of a file
+def get_line_count(fn):
+    '''From https://stackoverflow.com/a/68385697'''
+    '''
+    Return the number of lines of the file `fn`.
+
+    Inspired from
+    https://stackoverflow.com/a/68385697
+
+    A lot faster than the one here :
+    https://stackoverflow.com/a/1019572
+    '''
+
+    def _make_gen(reader):
+        while True:
+            b = reader(2 ** 16)
+            if not b:
+                break
+
+            yield b
+
+    with open(fn, 'rb') as f:
+        count = sum(buf.count(b'\n') for buf in _make_gen(f.raw.read))
+
+    return count
+
+
+##-Xor
+def xor(s1, s2):
+    '''Return s1 xored with s2 bit per bit.'''
+
+    if (len(s1) != len(s2)):
+        raise ValueError('Strings are not of the same length.')
+
+    if type(s1) != bytes:
+        s1 = s1.encode()
+
+    if type(s2) != bytes:
+        s2 = s2.encode()
+
+    l = [i ^ j for i, j in zip(list(s1), list(s2))]
+
+    return bytes(l)
+
+
+##-Int and bytes
+def int_to_bytes(x: int) -> bytes:
+    return x.to_bytes((x.bit_length() + 7) // 8, 'little')
+
+def bytes_to_int(xbytes: bytes) -> int:
+    return int.from_bytes(xbytes, 'little')
+
+
+##-Input functions
+def print_error(err_msg, title='Error !!!', parent=None, interface=None):
+    '''
+    Show the error message using the right interface.
+
+    - err_msg   : the error message to show ;
+    - title     : the title for the QMessageBox popup (used only if interface is 'gui') ;
+    - parent    : the parent of the QMessageBox popup (used only if interface is 'gui') ;
+    - interface : the interface used by the program. In (None, 'console', 'gui').
+    '''
+
+    if interface == None:
+        print(err_msg)
+
+    elif interface == 'console':
+        cl_out(c_error, err_msg)
+
+    elif interface == 'gui':
+        QMessageBox.critical(parent, title, f'<h2>{err_msg}</h2>')
+
+    else:
+        raise ValueError('The argument "interface" should be None, "gui", \
+            or "console", but {} of type {} was found !!!'.format(interface, type(interface)))
+
+
+def get_pwd(label='RSA key password :', ret_hash=True, h='sha256', parent=None, interface=None):
+    '''
+    Ask for a password to the user using the right interface.
+
+    - ret_hash  : a boolean indicating if to hash the input ;
+    - h         : the hash to use ;
+    - parent    : the parent for the AskPwd window ;
+    - interface : the interface used by the program. In (None, 'console', 'gui').
+
+    Return :
+        pwd_clear    if ret_hash is False ;
+        pwd_h        otherwise ;
+        -3           if the user canceled.
+    '''
+
+    try:
+        if interface == None:
+            pwd_clear = input(label)
+
+        elif interface == 'console':
+            pwd_clear = getpass(tr(label))
+
+        elif interface == 'gui':
+            pwd_clear = AskPwd.use(ret_hash=False, parent=parent) #TODO: use label also here.
+
+            if pwd_clear == None: #Canceled by user
+                raise KeyboardInterrupt
+
+    except KeyboardInterrupt:
+        return -3
+
+    if ret_hash:
+        pwd_h = Hasher(h).hash(pwd_clear)
+        return pwd_h
+
+    else:
+        return pwd_clear
+
+
+##-Maths functions
 def fact(n:int):
     '''
     Return the factorial of n
