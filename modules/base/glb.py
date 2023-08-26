@@ -37,4 +37,5 @@ prog_name = 'KRIS'
 
 #------Version changing RSA
 new_RSA_kris_version = '3.0.0' #This is the KRIS version when the new RSA implementation (with OAEP) has been added.
+new_RSA_cracker_version = '3.1.0' #TODO: ensure that it will be that. Otherwise, change. Or use insteat last version before new RSA and <=.
 

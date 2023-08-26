@@ -2860,7 +2860,16 @@ class UseCiphers:
             formatted_out = False
 
         else:
-            version = d['Version'][len(glb.prog_name + '_v'):]
+            i = d['Version'].index('_v') + 2
+            version = d['Version'][i : i + 5]
+
+            use_old_rsa = False
+
+            if d['Version'][0].lower() == 'k': # Kris
+                use_old_rsa = version < glb.new_RSA_kris_version
+
+            else: # Cracker
+                use_old_rsa = version < glb.new_RSA_cracker_version
 
             if d['Cipher'] == 'RSA signature':
                 txt, d = FormatMsg(raw_txt, nl=False).unset()
@@ -2888,7 +2897,7 @@ class UseCiphers:
                     else:
                         QMessageBox.critical(self.parent, '!!! {} !!!'.format(tr('Not found')), '<h2>{}</h2>\n<h2>{}</h2>'.format(tr(f'Key "{d["Key_name"]}" not found.'), tr('Trying with the selected key instead.')))
 
-                if ciph in (*ciphers_list['KRIS'], *ciphers_list['RSA']) and version < glb.new_RSA_kris_version: #TODO: check that it works correctly.
+                if ciph in (*ciphers_list['KRIS'], *ciphers_list['RSA']) and use_old_rsa:
                     QMessageBox.warning(self.parent, 'Old version !', '<h2>{}</h2>'.format(tr('The message has been encrypted with an old version of RSA. Using this old version to decrypt.')))
 
                     use_old_rsa = True
