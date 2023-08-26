@@ -60,16 +60,12 @@ Otherwise you should be able to run the software by downloading the build versio
 You can download directly the source code, or the last release, as you prefer. If you don't want to download Python3 and PyQt5, you can download the last release zip file that contain a build version for your OS (Windows or Linux).
 
 ### Source code
-Download or clone the repository :
+Download or clone the repository and make the launcher executable :
 
 ```bash
 git clone https://github.com/lasercata/KRIS.git
-```
-
-Make the launchers executable :
-
-```bash
-chmod +x *.py
+cd KRIS
+chmod +x KRIS_gui.py
 ```
 
 ### Release
