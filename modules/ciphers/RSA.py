@@ -544,11 +544,12 @@ class RsaKeyFile:
         return "RsaKeyFile('{}', interface='{}')".format(self.k_name, self.interface) #Printing self.k_name and not the full filename with the extension as the key can be saved in multiple formats at the same time.
 
 
-    def read(self, mode='all', also_ret_pwd=False, verbose=True):
+    def read(self, mode='all', pwd=None, also_ret_pwd=False, verbose=True):
         '''
         Try to read the content of the file `[self.k_name] + ext`, and return an RsaKey object.
 
         - mode         : the self.get_fn mode. in ('pvk', 'pbk', 'all'). Default is 'all' ;
+        - pwd          : If the key is encrypted, you can give the password here. If you don't, it will be asked according to the interface ;
         - also_ret_pwd : a bool indicating if also return the password. If True, return the password at the end of the return tuple ;
         - verbose      : if True, show error messages (before returning -1, -2, or -3).
 
@@ -589,7 +590,8 @@ class RsaKeyFile:
         #------Decrypt content, if encrypted
         if fn[-4:] == '.enc':
             #---Get password
-            pwd = get_pwd(interface=self.interface)
+            if pwd == None:
+                pwd = get_pwd(interface=self.interface)
 
             if pwd == -3:
                 return -3 # Canceled by user
@@ -707,10 +709,12 @@ class RsaKeyFile:
             None    otherwise.
         '''
 
-        key, pwd = self.read(also_ret_pwd=True)
+        out = self.read(also_ret_pwd=True)
 
-        if key in (-1, -2, -3):
+        if out in (-1, -2, -3):
             return -1
+
+        key, pwd = out
 
         old_fn, (type_, stg_md) = self.get_fn(also_ret_md=True)
 

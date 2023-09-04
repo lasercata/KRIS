@@ -13,13 +13,13 @@ from Languages.lang import translate as tr
 
 
 ##-ini
-ciphers_list = { #TODO: put this in a global file.
-    'KRIS' : ('KRIS-AES-256', 'KRIS-AES-192', 'KRIS-AES-128'),
-
-    'AES' : ('AES-256', 'AES-192', 'AES-128'),
-
-    'RSA' : ('RSA', tr('RSA signature')),
-}
+# ciphers_list = { #TODO: put this in a global file.
+#     'KRIS' : ('KRIS-AES-256', 'KRIS-AES-192', 'KRIS-AES-128'),
+#
+#     'AES' : ('AES-256', 'AES-192', 'AES-128'),
+#
+#     'RSA' : ('RSA', tr('RSA signature')),
+# }
 
 
 ##-main

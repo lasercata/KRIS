@@ -16,6 +16,8 @@ from os import chdir, mkdir, getcwd
 from os.path import expanduser
 import platform
 
+from getpass import getpass
+
 #if glb.interface == 'gui':
 from PyQt5.QtWidgets import QMessageBox
 
@@ -23,6 +25,7 @@ from PyQt5.QtWidgets import QMessageBox
 from modules.gui.AskPwd import AskPwd
 from modules.base import glb
 from modules.ciphers.hasher import Hasher
+from Languages.lang import translate as tr
 
 ##-Date
 def date():

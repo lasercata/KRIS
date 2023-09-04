@@ -1658,6 +1658,7 @@ class GenKeyWin(QDialog): #QMainWindow):
         sp_lay.addWidget(self.sp_lb, 0, 0)
 
         self.str1_lth = QSpinBox()
+        self.str1_lth.setMinimum(1)
         self.str1_lth.setValue(15)
         self.str1_lth.setMinimumSize(150, 35)
         sp_lay.addWidget(self.str1_lth, 0, 1)
@@ -1699,17 +1700,22 @@ class GenKeyWin(QDialog): #QMainWindow):
         if ciph == 'RSA':
             for w in self.w_lst:
                 w.hide()
+
             self.RSA_wid.show()
 
         elif 'AES' in ciph:
             for w in self.w_lst:
                 w.hide()
+
             self.sp_wid.show()
             self.sp_lb.setText("Key's size :")
 
+            mode = int(ciph[-3:])
+            self.str1_lth.setMaximum(mode // 8)
+
 
     def gen(self):
-        '''Redirect to the good gen method.'''
+        '''Redirect toward the right key generation method.'''
 
         ciph = self.cipher_box.currentText()
 
@@ -2243,7 +2249,8 @@ class EncKeyWin(QDialog): #QMainWindow):
         self.keys_opt.setMinimumSize(200, 0)
         self.keys_opt.addItem(tr('-- Select a key --'))
         self.keys_opt.insertSeparator(1)
-        self.keys_opt.addItems(RSA.list_keys('dec'))
+        # self.keys_opt.addItems(RSA.list_keys('dec'))
+        self.keys_opt.addItems(RSA.rm_lst(RSA.list_keys('dec'), RSA.list_keys('pbk_without_pvk')))
         main_lay.addWidget(self.keys_opt, 0, 1)
 
         #---Password line edit
@@ -2432,13 +2439,16 @@ class DecKeyWin(QDialog): #QMainWindow):
             pwd_clear = self.pwd_ledit.text()
             pwd = hasher.Hasher('sha256').hash(pwd_clear)
 
-        sure = QMessageBox.question(None, tr('Are you sure ?'), '<h2>{}</h2>'.format(tr('Do you really want to decrypt "{}" keys ? Anyone with access to this computer will be able to read them !').format(k_name)), QMessageBox.Yes | QMessageBox.Cancel, QMessageBox.Cancel)
+        keys = RSA.RsaKeyFile(k_name, interface='gui')
+
+        #Trying the password before asking for confirmation
+        if keys.read(pwd=pwd) in (-1, -2, -3):
+            return -3
+
+        sure = QMessageBox.question(self, tr('Are you sure ?'), '<h2>{}</h2>'.format(tr('Do you really want to decrypt "{}" keys ? Anyone with access to this computer will be able to read them !').format(k_name)), QMessageBox.Yes | QMessageBox.Cancel, QMessageBox.Cancel)
 
         if sure == QMessageBox.Cancel:
             return -3 #Cancel.
-
-
-        keys = RSA.RsaKeyFile(k_name, interface='gui')
 
         try:
             out = keys.decrypt(pwd)
