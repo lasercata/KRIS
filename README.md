@@ -8,6 +8,7 @@ The name come from the esperanto for cryptosystem, "kriptosistemo" ("KRIptoSiste
 ![Screenshot_2021 04 13_23h55 02](https://user-images.githubusercontent.com/67599917/114626132-cc3b3780-9ca2-11eb-9ecf-e6bebc825e7c.png)
 
 
+## Important note
 Please note that that the `AES` and `RSA` implementations are home made, and have not been audited by anyone.
 
 THIS PROGRAM IS PROVIDED "AS IS", WITHOUT ANY WARRANTY.
