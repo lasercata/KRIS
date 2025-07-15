@@ -947,7 +947,8 @@ class KrisGui(QMainWindow):
 
         k_name = fn_src.split('/')[-1]
 
-        fn_dest = '{}/RSA_keys/{}'.format(glb.KRIS_data_path, k_name)
+        rsa_key_dir = expanduser('~/.RSA_keys') if glb.home else glb.KRIS_data_path + '/RSA_keys'
+        fn_dest = '{}/{}'.format(rsa_key_dir, k_name)
 
         copy(fn_src, fn_dest)
 
